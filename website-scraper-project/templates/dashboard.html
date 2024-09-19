@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 80%;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        form {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        input[type="file"] {
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-left: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        .error {
+            color: red;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .task-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .task-table th, .task-table td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        .task-table th {
+            background-color: #f2f2f2;
+        }
+
+        .task-table td {
+            background-color: #fff;
+        }
+
+        .progress-bar {
+            width: 100%;
+            background-color: #f4f4f9;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            background-color: #28a745;
+            height: 20px;
+            width: 0%;
+            border-radius: 5px;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .status {
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .btn-download {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .btn-download:hover {
+            background-color: #0056b3;
+        }
+
+        .cancel-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+        }
+
+        .cancel-button:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Task Dashboard</h1>
+
+        <!-- File Upload Form -->
+        <form method="post" enctype="multipart/form-data">
+            <input type="file" name="file" required>
+            <button type="submit">Start Task</button>
+        </form>
+
+        <!-- Display error if a task is already running -->
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <!-- Display list of tasks -->
+        <table class="task-table">
+            <thead>
+                <tr>
+                    <th>Task ID</th>
+                    <th>Status</th>
+                    <th>Progress</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task_id, task in tasks.items() %}
+                    <tr>
+                        <td>{{ task_id }}</td>
+                        <td>{{ task.status }}</td>
+                        <td>
+                            <div class="progress-bar">
+                                <div class="progress-bar-fill" style="width: {{ task.progress }}%;">{{ task.progress }}%</div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if not task.done %}
+                                <form action="/cancel/{{ task_id }}" method="get" style="display:inline;">
+                                    <button class="cancel-button">Cancel</button>
+                                </form>
+                            {% endif %}
+
+                            {% if task.done and task.results %}
+                                <a href="/download/{{ task_id }}" class="btn-download">Download Results</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

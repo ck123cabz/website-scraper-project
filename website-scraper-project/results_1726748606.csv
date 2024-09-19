@@ -1,0 +1,9 @@
+url,result,confidence_score,reason
+abmatic.ai,No Fit,25,Matched based on scoring criteria
+tweetbinder.com,Filtered,N/A,Filtered due to News and Media, triggered by Contains keyword: media
+traqq.com,Filtered,N/A,Filtered due to News and Media, triggered by Contains keyword: news
+invoiced.com,Proceed,55,Matched based on scoring criteria
+printwhatyoulike.com,No Fit,0,Matched based on scoring criteria
+goprospero.com,Filtered,N/A,Filtered due to News and Media, triggered by Contains keyword: news
+bytecheck.com,No Fit,0,Matched based on scoring criteria
+userbrain.com,No Fit,30,Matched based on scoring criteria

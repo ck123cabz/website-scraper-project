@@ -1,0 +1,20 @@
+url,result,confidence_score,gpt_classification
+ecotality.com,No Fit,20,no fit
+getchip.com,No Fit,40,proceed
+reship.com,Proceed,80,proceed
+lifestylebyps.com,No Fit,30,proceed
+newmiddleclassdad.com,Filtered,N/A,Filtered due to News and Media, triggered by Contains keyword: news
+mashable.com,Proceed,50,proceed
+format.com,Proceed,50,proceed
+ubc.ca,Filtered,N/A,Filtered due to Educational Institutions, triggered by Contains keyword: edu
+bustle.com,Proceed,50,proceed
+cxl.com,Proceed,80,proceed
+zenbusiness.com,Proceed,70,proceed
+flippa.com,No Fit,40,proceed
+cracked.com,Filtered,N/A,Filtered due to News and Media, triggered by Contains keyword: news
+activerain.com,Proceed,70,proceed
+glueup.com,Proceed,80,proceed
+articlesfactory.com,Proceed,50,proceed
+omniconvert.com,Proceed,70,proceed
+promo.com,Filtered,N/A,Filtered due to News and Media, triggered by Contains keyword: news
+seopressor.com,Filtered,N/A,Filtered due to News and Media, triggered by Contains keyword: press

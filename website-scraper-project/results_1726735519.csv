@@ -1,0 +1,9 @@
+url,result,confidence_score,reason,filtered_category,filter_trigger
+abmatic.ai,no fit,2,Classified as News/Media,,
+tweetbinder.com,proceed,3,Classified as SaaS,,
+traqq.com,no fit,2,Classified as News/Media,,
+invoiced.com,proceed,3,Classified as SaaS,,
+printwhatyoulike.com,proceed,3,Classified as SaaS,,
+goprospero.com,proceed,5,Classified as SaaS,,
+bytecheck.com,no fit,2,Classified as News/Media,,
+userbrain.com,proceed,3,Classified as SaaS,,
