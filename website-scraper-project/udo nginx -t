@@ -1,0 +1,6 @@
+● nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (/lib/systemd/system/nginx.service; enabled; vendor preset: enabled)
+     Active: activating (auto-restart) (Result: exit-code) since Thu 2024-09-19 16:40:09 UTC; 2s ago
+       Docs: man:nginx(8)
+    Process: 10042 ExecStartPre=/usr/sbin/nginx -t -q -g daemon on; master_process on; [0;1;31m(code=exited, status=1/FAILURE)[0m
+        CPU: 3ms

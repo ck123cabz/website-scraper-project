@@ -1,8 +1,16 @@
-from openai import OpenAI
+import os
 import logging
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Get the OpenAI API key from the environment variables
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 # Set up OpenAI API key
-client = OpenAI(api_key='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')
+client = OpenAI(api_key='OPENAI_API_KEY')
 
 # Predefined categories and keywords for filtering
 FILTER_CATEGORIES = {
