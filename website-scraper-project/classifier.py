@@ -7,10 +7,10 @@ from openai import OpenAI
 load_dotenv()
 
 # Get the OpenAI API key from the environment variables
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+api_key = os.getenv('OPENAI_API_KEY')
 
 # Initialize OpenAI client
-client = OpenAI(api_key=OPENAI_API_KEY)
+client = OpenAI(api_key=api_key)
 
 def classify_website(scraped_data):
     """Classifies the website content using GPT and custom scoring logic."""

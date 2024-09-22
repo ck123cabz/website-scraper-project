@@ -3,6 +3,13 @@ from scrapingbee import ScrapingBeeClient
 from bs4 import BeautifulSoup
 import time
 from concurrent.futures import ThreadPoolExecutor
+import os
+from dotenv import load_dotenv
+import openai
+
+# Load environment variables from .env file
+load_dotenv()
+
 
 # Configure logging
 logging.basicConfig(filename='scraper.log', level=logging.INFO,
