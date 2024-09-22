@@ -2,7 +2,6 @@ import os
 import openai
 import logging
 from dotenv import load_dotenv
-from openai import OpenAI
 
 # Load environment variables from .env file
 load_dotenv()
@@ -14,8 +13,8 @@ logging.basicConfig(filename='scraper.log', level=logging.INFO,
 # Get the OpenAI API key from the environment variables
 api_key = os.getenv('OPENAI_API_KEY')
 
-# Set up OpenAI API key
-client.api_key = OpenAI(api_key=api_key)
+# Initialize OpenAI client
+openai.api_key = api_key
 
 # Log the API key for debugging (make sure to remove this in production for security reasons)
 logging.info(f"Using OpenAI API Key: {api_key}")
@@ -40,7 +39,7 @@ def filter_url(url):
 
     try:
         # Call OpenAI API using the new ChatCompletion endpoint
-        response = client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-4o-mini",  # or "gpt-4" if available
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that categorizes websites."},
@@ -48,7 +47,7 @@ def filter_url(url):
             ]
         )
 
-        classification = response.choices[0].message.content.strip().lower()
+        classification = response.choices[0].message['content'].strip().lower()
 
         # Check if the classification contains any keywords from the filter categories
         for category, keywords in FILTER_CATEGORIES.items():
