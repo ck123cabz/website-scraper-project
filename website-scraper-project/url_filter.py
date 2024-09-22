@@ -1,6 +1,6 @@
 import os
-import openai
 import logging
+import openai
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -33,7 +33,7 @@ def filter_url(url):
 
     try:
         # Call OpenAI API using the new ChatCompletion endpoint
-        response = client.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4o-mini",  # or "gpt-4" if available
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that categorizes websites."},
@@ -41,7 +41,7 @@ def filter_url(url):
             ]
         )
 
-        classification = response.choices[0].message['content'].strip().lower()
+        classification = response.choices[0].message.content.strip().lower()
 
         # Check if the classification contains any keywords from the filter categories
         for category, keywords in FILTER_CATEGORIES.items():
