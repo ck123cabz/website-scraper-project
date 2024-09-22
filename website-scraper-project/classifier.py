@@ -1,5 +1,6 @@
 import os
 import logging
+import openai
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -10,7 +11,7 @@ load_dotenv()
 api_key = os.getenv('OPENAI_API_KEY')
 
 # Initialize OpenAI client
-client = OpenAI(api_key=api_key)
+client.api_key = OpenAI(api_key=api_key)
 
 def classify_website(scraped_data):
     """Classifies the website content using GPT and custom scoring logic."""
