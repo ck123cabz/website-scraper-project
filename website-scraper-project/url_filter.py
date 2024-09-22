@@ -7,8 +7,9 @@ from openai import OpenAI
 # Load environment variables from .env file
 load_dotenv()
 
-# Log the API key for debugging (make sure to remove this in production for security reasons)
-logging.info(f"Using OpenAI API Key: {api_key}")
+# Set up logging
+logging.basicConfig(filename='url_filter.log', level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Get the OpenAI API key from the environment variables
 api_key = os.getenv('OPENAI_API_KEY')
