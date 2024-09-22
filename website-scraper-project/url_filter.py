@@ -7,11 +7,17 @@ from openai import OpenAI
 # Load environment variables from .env file
 load_dotenv()
 
+# Log the API key for debugging (make sure to remove this in production for security reasons)
+logging.info(f"Using OpenAI API Key: {api_key}")
+
 # Get the OpenAI API key from the environment variables
 api_key = os.getenv('OPENAI_API_KEY')
 
 # Set up OpenAI API key
 client.api_key = OpenAI(api_key=api_key)
+
+# Log the API key for debugging (make sure to remove this in production for security reasons)
+logging.info(f"Using OpenAI API Key: {api_key}")
 
 # Predefined categories and keywords for filtering
 FILTER_CATEGORIES = {
