@@ -22089,3 +22089,33 @@ in summary, userbrain is a fit for guest posting as it has a relevant audience, 
 2024-09-22 22:17:28,722 - INFO - Successfully scraped https://tmcnet.com
 2024-09-22 22:17:31,098 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
 2024-09-22 22:17:31,099 - INFO - GPT Classification Response: proceed
+2024-09-22 22:29:17,642 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2024-09-22 22:29:17,642 - ERROR - Error filtering URL opencart.com: Error code: 401 - {'error': {'message': 'Incorrect API key provided: OPENAI_A**_KEY. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2024-09-22 22:29:17,643 - INFO - Scraping https://opencart.com through ScrapingBee
+2024-09-22 22:29:20,048 - INFO - Successfully scraped https://opencart.com
+2024-09-22 22:29:22,532 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-09-22 22:29:22,533 - INFO - GPT Classification Response: proceed
+2024-09-22 22:29:24,695 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2024-09-22 22:29:24,696 - ERROR - Error filtering URL flippingbook.com: Error code: 401 - {'error': {'message': 'Incorrect API key provided: OPENAI_A**_KEY. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2024-09-22 22:29:24,696 - INFO - Scraping https://flippingbook.com through ScrapingBee
+2024-09-22 22:29:25,712 - INFO - Successfully scraped https://flippingbook.com
+2024-09-22 22:29:28,162 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-09-22 22:29:28,163 - INFO - GPT Classification Response: proceed
+2024-09-22 22:29:30,532 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2024-09-22 22:29:30,533 - ERROR - Error filtering URL mykajabi.com: Error code: 401 - {'error': {'message': 'Incorrect API key provided: OPENAI_A**_KEY. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2024-09-22 22:29:30,533 - INFO - Scraping https://mykajabi.com through ScrapingBee
+2024-09-22 22:29:37,127 - ERROR - Failed to scrape https://mykajabi.com, Status code: 500, Response: b'{"error": "Error with your request, please try again (you will not be charged for this request).You should: 1) check that your URL is correctly encoded 2) try with render_js=True (5 credits per request) 3) try with premium_proxy=True see documentation: https://www.scrapingbee.com/documentation#premium_proxy (10-25 credits per request) 4) try with stealth_proxy=True see documentation: https://www.scrapingbee.com/documentation#stealth_proxy (75 credits per request)Do not hesitate to check our troubleshooting guide:https://www.scrapingbee.com/help", "reason": "Server responded with 500", "help": ""}'
+2024-09-22 22:29:39,756 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-09-22 22:29:39,757 - INFO - GPT Classification Response: please provide the meta description and text content so i can better assess whether the website is a good fit
+2024-09-22 22:29:41,918 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2024-09-22 22:29:41,919 - ERROR - Error filtering URL nasdaq.com: Error code: 401 - {'error': {'message': 'Incorrect API key provided: OPENAI_A**_KEY. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2024-09-22 22:29:41,919 - INFO - Scraping https://nasdaq.com through ScrapingBee
+2024-09-22 22:29:44,422 - INFO - Successfully scraped https://nasdaq.com
+2024-09-22 22:29:46,801 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-09-22 22:29:46,803 - INFO - GPT Classification Response: proceed
+2024-09-22 22:29:48,972 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2024-09-22 22:29:48,973 - ERROR - Error filtering URL wustl.edu: Error code: 401 - {'error': {'message': 'Incorrect API key provided: OPENAI_A**_KEY. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2024-09-22 22:29:48,973 - INFO - Scraping https://wustl.edu through ScrapingBee
+2024-09-22 22:29:51,962 - INFO - Successfully scraped https://wustl.edu
+2024-09-22 22:29:54,380 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-09-22 22:29:54,381 - INFO - GPT Classification Response: proceed
