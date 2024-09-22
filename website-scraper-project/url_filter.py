@@ -8,7 +8,7 @@ from openai import OpenAI
 load_dotenv()
 
 # Set up logging
-logging.basicConfig(filename='classifier.log', level=logging.INFO,
+logging.basicConfig(filename='scraper.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Get the OpenAI API key from the environment variables
