@@ -2,22 +2,16 @@ import os
 import openai
 import logging
 from dotenv import load_dotenv
+from openai import OpenAI
 
 # Load environment variables from .env file
 load_dotenv()
-
-# Set up logging
-logging.basicConfig(filename='scraper.log', level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Get the OpenAI API key from the environment variables
 api_key = os.getenv('OPENAI_API_KEY')
 
 # Initialize OpenAI client
-openai.api_key = api_key
-
-# Log the API key for debugging (make sure to remove this in production for security reasons)
-logging.info(f"Using OpenAI API Key: {api_key}")
+client.api_key = OpenAI(api_key=api_key)
 
 # Predefined categories and keywords for filtering
 FILTER_CATEGORIES = {
@@ -39,7 +33,7 @@ def filter_url(url):
 
     try:
         # Call OpenAI API using the new ChatCompletion endpoint
-        response = openai.ChatCompletion.create(
+        response = client.ChatCompletion.create(
             model="gpt-4o-mini",  # or "gpt-4" if available
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that categorizes websites."},
