@@ -14,8 +14,6 @@ tasks = {}
 current_task = None  # Track the currently running task
 task_counter = 0  # Start task ID counter from 0
 
-load_dotenv()
-
 def background_task(urls, task_id):
     """Background task that processes the URLs and updates progress."""
 
