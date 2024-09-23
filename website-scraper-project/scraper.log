@@ -22425,3 +22425,27 @@ in summary, userbrain is a fit for guest posting as it has a relevant audience, 
 2024-09-23 01:16:05,607 - INFO - Successfully scraped https://flippingbook.com
 2024-09-23 01:16:08,270 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
 2024-09-23 01:16:08,271 - INFO - GPT Classification Response: proceed
+2024-09-23 01:21:30,153 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2024-09-23 01:21:30,154 - ERROR - Error filtering URL opencart.com: Error code: 401 - {'error': {'message': 'Incorrect API key provided: OPENAI_A**_KEY. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2024-09-23 01:21:30,154 - INFO - Scraping https://opencart.com through ScrapingBee
+2024-09-23 01:21:32,463 - INFO - Successfully scraped https://opencart.com
+2024-09-23 01:21:35,392 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-09-23 01:21:35,393 - INFO - GPT Classification Response: proceed
+2024-09-23 01:21:37,551 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2024-09-23 01:21:37,552 - ERROR - Error filtering URL flippingbook.com: Error code: 401 - {'error': {'message': 'Incorrect API key provided: OPENAI_A**_KEY. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2024-09-23 01:21:37,553 - INFO - Scraping https://flippingbook.com through ScrapingBee
+2024-09-23 01:21:38,915 - INFO - Successfully scraped https://flippingbook.com
+2024-09-23 01:21:41,326 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-09-23 01:21:41,327 - INFO - GPT Classification Response: proceed
+2024-09-23 01:33:20,289 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2024-09-23 01:33:20,289 - ERROR - Error filtering URL opencart.com: Error code: 401 - {'error': {'message': 'Incorrect API key provided: OPENAI_A**_KEY. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2024-09-23 01:33:20,290 - INFO - Scraping https://opencart.com through ScrapingBee
+2024-09-23 01:34:10,828 - INFO - Successfully scraped https://opencart.com
+2024-09-23 01:34:13,316 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-09-23 01:34:13,317 - INFO - GPT Classification Response: proceed
+2024-09-23 01:34:15,475 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2024-09-23 01:34:15,475 - ERROR - Error filtering URL flippingbook.com: Error code: 401 - {'error': {'message': 'Incorrect API key provided: OPENAI_A**_KEY. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2024-09-23 01:34:15,476 - INFO - Scraping https://flippingbook.com through ScrapingBee
+2024-09-23 01:34:17,012 - INFO - Successfully scraped https://flippingbook.com
+2024-09-23 01:34:19,432 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-09-23 01:34:19,433 - INFO - GPT Classification Response: proceed
