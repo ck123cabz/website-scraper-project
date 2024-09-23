@@ -13,6 +13,8 @@ api_key = os.getenv('OPENAI_API_KEY')
 # Initialize OpenAI client
 client.api_key = OpenAI(api_key=api_key)
 
+logging.info(f"Environment: {os.environ}")
+
 # Predefined categories and keywords for filtering
 FILTER_CATEGORIES = {
     "News and Media": ['news', 'report', 'magazine', 'press', 'daily', 'media'],
