@@ -7,13 +7,6 @@ from openai import OpenAI
 # Load environment variables from .env file
 load_dotenv()
 
-# Get the OpenAI API key from the environment variables
-api_key = os.getenv('OPENAI_API_KEY')
-logging.info(f"API Key Loaded: {api_key}")
-
-# Check if loaded properly
-if not api_key:
-    logging.error("Failed to load the API Key")
 # Initialize OpenAI client
 client.api_key = OpenAI(api_key=api_key)
 
@@ -37,17 +30,19 @@ FILTER_CATEGORIES = {
 def filter_url(url):
     prompt = f"Based on just the text, Does this URL strictly have an exact match with any of the keywords in following categories? {FILTER_CATEGORIES}\nURL: {url}\n"
 
-    try:
-        # Call OpenAI API using the new ChatCompletion endpoint
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",  # or "gpt-4" if available
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant that categorizes websites."},
-                {"role": "user", "content": prompt}
-            ]
+   try:
+        # Call GPT API for classification
+        response = client.chat.completions.create(model="gpt-4o-mini",  # Replace with your desired model
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant that classifies websites."},
+            {"role": "user", "content": prompt}
+        ],
+
+        max_tokens=20  # Limit the response to minimal tokens for efficiency
+
         )
 
-        classification = response.choices[0].message.content.strip().lower()
+        gpt_classification = response.choices[0].message.content.strip().lower()
 
         # Check if the classification contains any keywords from the filter categories
         for category, keywords in FILTER_CATEGORIES.items():
