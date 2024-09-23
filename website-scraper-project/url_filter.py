@@ -7,16 +7,11 @@ from openai import OpenAI
 # Load environment variables from .env file
 load_dotenv()
 
-logging.basicConfig(filename='url_filter.log', level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
-
 # Get the OpenAI API key from the environment variables
-api_key = os.getenv('OPENAI_API_KEY2')
+api_key = os.getenv('OPENAI_API_KEY')
 
 # Initialize OpenAI client
 openai.api_key = OpenAI(api_key=api_key)
-
-logging.info(f"Environment: {os.environ}")
 
 # Predefined categories and keywords for filtering
 FILTER_CATEGORIES = {
