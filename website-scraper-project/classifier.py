@@ -36,7 +36,7 @@ def classify_website(scraped_data):
 
     try:
         # Call GPT API for classification
-        response = openai.chat.completions.create(model="gpt-4o-mini",  # Replace with your desired model
+        response = client.chat.completions.create(model="gpt-4o-mini",  # Replace with your desired model
         messages=[
             {"role": "system", "content": "You are a helpful assistant that classifies websites."},
             {"role": "user", "content": prompt}
