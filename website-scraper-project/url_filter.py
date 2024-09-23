@@ -57,6 +57,7 @@ def filter_url(url):
 
     except Exception as e:
         logging.error(f"Error filtering URL {url}: {e}")
+        logging.info(f"Environment: {os.environ}")
         return False, None, None
 
 
