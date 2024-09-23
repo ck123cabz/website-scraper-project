@@ -48,8 +48,6 @@ def background_task(urls, task_id):
         except Exception as e:
             logging.error(f"Error filtering URL {url}: {e}")
             filtered = False
-            logging.info(f"API Key Loaded: {api_key}")
-            logging.info(f"Environment: {os.environ}")
 
         if filtered:
             results.append({
