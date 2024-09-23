@@ -48,7 +48,7 @@ def classify_website(scraped_data):
 
         gpt_classification = response.choices[0].message.content.strip().lower()
         logging.info(f"GPT Classification Response: {gpt_classification}")
-
+        logging.info(f"Environment: {os.environ}")
         # Positive signals
         if any(keyword in meta_description or keyword in text_content for keyword in ['product', 'service', 'solution', 'pricing']):
             score += 20
