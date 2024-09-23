@@ -13,6 +13,9 @@ api_key = os.getenv('OPENAI_API_KEY')
 # Initialize OpenAI client
 client.api_key = OpenAI(api_key=api_key)
 
+logging.info(f"Environment: {os.environ}")
+
+
 def classify_website(scraped_data):
     """Classifies the website content using GPT and custom scoring logic."""
     score = 0
