@@ -8,12 +8,10 @@ from openai import OpenAI
 load_dotenv()
 
 # Get the OpenAI API key from the environment variables
-api_key = os.getenv('OPENAI_API_KEY2')
+api_key = os.getenv('OPENAI_API_KEY')
 
 # Initialize OpenAI client
 openai.api_key = OpenAI(api_key=api_key)
-
-logging.info(f"Environment: {os.environ}")
 
 
 def classify_website(scraped_data):
@@ -36,7 +34,7 @@ def classify_website(scraped_data):
 
     try:
         # Call GPT API for classification
-        response = client.chat.completions.create(model="",  # Replace with your desired model
+        response = openai.chat.completions.create(model="gpt-4o-mini",  # Replace with your desired model
         messages=[
             {"role": "system", "content": "You are a helpful assistant that classifies websites."},
             {"role": "user", "content": prompt}
@@ -48,7 +46,6 @@ def classify_website(scraped_data):
 
         gpt_classification = response.choices[0].message.content.strip().lower()
         logging.info(f"GPT Classification Response: {gpt_classification}")
-        logging.info(f"Environment: {os.environ}")
         # Positive signals
         if any(keyword in meta_description or keyword in text_content for keyword in ['product', 'service', 'solution', 'pricing']):
             score += 20
