@@ -11,7 +11,7 @@ load_dotenv()
 api_key = os.getenv('OPENAI_API_KEY')
 
 # Initialize OpenAI client
-openai.api_key = OpenAI(api_key=api_key)
+client = OpenAI(api_key=api_key)
 
 # Predefined categories and keywords for filtering
 FILTER_CATEGORIES = {
@@ -33,7 +33,7 @@ def filter_url(url):
 
     try:
         # Call GPT API for classification
-        response = openai.chat.completions.create(
+        response = client.chat.completions.create(
             model="gpt-4o-mini",  # Replace with your desired model
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that classifies websites."},
