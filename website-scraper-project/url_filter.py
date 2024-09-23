@@ -31,16 +31,15 @@ FILTER_CATEGORIES = {
 def filter_url(url):
     prompt = f"Based on just the text, Does this URL strictly have an exact match with any of the keywords in following categories? {FILTER_CATEGORIES}\nURL: {url}\n"
 
-   try:
+    try:
         # Call GPT API for classification
-        response = openai.chat.completions.create(model="gpt-4o-mini",  # Replace with your desired model
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant that classifies websites."},
-            {"role": "user", "content": prompt}
-        ],
-
-        max_tokens=20  # Limit the response to minimal tokens for efficiency
-
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",  # Replace with your desired model
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that classifies websites."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=20  # Limit the response to minimal tokens for efficiency
         )
 
         gpt_classification = response.choices[0].message.content.strip().lower()
@@ -48,7 +47,7 @@ def filter_url(url):
         # Check if the classification contains any keywords from the filter categories
         for category, keywords in FILTER_CATEGORIES.items():
             for keyword in keywords:
-                if keyword.lower() in classification:
+                if keyword.lower() in gpt_classification:
                     logging.info(f"Filtered out URL: {url} under category: {category}, Trigger: {keyword}")
                     return True, category, f"Contains keyword: {keyword}"
 
