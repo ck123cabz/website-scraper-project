@@ -1,3 +1,19 @@
+from flask import Flask, request, jsonify, render_template, send_file, redirect, url_for
+from classifier import classify_website
+from url_filter import filter_url
+from scraper import scrape_multiple_websites
+import os
+import time
+import threading
+import logging
+
+app = Flask(__name__)
+
+# Dictionary to store task details
+tasks = {}
+current_task = None  # Track the currently running task
+task_counter = 0  # Start task ID counter from 0
+
 def background_task(urls, task_id):
     """Background task that processes the URLs and updates progress."""
 
@@ -94,3 +110,66 @@ def background_task(urls, task_id):
     
     current_task = None
     tasks[task_id]['done'] = True
+
+
+@app.route("/", methods=["GET", "POST"])
+def home():
+    """Dashboard displaying all tasks and allowing new task creation."""
+    global current_task
+    global task_counter  # Use global task_counter to assign task IDs
+    
+    if request.method == "POST":
+        # Prevent starting a new task if one is already running
+        if current_task is not None:
+            return render_template("dashboard.html", tasks=tasks, error="A task is already running.")
+        
+        # Get the file with URLs
+        file = request.files['file']
+        urls = file.read().decode("utf-8").splitlines()
+
+        # Use the task_counter for task ID and then increment it
+        task_id = str(task_counter)
+        task_counter += 1  # Increment task counter for the next task
+
+        # Initialize the task status
+        tasks[task_id] = {'progress': 0, 'status': 'Starting', 'done': False, 'results': None, 'canceled': False}
+
+        # Start background task for processing URLs
+        threading.Thread(target=background_task, args=(urls, task_id)).start()
+
+        return redirect(url_for("home"))
+
+    return render_template("dashboard.html", tasks=tasks)
+
+
+@app.route("/progress/<task_id>")
+def progress(task_id):
+    """Return task progress and status as JSON."""
+    task = tasks.get(task_id, None)
+    if task:
+        return jsonify(progress=task['progress'], status=task['status'], done=task['done'], 
+                       results=task['results'], elapsed_time=task['elapsed_time'], 
+                       estimated_remaining_time=task['estimated_remaining_time'])
+    return jsonify(progress=0, status="Task not found", done=True)
+
+@app.route("/cancel/<task_id>")
+def cancel_task(task_id):
+    """Cancel a running task."""
+    global current_task
+    if current_task == task_id:
+        tasks[task_id]['canceled'] = True
+        return redirect(url_for("home"))
+    return "Task not found or not running", 404
+
+
+@app.route("/download/<task_id>")
+def download(task_id):
+    """Download the result CSV of a completed task."""
+    task = tasks.get(task_id, None)
+    if task and task['results']:
+        return send_file(task['results'], as_attachment=True)
+    return "No results available for this task.", 404
+
+
+if __name__ == "__main__":
+    app.run(debug=True, port=5001)
