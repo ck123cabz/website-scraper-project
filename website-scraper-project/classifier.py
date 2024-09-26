@@ -50,7 +50,7 @@ def classify_website(scraped_data):
         )
 
         # Get GPT classification response
-        gpt_classification = response.choices[0].message["content"].strip().lower()
+        gpt_classification = response['choices'][0]['message']['content'].strip().lower()
         logging.info(f"GPT Classification Response: {gpt_classification}")
 
         # Post-process the response
