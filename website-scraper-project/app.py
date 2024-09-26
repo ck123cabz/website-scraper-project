@@ -6,7 +6,6 @@ import os
 import time
 import threading
 import logging
-import csv
 
 app = Flask(__name__)
 
@@ -17,7 +16,6 @@ task_counter = 0  # Start task ID counter from 0
 
 def background_task(urls, task_id):
     """Background task that processes the URLs and updates progress."""
-
     global current_task
     current_task = task_id
 
@@ -31,9 +29,9 @@ def background_task(urls, task_id):
             break
 
         # Update task status
-        elapsed_time = time.time() - start_time
+        elapsed_time = time.time() - start_time  # Calculate elapsed time
         progress_percent = (idx + 1) / total_urls
-        estimated_total_time = elapsed_time / progress_percent
+        estimated_total_time = elapsed_time / progress_percent  # Estimate total time
         estimated_remaining_time = estimated_total_time - elapsed_time
         
         tasks[task_id]['status'] = f"Processing {url} ({idx + 1}/{total_urls})"
@@ -51,23 +49,21 @@ def background_task(urls, task_id):
         if filtered:
             results.append({
                 'url': url, 
-                'result': 'Filtered',
-                'confidence_score': 'N/A',
-                'gpt_classification': f"Filtered due to {filtered_category}, triggered by {filter_trigger}",
+                'result': 'No Fit',
+                'explanation': f"Filtered due to {filtered_category}, triggered by {filter_trigger}",
                 'title': 'N/A',
                 'meta_description': 'N/A',
                 'text_content': 'N/A'
             })
         else:
             try:
-                scraped_data = scrape_multiple_websites([url], max_workers=3, delay=2)[0]
+                scraped_data = scrape_multiple_websites([url], max_workers= 3, delay=2)[0]
                 if scraped_data:
                     classification_result = classify_website(scraped_data)
                     results.append({
                         'url': url,
-                        'result': classification_result['classification'],
-                        'confidence_score': classification_result['confidence_score'],
-                        'gpt_classification': classification_result['gpt_classification'],
+                        'result': classification_result['classification'],  # Proceed or No Fit
+                        'explanation': classification_result['explanation'],  # GPT Classification/Explanation
                         'title': scraped_data.get('title', 'N/A'),
                         'meta_description': scraped_data.get('meta_description', 'N/A'),
                         'text_content': scraped_data.get('text_content', 'N/A')
@@ -76,8 +72,7 @@ def background_task(urls, task_id):
                     results.append({
                         'url': url,
                         'result': 'Error',
-                        'confidence_score': 'N/A',
-                        'gpt_classification': 'No data scraped',
+                        'explanation': 'No data scraped',
                         'title': 'N/A',
                         'meta_description': 'N/A',
                         'text_content': 'N/A'
@@ -87,32 +82,24 @@ def background_task(urls, task_id):
                 results.append({
                     'url': url,
                     'result': 'Error',
-                    'confidence_score': 'N/A',
-                    'gpt_classification': 'Scraping or classification failed',
+                    'explanation': 'Scraping or classification failed',
                     'title': 'N/A',
                     'meta_description': 'N/A',
                     'text_content': 'N/A'
                 })
 
-        time.sleep(2)  # Simulate processing delay
+        # Simulate processing time
+        time.sleep(2)
 
     # Save results to CSV
     if not tasks[task_id]['canceled']:
         results_csv = f"results_{task_id}.csv"
-        with open(results_csv, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            # Write the CSV headers including title, meta description, and text content
-            writer.writerow(['url', 'result', 'confidence_score', 'gpt_classification', 'title', 'meta_description', 'text_content'])
+        with open(results_csv, 'w') as f:
+            # Write the CSV headers
+            f.write('url,result,explanation,title,meta_description,text_content\n')
+            # Write the rows for each result
             for result in results:
-                writer.writerow([
-                    result['url'],
-                    result.get('result'),
-                    result.get('confidence_score'),
-                    result.get('gpt_classification'),
-                    result.get('title'),
-                    result.get('meta_description'),
-                    result.get('text_content')
-                ])
+                f.write(f"{result['url']},{result['result']},{result['explanation']},{result['title']},{result['meta_description']},{result['text_content']}\n")
 
         tasks[task_id]['results'] = results_csv
         tasks[task_id]['status'] = 'Completed'
