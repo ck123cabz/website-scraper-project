@@ -96,10 +96,10 @@ def background_task(urls, task_id):
         results_csv = f"results_{task_id}.csv"
         with open(results_csv, 'w') as f:
             # Write the CSV headers
-            f.write('url,result,explanation,title,meta_description,text_content\n')
+            f.write('Url,Result,Explanation,Title,Meta Description,Text Content\n')
             # Write the rows for each result
             for result in results:
-                f.write(f"{result['url']},{result['result']},{result['explanation']},{result['title']},{result['meta_description']},{result['text_content']}\n")
+                f.write(f"{result['url']},{result['result']},{result['explanation']},\"{result['title']}\",\"{result['meta_description']}\",\"{result['text_content']}\"\n")
 
         tasks[task_id]['results'] = results_csv
         tasks[task_id]['status'] = 'Completed'
