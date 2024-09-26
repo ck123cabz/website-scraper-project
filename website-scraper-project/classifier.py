@@ -15,21 +15,25 @@ client.api_key = OpenAI(api_key=api_key)
 
 
 def classify_website(scraped_data):
-    """Classifies the website content using GPT and custom scoring logic."""
-    score = 0
-
+    """Classifies the website content using GPT, focusing on business relevance and excluding media-related content."""
+    
     # Extract title, meta description, and text content
     title = scraped_data.get('title', '').lower()
     meta_description = scraped_data.get('meta_description', '').lower()
     text_content = scraped_data.get('text_content', '').lower()
 
-    # Create a prompt for GPT to classify the content
+    # Updated Prompt with Additional Context and Criteria
     prompt = f"""
-    The following is data scraped from a website:
-    Meta Description: {scraped_data.get('meta_description', '')}
-    Text Content: {scraped_data.get('text_content', '')}
+    You are classifying websites based on their relevance for guest posting. Prioritize sites with marketing, business, product-related content, and high-quality copy.
+    
+    Declassify sites that focus on news, media, or general reporting.
 
-    Does this website look like a good fit for guest posting? Answer "Proceed" or "No Fit".
+    Website Data:
+    - Title: {title}
+    - Meta Description: {meta_description}
+    - Text Content: {text_content}
+
+    Answer with "Proceed" for business/marketing/product-related content or "No Fit" if the content is news, media-related, or irrelevant. Provide a reason for your decision.
     """
 
     try:
@@ -40,36 +44,31 @@ def classify_website(scraped_data):
             {"role": "user", "content": prompt}
         ],
 
-        max_tokens=20  # Limit the response to minimal tokens for efficiency
+        max_tokens=30,  # Adjust if needed
+        temperature=0.2  # Lower value for deterministic output
 
         )
 
-        gpt_classification = response.choices[0].message.content.strip().lower()
+        # Get GPT classification response
+        gpt_classification = response.choices[0].message["content"].strip().lower()
         logging.info(f"GPT Classification Response: {gpt_classification}")
-        # Positive signals
-        if any(keyword in meta_description or keyword in text_content for keyword in ['product', 'service', 'solution', 'pricing']):
-            score += 20
-        if any(keyword in meta_description or keyword in text_content for keyword in ['marketing', 'saas', 'b2b']):
-            score += 10
-        if any(keyword in meta_description or keyword in text_content for keyword in ['contact us', 'get a quote', 'start free trial']):
-            score += 10
-        # Negative signals
-        if any(keyword in meta_description or keyword in text_content for keyword in ['news', 'media', 'lifestyle', 'health']):
-            score -= 20
-        if 'generic' in meta_description:
-            score -= 10
 
-        # GPT classification adds weight
+        # Post-process the response
         if 'proceed' in gpt_classification:
-            score += 50
+            classification = 'Proceed'
+        elif 'no fit' in gpt_classification:
+            classification = 'No Fit'
+        else:
+            classification = 'Unclear'
 
-        # Determine final classification based on score
-        classification = "Proceed" if score >= 50 else "No Fit"
+        # Extract the explanation from the response
+        explanation = gpt_classification.split('\n', 1)[-1] if '\n' in gpt_classification else 'No explanation'
 
+        # Return result
         return {
             'classification': classification,
-            'confidence_score': score,
-            'gpt_classification': gpt_classification
+            'gpt_classification': gpt_classification,
+            'explanation': explanation  # Return the reasoning from GPT
         }
 
     except Exception as e:
