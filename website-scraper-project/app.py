@@ -6,6 +6,7 @@ import os
 import time
 import threading
 import logging
+import csv
 
 app = Flask(__name__)
 
@@ -98,12 +99,20 @@ def background_task(urls, task_id):
     # Save results to CSV
     if not tasks[task_id]['canceled']:
         results_csv = f"results_{task_id}.csv"
-        with open(results_csv, 'w') as f:
+        with open(results_csv, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
             # Write the CSV headers including title, meta description, and text content
-            f.write('url,result,confidence_score,gpt_classification,title,meta_description,text_content\n')
+            writer.writerow(['url', 'result', 'confidence_score', 'gpt_classification', 'title', 'meta_description', 'text_content'])
             for result in results:
-                f.write(f"{result['url']},{result.get('result')},{result.get('confidence_score')},{result.get('gpt_classification')},"
-                        f"{result.get('title')},{result.get('meta_description')},{result.get('text_content')}\n")
+                writer.writerow([
+                    result['url'],
+                    result.get('result'),
+                    result.get('confidence_score'),
+                    result.get('gpt_classification'),
+                    result.get('title'),
+                    result.get('meta_description'),
+                    result.get('text_content')
+                ])
 
         tasks[task_id]['results'] = results_csv
         tasks[task_id]['status'] = 'Completed'
