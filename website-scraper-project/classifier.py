@@ -24,7 +24,7 @@ def classify_website(scraped_data):
 
     # Updated Prompt with Additional Context and Criteria
     prompt = f"""
-    You are classifying websites based on their relevance for guest posting. Prioritize sites with marketing, business, product-related content, and high-quality copy.
+    You are classifying websites based on their relevance for guest posting. Prioritize sites with marketing, b2b, saas, product-related content, and high-quality copy.
     
     Declassify sites that focus on news, media, or general reporting.
 
@@ -33,7 +33,7 @@ def classify_website(scraped_data):
     - Meta Description: {meta_description}
     - Text Content: {text_content}
 
-    Answer with "Proceed" for business/marketing/product-related content or "No Fit" if the content is news, media-related, or irrelevant. Provide a reason for your decision.
+    Answer with "Proceed" for b2b/saas/marketing/product-related content or "No Fit" if the content is news, media-related, or irrelevant. Provide a one sentence reason for your decision.
     """
 
     try:
@@ -45,7 +45,7 @@ def classify_website(scraped_data):
         ],
 
         max_tokens=30,  # Adjust if needed
-        temperature=0.2  # Lower value for deterministic output
+        temperature=0.1  # Lower value for deterministic output
 
         )
 
@@ -61,8 +61,9 @@ def classify_website(scraped_data):
             classification = 'Unclear'
 
         # Extract the explanation from the response
-        explanation = gpt_classification.split('\n', 1)[-1] if '\n' in gpt_classification else 'No explanation'
-
+        explanation = gpt_classification.split('\n', 1)[-1] if '\n' in gpt_classification else 'No explanation from GPT'
+        explanation = explanation.strip().replace('"', '').replace("'", "")  # Remove unnecessary quotes and trim spaces
+        
         # Return result
         return {
             'classification': classification,
