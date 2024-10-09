@@ -4,30 +4,98 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
+            font-family: 'Poppins', sans-serif;
+            background-color: #1f2124; /* Dark background for the whole page */
             margin: 0;
             padding: 0;
+            color: #ffffff; /* White text for better contrast */
         }
         .container {
-            width: 80%;
+            width: 90%;
+            max-width: 1000px;
             margin: 30px auto;
             padding: 20px;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
+            background-color: #2a2d32; /* Slightly lighter shade for the container */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); /* Enhanced shadow for depth */
+            border-radius: 10px;
+            overflow: hidden;
         }
-        table, th, td {
-            border: 1px solid black;
+        h1 {
+            color: #ffffff; /* Maintaining white color for headings */
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input[type="file"] {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #34373c; /* Border for input */
+            background: #1f2124; /* Background for input */
+            color: #fff; /* Text color for input */
+            border-radius: 5px;
+        }
+        button, .btn-download {
+            background-color: #1f2124; /* Dark color for buttons */
+            color: white;
+            border: 2px solid #4CAF50; /* Green border for a pop of color */
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.2s ease;
+            font-weight: 600;
+        }
+        button:hover, .btn-download:hover {
+            background-color: #333333; /* Slightly lighter on hover for feedback */
+        }
+        table {
+            width: 100%;
             border-collapse: collapse;
+            margin-top: 20px;
         }
         th, td {
-            padding: 10px;
+            padding: 12px;
+            border-bottom: 1px solid #34373c;
+            text-align: left;
         }
         th {
-            text-align: left;
+            background-color: #25282c; /* Slightly different shade for header */
+            font-weight: 600;
+        }
+        .progress-bar {
+            background-color: #34373c; /* Darker background for progress bar */
+            border-radius: 5px;
+            height: 20px;
+            width: 100%;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            background-color: #4CAF50; /* Green for the fill */
+            height: 100%;
+            width: 0%; /* Initial state */
+            border-radius: 5px;
+            text-align: right;
+            padding-right: 5px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            transition: width 0.5s ease-in-out;
+        }
+        .actions {
+            text-align: center;
+        }
+        .error {
+            color: #FF5722; /* Error color for visibility */
+            text-align: center;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -47,32 +115,50 @@
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for task_id, task in tasks.items() %}
-                <tr>
-                    <td>{{ task_id }}</td>
-                    <td>{{ task.status }}</td>
-                    <td>
-                        <div style="width: 100%; background-color: grey;">
-                            <div style="width: {{ task.progress }}%; background-color: green; color: white; text-align: center;">
-                                {{ task.progress }}%
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        {% if not task.done %}
-                            <form action="/cancel/{{ task_id }}" method="post">
-                                <button type="submit">Cancel</button>
-                            </form>
-                        {% endif %}
-                        {% if task.done and task.results %}
-                            <a href="/download/{{ task_id }}">Download Results</a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
+            <tbody id="tasks">
+                <!-- Tasks will be loaded here -->
             </tbody>
         </table>
     </div>
+    <script>
+        async function updateTasks() {
+            const response = await fetch('/tasks'); // Ensure the endpoint matches your Flask app's route
+            const tasks = await response.json();
+            const tasksContainer = document.getElementById('tasks');
+            tasksContainer.innerHTML = ''; // Clear current tasks
+            tasks.forEach(task => {
+                const taskRow = `
+                    <tr>
+                        <td>${task.id}</td>
+                        <td>${task.status}</td>
+                        <td>
+                            <div class="progress-bar">
+                                <div class="progress-bar-fill" style="width: ${task.progress}%;">${task.progress}%</div>
+                            </div>
+                        </td>
+                        <td class="actions">
+                            ${!task.done ? `<button onclick="cancelTask('${task.id}')">Cancel</button>` : ''}
+                            ${task.done && task.results ? `<a href="/download/${task.id}" class="btn-download">Download Results</a>` : ''}
+                        </td>
+                    </tr>
+                `;
+                tasksContainer.innerHTML += taskRow;
+            });
+        }
+
+        function cancelTask(taskId) {
+            fetch(`/cancel/${taskId}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Task cancelled:', data);
+                    updateTasks(); // Refresh the task list
+                })
+                .catch(error => console.error('Error cancelling task:', error));
+        }
+
+        // Update tasks every 5 seconds
+        setInterval(updateTasks, 5000);
+        updateTasks(); // Initial call to load tasks
+    </script>
 </body>
 </html>
