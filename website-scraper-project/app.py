@@ -16,14 +16,15 @@ task_lock = threading.Lock()
 task_counter = 0  # Start task ID counter from 0
 
 def background_task(urls, task_id):
+    """Background task that processes the URLs and updates progress."""
     with task_lock:
         tasks[task_id]['status'] = 'Running'
     results = []
     start_time = time.time()
     
     for idx, url in enumerate(urls):
-        with task_lock:
-            if tasks[task_id]['canceled']:
+        if 'canceled' in tasks[task_id] and tasks[task_id]['canceled']:
+            with task_lock:
                 tasks[task_id]['status'] = 'Canceled'
                 break
 
@@ -33,61 +34,75 @@ def background_task(urls, task_id):
             results.append(result)
 
     with task_lock:
-        if not tasks[task_id]['canceled']:
+        if 'canceled' not in tasks[task_id] or not tasks[task_id]['canceled']:
             save_results_to_csv(results, task_id)
             tasks[task_id]['status'] = 'Completed'
         tasks[task_id]['done'] = True
 
 def process_url(url):
+    """Processes an individual URL by filtering and classifying it."""
     try:
         filtered, filtered_category, filter_trigger = filter_url(url)
         if filtered:
-            return {'url': url, 'result': 'Filtered', 'explanation': f"Due to {filtered_category}, triggered by {filter_trigger}", 'title': 'N/A', 'meta_description': 'N/A', 'text_content': 'N/A'}
+            return {'id': url, 'status': 'Filtered', 'progress': 100, 'results': None, 'done': True}
         scraped_data = scrape_multiple_websites([url])[0]
         classification_result = classify_website(scraped_data)
-        return {'url': url, 'result': classification_result['classification'], 'explanation': classification_result['explanation'], 'title': scraped_data.get('title', 'N/A'), 'meta_description': scraped_data.get('meta_description', 'N/A'), 'text_content': scraped_data.get('text_content', 'N/A')}
+        return {'id': url, 'status': classification_result['classification'], 'progress': 100, 'results': 'Available', 'done': True}
     except Exception as e:
         logging.error(f"Error processing URL {url}: {e}")
-        return {'url': url, 'result': 'Error', 'explanation': 'Exception occurred', 'title': 'N/A', 'meta_description': 'N/A', 'text_content': 'N/A'}
+        return {'id': url, 'status': 'Error', 'progress': 0, 'results': None, 'done': True}
 
 def save_results_to_csv(results, task_id):
+    """Saves results of a task to a CSV file."""
     results_csv = f"results_{task_id}.csv"
     with open(results_csv, 'w') as f:
-        f.write('Url,Result,Explanation,Title,Meta Description,Text Content\n')
+        f.write('Url,Result\n')
         for result in results:
-            f.write(f"{result['url']},{result['result']},\"{result['explanation']}\",\"{result['title']}\",\"{result['meta_description']}\",\"{result['text_content']}\"\n")
+            f.write(f"{result['id']},{result['status']}\n")
     with task_lock:
         tasks[task_id]['results'] = results_csv
 
 @app.route("/", methods=["GET", "POST"])
 def home():
+    """Renders the main dashboard and handles file uploads."""
     if request.method == "POST":
         file = request.files['file']
         filename = secure_filename(file.filename)
-        file.save(os.path.join('uploads', filename))
-        urls = open(os.path.join('uploads', filename)).read().splitlines()
+        file_path = os.path.join('uploads', filename)
+        file.save(file_path)
+        urls = open(file_path).read().splitlines()
 
-        task_id = str(len(tasks))
-        tasks[task_id] = {'progress': 0, 'status': 'Starting', 'done': False, 'results': None, 'canceled': False}
+        task_id = str(task_counter)
+        with task_lock:
+            tasks[task_id] = {'id': task_id, 'status': 'Starting', 'progress': 0, 'done': False, 'results': None, 'canceled': False}
+            global task_counter
+            task_counter += 1
 
         threading.Thread(target=background_task, args=(urls, task_id)).start()
         return redirect(url_for("home"))
 
     return render_template("dashboard.html", tasks=tasks)
 
-@app.route("/cancel/<task_id>")
+@app.route("/tasks")
+def get_tasks():
+    """Returns a list of all tasks with their current status and progress."""
+    return jsonify([tasks[task_id] for task_id in tasks])
+
+@app.route("/cancel/<task_id>", methods=["POST"])
 def cancel_task(task_id):
+    """Cancels a task if it is running."""
     with task_lock:
         if task_id in tasks and not tasks[task_id]['done']:
             tasks[task_id]['canceled'] = True
             tasks[task_id]['status'] = 'Canceled'
-            return redirect(url_for("home"))
-    return "Task not found or not running", 404
+            return jsonify({'status': 'Task canceled'})
+    return jsonify({'status': 'Task not found or not running'}), 404
 
 @app.route("/download/<task_id>")
 def download(task_id):
+    """Downloads the result file for a completed task."""
     task = tasks.get(task_id)
-    if task and task['results']:
+    if task and 'results' in task and task['results']:
         return send_file(task['results'], as_attachment=True)
     return "No results available for this task.", 404
 
