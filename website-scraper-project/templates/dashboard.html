@@ -4,98 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Roboto', sans-serif;
+            font-family: Arial, sans-serif;
             background-color: #f4f4f9;
             margin: 0;
             padding: 0;
         }
         .container {
-            width: 90%;
-            max-width: 960px;
+            width: 80%;
             margin: 30px auto;
             padding: 20px;
             background-color: #fff;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
         }
-        h1 {
-            color: #333;
-            text-align: center;
-        }
-        form {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-        input[type="file"] {
-            padding: 8px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-        }
-        button, .btn-download, .cancel-button {
-            background-color: #0056b3;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            margin-left: 10px;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-        button:hover, .btn-download:hover, .cancel-button:hover {
-            background-color: #003875;
-        }
-        .task-table {
-            width: 100%;
+        table, th, td {
+            border: 1px solid black;
             border-collapse: collapse;
-            margin-top: 20px;
         }
-        .task-table th, .task-table td {
-            padding: 12px;
-            border: 1px solid #ddd;
+        th, td {
+            padding: 10px;
+        }
+        th {
             text-align: left;
-        }
-        .task-table th {
-            background-color: #f2f2f2;
-        }
-        .progress-bar {
-            background-color: #f4f4f9;
-            border-radius: 5px;
-            overflow: hidden;
-            position: relative;
-            height: 20px;
-        }
-        .progress-bar-fill {
-            background-color: #28a745;
-            height: 100%;
-            width: 0%;
-            border-radius: 5px;
-            transition: width 0.4s ease-in-out;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-        }
-        @media (max-width: 600px) {
-            .container {
-                width: 95%;
-                margin: 20px auto;
-            }
-            form {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            input[type="file"], button {
-                width: 100%;
-                margin-top: 10px;
-            }
-            button {
-                margin-left: 0;
-            }
         }
     </style>
 </head>
@@ -106,7 +38,7 @@
             <input type="file" name="file" required>
             <button type="submit">Start Task</button>
         </form>
-        <table class="task-table">
+        <table>
             <thead>
                 <tr>
                     <th>Task ID</th>
@@ -119,18 +51,22 @@
                 {% for task_id, task in tasks.items() %}
                 <tr>
                     <td>{{ task_id }}</td>
-                    <td id="status-{{ task_id }}">{{ task.status }}</td>
+                    <td>{{ task.status }}</td>
                     <td>
-                        <div class="progress-bar">
-                            <div class="progress-bar-fill" id="progress-{{ task_id }}" style="width: {{ task.progress }}%;">{{ task.progress }}%</div>
+                        <div style="width: 100%; background-color: grey;">
+                            <div style="width: {{ task.progress }}%; background-color: green; color: white; text-align: center;">
+                                {{ task.progress }}%
+                            </div>
                         </div>
                     </td>
                     <td>
                         {% if not task.done %}
-                        <button class="cancel-button" onclick="cancelTask('{{ task_id }}')">Cancel</button>
+                            <form action="/cancel/{{ task_id }}" method="post">
+                                <button type="submit">Cancel</button>
+                            </form>
                         {% endif %}
                         {% if task.done and task.results %}
-                        <a href="/download/{{ task_id }}" class="btn-download">Download Results</a>
+                            <a href="/download/{{ task_id }}">Download Results</a>
                         {% endif %}
                     </td>
                 </tr>
@@ -138,17 +74,5 @@
             </tbody>
         </table>
     </div>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        function cancelTask(taskId) {
-            fetch(`/cancel/${taskId}`, { method: 'GET' })
-            .then(response => response.json())
-            .then(data => {
-                alert('Task canceled.');
-                location.reload(); // Reload the page to update the task list
-            })
-            .catch(error => console.error('Error:', error));
-        }
-    </script>
 </body>
 </html>
