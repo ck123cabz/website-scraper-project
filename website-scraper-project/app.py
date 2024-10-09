@@ -1,55 +1,93 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
 import threading
 import time
-import random
+import os
+import datetime
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
 
 tasks = {}
 task_counter = 0
 
-def simulate_task_progress():
-    """Simulates task progress for demonstration purposes."""
-    while True:
-        task_id = str(task_counter)
-        task_progress = 0
-        tasks[task_id] = {'id': task_id, 'status': 'Running', 'progress': task_progress}
-        task_counter += 1
+def background_task(task_id, filename):
+    """Background task that processes the URLs and updates progress."""
+    total_urls = 100  # Simulating 100 URLs
+    start_time = time.time()  # Store task start time
+
+    for idx in range(total_urls):
+        if tasks[task_id]['canceled']:
+            emit('progress', {'task_id': task_id, 'progress': 100, 'time_remaining': '00:00', 'status': 'Canceled'}, namespace='/')
+            break
+
+        time.sleep(0.1)  # Simulate processing time
+        progress_percent = (idx + 1) / total_urls
+        elapsed_time = time.time() - start_time
+        estimated_total_time = elapsed_time / progress_percent
+        estimated_remaining_time = estimated_total_time - elapsed_time
         
-        # Simulate task progress
-        while task_progress < 100:
-            time.sleep(random.randint(1, 3))  # Random delay to simulate task processing time
-            task_progress += random.randint(5, 25)  # Random progress
-            task_progress = min(task_progress, 100)
-            tasks[task_id]['progress'] = task_progress
-            tasks[task_id]['status'] = 'Running'
-            socketio.emit('task_update', {'id': task_id, 'progress': task_progress, 'status': 'Running'}, namespace='/')
+        tasks[task_id]['progress'] = int(progress_percent * 100)
+        tasks[task_id]['estimated_time'] = f"{int(estimated_remaining_time // 60):02d}:{int(estimated_remaining_time % 60):02d}"
+        
+        emit('progress', {
+            'task_id': task_id,
+            'progress': tasks[task_id]['progress'],
+            'time_remaining': tasks[task_id]['estimated_time'],
+            'status': 'Processing'
+        }, namespace='/')
 
-        # Mark task as completed
+    if not tasks[task_id]['canceled']:
         tasks[task_id]['status'] = 'Completed'
-        socketio.emit('task_update', {'id': task_id, 'progress': 100, 'status': 'Completed'}, namespace='/')
-        time.sleep(5)  # Wait a bit before starting a new task
+        tasks[task_id]['completion_time'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        emit('completed', {'task_id': task_id, 'status': 'Completed'}, namespace='/')
 
-@app.route('/')
+@app.route("/", methods=["GET", "POST"])
 def index():
-    """Serve the index HTML file."""
     return render_template('dashboard.html')
 
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    file = request.files['file']
+    filename = file.filename
+    save_path = os.path.join('uploads', filename)
+    file.save(save_path)
+    
+    global task_counter
+    task_id = str(task_counter)
+    task_counter += 1
+
+    tasks[task_id] = {
+        'file_path': save_path,
+        'progress': 0,
+        'status': 'Pending',
+        'canceled': False,
+        'upload_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        'completion_time': None,
+        'estimated_time': ''
+    }
+
+    # Start background task
+    threading.Thread(target=background_task, args=(task_id, filename)).start()
+
+    return jsonify({'task_id': task_id}), 200
+
 @socketio.on('connect', namespace='/')
-def test_connect():
-    """Handle client connections to the WebSocket."""
+def handle_connect():
     print('Client connected')
-    emit('response', {'message': 'Connected to server'})
 
 @socketio.on('disconnect', namespace='/')
-def test_disconnect():
-    """Handle client disconnections from the WebSocket."""
+def handle_disconnect():
     print('Client disconnected')
 
+@socketio.on('cancel_task', namespace='/')
+def handle_cancel_task(data):
+    task_id = data['task_id']
+    if task_id in tasks:
+        tasks[task_id]['canceled'] = True
+        tasks[task_id]['status'] = 'Canceled'
+        print(f"Task {task_id} has been canceled by the user.")
+
 if __name__ == '__main__':
-    # Run a thread to simulate task progress
-    threading.Thread(target=simulate_task_progress, daemon=True).start()
-    # Run the Flask app with SocketIO integration
     socketio.run(app, debug=True)
