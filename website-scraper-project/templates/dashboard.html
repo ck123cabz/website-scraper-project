@@ -3,123 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+    <title>Task Dashboard</title>
     <style>
-        .progress-bar {
-            position: relative;
-            height: 30px;
-            background-color: #f5f5f5;
+        /* Base styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
         }
-        .progress-bar-inner {
-            height: 100%;
-            background-color: #3273dc;
+        .container {
+            max-width: 90%;
+            margin: auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        h1 {
+            text-align: center;
+        }
+
+        /* Forms and buttons */
+        form {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input, button {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #0056b3;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover, .btn-download:hover, .cancel-button:hover {
+            opacity: 0.8;
+        }
+
+        /* Task table and progress bars */
+        .task-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .task-table th, .task-table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .task-table th {
+            background-color: #e9ecef;
+        }
+        .progress-bar {
+            width: 100%;
+            background-color: #e9ecef;
+            border-radius: 5px;
+        }
+        .progress-bar-fill {
+            background-color: #007bff;
+            height: 20px;
             width: 0%;
-            position: absolute;
-            transition: width 0.4s ease;
-            color: white;
+            border-radius: 5px;
             display: flex;
             align-items: center;
             justify-content: center;
+            color: white;
+            font-weight: bold;
         }
-        .is-hidden {
-            display: none;
+
+        /* Download and cancel buttons */
+        .btn-download, .cancel-button {
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .cancel-button {
+            background-color: #dc3545;
         }
     </style>
 </head>
 <body>
-    <section class="section">
-        <div id="app" class="container">
-            <div class="columns is-centered">
-                <div class="column is-half">
-                    <h1 class="title">Dashboard</h1>
-                    <div class="box">
-                        <div class="file has-name is-boxed">
-                            <label class="file-label">
-                                <input class="file-input" type="file" name="file" @change="handleFileUpload">
-                                <span class="file-cta">
-                                    <span class="file-icon">
-                                        <i class="fas fa-upload"></i>
-                                    </span>
-                                    <span class="file-label">
-                                        Choose a file…
-                                    </span>
-                                </span>
-                                <span class="file-name" v-if="file">
-                                    {{ file.name }}
-                                </span>
-                            </label>
-                        </div>
-                        <button class="button is-primary" @click="startProcessing" :disabled="!file">Start Processing</button>
-                        <div class="progress-bar" v-if="progress > 0">
-                            <div class="progress-bar-inner" :style="{width: progress + '%'}">
-                                {{ progress }}%
+    <div class="container">
+        <h1>Task Dashboard</h1>
+        <form method="post" enctype="multipart/form-data">
+            <input type="file" name="file" required>
+            <button type="submit">Start Task</button>
+        </form>
+        <!-- Error message -->
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+        <!-- Task list table -->
+        <table class="task-table">
+            <thead>
+                <tr>
+                    <th>Task ID</th>
+                    <th>Status</th>
+                    <th>Progress</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task_id, task in tasks.items() %}
+                    <tr>
+                        <td>{{ task_id }}</td>
+                        <td>{{ task.status }}</td>
+                        <td>
+                            <div class="progress-bar">
+                                <div class="progress-bar-fill" style="width: {{ task.progress }}%;">{{ task.progress }}%</div>
                             </div>
-                        </div>
-                        <p v-if="timeRemaining">{{ timeRemaining }}</p>
-                        <button class="button is-danger" @click="cancelProcess" v-if="progress && progress < 100">Cancel</button>
-                        <p v-if="completedMessage" class="notification is-success">{{ completedMessage }}</p>
-                        <div>
-                            <h2 class="title is-4">Processed Files:</h2>
-                            <table class="table is-striped is-fullwidth">
-                                <thead>
-                                    <tr>
-                                        <th>File Name</th>
-                                        <th>Upload Date</th>
-                                        <th>Completion Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="file in processedFiles">
-                                        <td>{{ file.name }}</td>
-                                        <td>{{ file.uploadDate }}</td>
-                                        <td>{{ file.completionDate }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
-    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
-    <script>
-        new Vue({
-            el: '#app',
-            data: {
-                file: null,
-                progress: 0,
-                timeRemaining: '',
-                completedMessage: '',
-                processedFiles: []
-            },
-            methods: {
-                handleFileUpload(event) {
-                    this.file = event.target.files[0];
-                },
-                startProcessing() {
-                    const socket = io();
-                    socket.emit('start_process', { filename: this.file.name });
-                    socket.on('progress', (data) => {
-                        this.progress = data.progress;
-                        this.timeRemaining = 'Estimated time remaining: ' + data.time_remaining + ' minutes';
-                    });
-                    socket.on('completed', (data) => {
-                        this.completedMessage = 'Processing completed';
-                        this.processedFiles.push({
-                            name: this.file.name,
-                            uploadDate: new Date().toLocaleString(),
-                            completionDate: new Date().toLocaleString()
-                        });
-                    });
-                },
-                cancelProcess() {
-                    // Emit cancel event to server, implementation needed in app.py
-                }
-            }
-        });
-    </script>
+                        </td>
+                        <td>
+                            {% if not task.done %}
+                                <form action="/cancel/{{ task_id }}" method="get" style="display:inline;">
+                                    <button class="cancel-button">Cancel</button>
+                                </form>
+                            {% endif %}
+                            {% if task.done and task.results %}
+                                <a href="/download/{{ task_id }}" class="btn-download">Download Results</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </body>
 </html>
