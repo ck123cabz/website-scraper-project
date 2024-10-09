@@ -1,18 +1,23 @@
+import os
 import logging
 from scrapingbee import ScrapingBeeClient
 from bs4 import BeautifulSoup
 import time
 from concurrent.futures import ThreadPoolExecutor
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Load ScrapingBee API key from environment variable
+SCRAPINGBEE_KEY = os.getenv('SCRAPINGBEE_KEY')
+
+# Initialize ScrapingBee client
+client = ScrapingBeeClient(api_key=SCRAPINGBEE_KEY)
 
 # Configure logging
 logging.basicConfig(filename='scraper.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
-
-# ScrapingBee API key
-SCRAPINGBEE_KEY = 'TE5YPOOP3XNJBVBG8C2QKU2U8S0WOSLFXZ8A9U36VBZ07RXBGTQTHW3JDHHIRJH8K870M67O2WHBX0MM'
-
-# Initialize ScrapingBee client
-client = ScrapingBeeClient(api_key=SCRAPINGBEE_KEY)
 
 def format_url(url):
     if not url.startswith('http://') and not url.startswith('https://'):
