@@ -5,3 +5,6 @@ export type { Database, Tables, TablesInsert, TablesUpdate, Enums } from './type
 // Schemas
 export { JobSchema, JobStatusSchema, ProcessingStageSchema } from './schemas/job';
 export type { JobSchemaType } from './schemas/job';
+
+// Utils
+export { formatDuration, formatNumber, calculateProcessingRate } from './utils/format';

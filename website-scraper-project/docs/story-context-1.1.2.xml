@@ -1,0 +1,384 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1.2</storyId>
+    <title>Live Progress Tracking</title>
+    <status>Draft</status>
+    <generatedAt>2025-10-13</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/website-scraper-project/docs/stories/story-1.2.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>team member</asA>
+    <iWant>to see real-time progress indicators for active jobs with percentage completion, processing rate, elapsed/remaining time, and success/failure counts</iWant>
+    <soThat>I can monitor scraping operations without refreshing the page and understand if the system is working properly</soThat>
+    <tasks>
+      <task id="1" goal="Create format utility functions" acs="2,3,4">
+        <subtask id="1.1">Create packages/shared/src/utils/format.ts file</subtask>
+        <subtask id="1.2">Implement formatDuration(seconds: number): string - Returns "HH:MM:SS" format</subtask>
+        <subtask id="1.3">Implement formatNumber(num: number): string - Returns formatted count with commas</subtask>
+        <subtask id="1.4">Implement calculateProcessingRate(processed: number, elapsedSeconds: number): number - Returns URLs/min</subtask>
+        <subtask id="1.5">Add unit tests for format functions (Jest)</subtask>
+        <subtask id="1.6">Export functions from packages/shared/src/index.ts</subtask>
+      </task>
+      <task id="2" goal="Create ProgressBar component" acs="1,8">
+        <subtask id="2.1">Create apps/web/components/progress-bar.tsx component</subtask>
+        <subtask id="2.2">Accept props: percentage: number, variant: 'success' | 'warning' | 'danger'</subtask>
+        <subtask id="2.3">Use shadcn/ui Progress component as base</subtask>
+        <subtask id="2.4">Implement color coding logic: green >95%, yellow >80%, red &lt;80%</subtask>
+        <subtask id="2.5">Add ARIA labels: aria-valuenow, aria-valuemin, aria-valuemax, aria-label</subtask>
+        <subtask id="2.6">Add smooth animation for percentage changes (CSS transition)</subtask>
+      </task>
+      <task id="3" goal="Create MetricsPanel component" acs="2,3,4,5">
+        <subtask id="3.1">Create apps/web/components/metrics-panel.tsx component</subtask>
+        <subtask id="3.2">Display "Processed: X / Y URLs" counter using Job.processedUrls and Job.totalUrls</subtask>
+        <subtask id="3.3">Display "XX URLs/min" processing rate using calculateProcessingRate utility</subtask>
+        <subtask id="3.4">Display "Elapsed: HH:MM:SS" using formatDuration(elapsedSeconds)</subtask>
+        <subtask id="3.5">Display "Est. Remaining: HH:MM:SS" using Job.estimatedTimeRemaining</subtask>
+        <subtask id="3.6">Display "Success: X | Failed: Y" using Job.successfulUrls and Job.failedUrls</subtask>
+        <subtask id="3.7">Use shadcn/ui Card component for layout</subtask>
+        <subtask id="3.8">Apply grid layout for responsive metric display</subtask>
+      </task>
+      <task id="4" goal="Create ProcessingIndicator component" acs="7">
+        <subtask id="4.1">Create apps/web/components/processing-indicator.tsx component</subtask>
+        <subtask id="4.2">Implement pulse animation using Tailwind CSS animate-pulse</subtask>
+        <subtask id="4.3">Conditionally render when Job.status === 'processing'</subtask>
+        <subtask id="4.4">Add "Live" badge with green dot indicator</subtask>
+        <subtask id="4.5">Use lucide-react Activity icon</subtask>
+      </task>
+      <task id="5" goal="Create job detail page" acs="ALL">
+        <subtask id="5.1">Create apps/web/app/jobs/[id]/page.tsx as Server Component</subtask>
+        <subtask id="5.2">Create client component wrapper for interactive elements</subtask>
+        <subtask id="5.3">Fetch job data using useJob(id) hook from Story 1.1</subtask>
+        <subtask id="5.4">Integrate ProgressBar component with Job.progressPercentage</subtask>
+        <subtask id="5.5">Integrate MetricsPanel component with job metrics</subtask>
+        <subtask id="5.6">Integrate ProcessingIndicator component</subtask>
+        <subtask id="5.7">Add page layout: header with job name, back button, progress section</subtask>
+        <subtask id="5.8">Handle loading state (Loader2 spinner)</subtask>
+        <subtask id="5.9">Handle error state (job not found, API errors)</subtask>
+      </task>
+      <task id="6" goal="Implement real-time updates for job detail" acs="6" mcpTools="Context7,Supabase">
+        <subtask id="6.1">Reference TanStack Query docs via Context7 for real-time patterns</subtask>
+        <subtask id="6.2">Enhance useJob(id) hook to set up Realtime subscription for single job</subtask>
+        <subtask id="6.3">Subscribe to jobs table UPDATE events filtered by job ID</subtask>
+        <subtask id="6.4">Invalidate React Query cache on UPDATE to trigger UI refresh</subtask>
+        <subtask id="6.5">Verify update frequency: metrics should update within 1-2 seconds</subtask>
+        <subtask id="6.6">Implement fallback polling (5s interval) if Realtime fails (NFR001-R7 from Story 1.1)</subtask>
+        <subtask id="6.7">Clean up subscription on component unmount (use channel.unsubscribe(), NOT unsubscribeAll())</subtask>
+        <subtask id="6.8">Test Realtime with Supabase MCP: UPDATE job row, verify UI reflects change</subtask>
+      </task>
+      <task id="7" goal="Testing and verification" acs="ALL" mcpTools="Chrome DevTools,Supabase">
+        <subtask id="7.1">Start dev server and navigate to job detail page (/jobs/[id])</subtask>
+        <subtask id="7.2">[Chrome DevTools] Take snapshot of job detail page to verify layout</subtask>
+        <subtask id="7.3">[Chrome DevTools] Verify progress bar displays correct percentage</subtask>
+        <subtask id="7.4">[Chrome DevTools] Verify all metric displays present and formatted correctly</subtask>
+        <subtask id="7.5">[Supabase MCP] Update job processed_urls column</subtask>
+        <subtask id="7.6">[Chrome DevTools] Verify progress bar updates within 1-2 seconds</subtask>
+        <subtask id="7.7">[Supabase MCP] Update job to status='processing'</subtask>
+        <subtask id="7.8">[Chrome DevTools] Verify pulse indicator appears</subtask>
+        <subtask id="7.9">[Supabase MCP] Set job success rate to different thresholds (>95%, 85%, 75%)</subtask>
+        <subtask id="7.10">[Chrome DevTools] Verify progress bar color changes (green, yellow, red)</subtask>
+        <subtask id="7.11">[Chrome DevTools] Verify ARIA labels present on progress bar (accessibility)</subtask>
+        <subtask id="7.12">[Chrome DevTools] Test keyboard navigation and focus states</subtask>
+        <subtask id="7.13">Document testing results with screenshots</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1" priority="critical">Progress bar shows percentage complete (0-100%) updating in real-time</criterion>
+    <criterion id="AC2" priority="critical">Counter displays: "Processed: X / Y URLs"</criterion>
+    <criterion id="AC3" priority="high">Processing rate displayed: "XX URLs/min" (calculated from recent throughput)</criterion>
+    <criterion id="AC4" priority="high">Time indicators: "Elapsed: HH:MM:SS" and "Est. Remaining: HH:MM:SS"</criterion>
+    <criterion id="AC5" priority="high">Success/failure counters: "Success: X | Failed: Y"</criterion>
+    <criterion id="AC6" priority="critical">All metrics update every 1-2 seconds via Supabase subscription</criterion>
+    <criterion id="AC7" priority="medium">Visual "pulse" indicator shows system is actively processing</criterion>
+    <criterion id="AC8" priority="high">Progress bar color changes based on success rate (green >95%, yellow >80%, red &lt;80%)</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR005: Real-Time Progress Indicators (lines 88-89)</section>
+        <snippet>Users shall see visual progress indicators including: overall batch progress bar, current queue depth, processing rate (URLs/minute), and success/failure counters that update in real-time.</snippet>
+        <relevance>Defines the functional requirement for real-time progress tracking</relevance>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>NFR001: Real-Time UI Responsiveness (lines 41-46)</section>
+        <snippet>Dashboard updates shall reflect job state changes within 500ms via Supabase Realtime subscriptions. Progress indicators shall update at minimum 1Hz (once per second). UI shall remain responsive during processing of 10K+ URL batches.</snippet>
+        <relevance>Specifies performance targets for real-time updates (&lt;500ms latency)</relevance>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Technical Specification - Epic 1</title>
+        <section>Story 1.2: Live Progress Tracking (lines 342-350)</section>
+        <snippet>AC1.2.1-AC1.2.8 detailed mapping with progress bar (0-100%), metrics (Processed X/Y), processing rate (XX URLs/min), time indicators, success/failure counters, 1-2 second update frequency, pulse indicator, and color-coded progress bar.</snippet>
+        <relevance>Detailed acceptance criteria mapping for all 8 ACs in Story 1.2</relevance>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Technical Specification - Epic 1</title>
+        <section>Data Models - Job Type (lines 93-120)</section>
+        <snippet>Complete Job TypeScript interface with all metric fields: progressPercentage, processingRate, estimatedTimeRemaining, successfulUrls, failedUrls, totalCost, etc.</snippet>
+        <relevance>Defines the Job data model with all fields needed for progress tracking</relevance>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Technical Specification - Epic 1</title>
+        <section>Workflows - Real-time Subscription Pattern (lines 210-230)</section>
+        <snippet>User Flow: View Live Job Progress - describes complete flow from page load to Realtime subscription setup, cache invalidation, UI updates (&lt;500ms latency), and cleanup on unmount.</snippet>
+        <relevance>Describes the technical pattern for implementing real-time updates</relevance>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Technical Specification - Epic 1</title>
+        <section>Non-Functional Requirements (lines 241-280)</section>
+        <snippet>NFR001-P2: Realtime updates &lt;500ms latency, NFR001-R7: Graceful degradation with fallback polling (5s interval), NFR001-O5: Realtime connection status indicator.</snippet>
+        <relevance>Performance targets, reliability requirements, and fallback strategies</relevance>
+      </doc>
+      <doc>
+        <path>docs/stories/story-1.1.md</path>
+        <title>Story 1.1 - Job Dashboard Foundation</title>
+        <section>Completion Notes &amp; Senior Developer Review</section>
+        <snippet>Finding #4: Fix subscription cleanup - use channel.unsubscribe(), NOT unsubscribeAll() to avoid breaking other components. Finding #5: Implement fallback polling (NFR001-R7) when Realtime fails.</snippet>
+        <relevance>Critical lessons learned from Story 1.1 that must be applied in Story 1.2</relevance>
+      </doc>
+      <doc>
+        <path>docs/solution-architecture.md</path>
+        <title>Solution Architecture</title>
+        <section>Frontend Stack</section>
+        <snippet>Next.js 14.2+ with App Router, React 18.3+, shadcn/ui, TanStack Query v5 for server state, Supabase Realtime for live updates, TypeScript 5.5+ strict mode.</snippet>
+        <relevance>Technology stack alignment for Story 1.2 implementation</relevance>
+      </doc>
+      <doc>
+        <path>docs/ux-specification.md</path>
+        <title>UX Specification</title>
+        <section>Design Principles</section>
+        <snippet>Radical Transparency: Every system action visible in real-time. Information Hierarchy for Glanceability: Critical info (progress, status) at top. Real-Time Feedback Without Lag: All UI updates &lt;500ms.</snippet>
+        <relevance>UX principles guiding visual design of progress tracking components</relevance>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>apps/web/hooks/use-jobs.ts</path>
+        <kind>hook</kind>
+        <symbol>useJob(jobId: string)</symbol>
+        <lines>43-63</lines>
+        <reason>Existing hook for fetching single job data - will be enhanced to add Realtime subscription for Story 1.2</reason>
+      </artifact>
+      <artifact>
+        <path>apps/web/lib/realtime-service.ts</path>
+        <kind>service</kind>
+        <symbol>subscribeToJob(jobId: string, callback: JobCallback)</symbol>
+        <lines>46-74</lines>
+        <reason>Realtime subscription helper for single job updates - will be integrated with useJob hook</reason>
+      </artifact>
+      <artifact>
+        <path>apps/web/lib/supabase-client.ts</path>
+        <kind>client</kind>
+        <symbol>supabase</symbol>
+        <lines>11-20</lines>
+        <reason>Configured Supabase client with Realtime settings (eventsPerSecond: 10)</reason>
+      </artifact>
+      <artifact>
+        <path>packages/shared/src/types/job.ts</path>
+        <kind>type</kind>
+        <symbol>Job interface</symbol>
+        <lines>4-25</lines>
+        <reason>Complete Job type definition with all metric fields: progressPercentage, processingRate, estimatedTimeRemaining, successfulUrls, failedUrls, etc.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/web/components/ui/progress.tsx</path>
+        <kind>component</kind>
+        <symbol>Progress (shadcn/ui)</symbol>
+        <lines>1-20</lines>
+        <reason>Base shadcn/ui Progress component to be wrapped by custom ProgressBar component</reason>
+      </artifact>
+      <artifact>
+        <path>apps/web/components/ui/card.tsx</path>
+        <kind>component</kind>
+        <symbol>Card (shadcn/ui)</symbol>
+        <lines>1-50</lines>
+        <reason>shadcn/ui Card component for MetricsPanel layout</reason>
+      </artifact>
+      <artifact>
+        <path>apps/web/components/ui/badge.tsx</path>
+        <kind>component</kind>
+        <symbol>Badge (shadcn/ui)</symbol>
+        <lines>1-30</lines>
+        <reason>shadcn/ui Badge component for "Live" pulse indicator in ProcessingIndicator</reason>
+      </artifact>
+      <artifact>
+        <path>apps/web/components/providers/query-provider.tsx</path>
+        <kind>provider</kind>
+        <symbol>QueryProvider</symbol>
+        <lines>1-30</lines>
+        <reason>TanStack Query provider setup - context for React Query cache invalidation on Realtime events</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="Node.js/TypeScript">
+        <package name="next" version="^14.2.0">React framework with App Router for dynamic routes</package>
+        <package name="react" version="^18.3.0">UI library for component rendering</package>
+        <package name="@tanstack/react-query" version="^5.50.0">Server state management and cache invalidation</package>
+        <package name="@supabase/supabase-js" version="^2.45.0">Supabase client with Realtime subscriptions</package>
+        <package name="tailwindcss" version="^3.4.0">Utility-first CSS for styling components</package>
+        <package name="lucide-react" version="^0.400.0">Icon library (Activity icon for pulse indicator)</package>
+        <package name="@radix-ui/react-progress" version="latest">Headless Progress primitive (shadcn/ui base)</package>
+        <package name="date-fns" version="^3.6.0">Date formatting utilities for elapsed time display</package>
+        <package name="typescript" version="^5.5.0">Type safety for all components and utilities</package>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <architectural>
+      <constraint id="ARCH-1">Next.js 14.2+ App Router with dynamic route pattern: apps/web/app/jobs/[id]/page.tsx</constraint>
+      <constraint id="ARCH-2">Server Components for layout, Client Components for real-time interactivity (mark with "use client")</constraint>
+      <constraint id="ARCH-3">Monorepo structure: shared utilities in packages/shared/src/utils/, components in apps/web/components/</constraint>
+    </architectural>
+    <stateManagement>
+      <constraint id="STATE-1">TanStack Query v5 for server state - reuse useJob(id) hook from Story 1.1</constraint>
+      <constraint id="STATE-2">React Query cache invalidation on Supabase Realtime UPDATE events (NOT full re-fetch)</constraint>
+      <constraint id="STATE-3">No additional Zustand store needed - only server state management</constraint>
+    </stateManagement>
+    <realtime>
+      <constraint id="RT-1">Subscribe to 'jobs' table UPDATE events filtered by specific job ID</constraint>
+      <constraint id="RT-2">Use channel.unsubscribe() on cleanup, NOT unsubscribeAll() (Story 1.1 Finding #4)</constraint>
+      <constraint id="RT-3">Implement fallback polling (5s interval) if Realtime WebSocket fails (NFR001-R7)</constraint>
+      <constraint id="RT-4">Target latency: &lt;500ms from database change to UI render (NFR001-P2)</constraint>
+      <constraint id="RT-5">Metrics update frequency: 1-2 seconds (AC6)</constraint>
+    </realtime>
+    <uiux>
+      <constraint id="UX-1">shadcn/ui Progress component as base for custom ProgressBar</constraint>
+      <constraint id="UX-2">WCAG 2.1 AA compliance: ARIA labels (role, aria-valuenow, aria-valuemin, aria-valuemax, aria-label)</constraint>
+      <constraint id="UX-3">Progress bar color coding: green &gt;95%, yellow &gt;80%, red &lt;80% with text supplement</constraint>
+      <constraint id="UX-4">Smooth CSS transitions for progress bar animation (NOT JavaScript)</constraint>
+      <constraint id="UX-5">Responsive grid layout for metrics - adapts to mobile/tablet/desktop</constraint>
+      <constraint id="UX-6">"Radical Transparency" design principle - all metrics visible at glance</constraint>
+    </uiux>
+    <testing>
+      <constraint id="TEST-1">Manual functional testing via Chrome DevTools MCP</constraint>
+      <constraint id="TEST-2">Integration testing with Supabase MCP for real-time behavior</constraint>
+      <constraint id="TEST-3">Unit tests for format utilities (formatDuration, formatNumber, calculateProcessingRate) with Jest</constraint>
+      <constraint id="TEST-4">Component unit tests deferred for MVP velocity (same as Story 1.1)</constraint>
+    </testing>
+    <naming>
+      <constraint id="NAME-1">Components: PascalCase (ProgressBar, MetricsPanel, ProcessingIndicator)</constraint>
+      <constraint id="NAME-2">Files: kebab-case (progress-bar.tsx, metrics-panel.tsx, processing-indicator.tsx)</constraint>
+      <constraint id="NAME-3">Utilities: camelCase (formatDuration, calculateProcessingRate)</constraint>
+      <constraint id="NAME-4">Constants: UPPER_SNAKE_CASE if needed (UPDATE_FREQUENCY_MS)</constraint>
+    </naming>
+    <performance>
+      <constraint id="PERF-1">Job detail page initial load &lt; 2 seconds (LCP)</constraint>
+      <constraint id="PERF-2">UI remains responsive during rapid metric updates</constraint>
+      <constraint id="PERF-3">Progress bar animation smooth via CSS transition, not JavaScript</constraint>
+    </performance>
+  </constraints>
+  <interfaces>
+    <api>
+      <interface>
+        <name>useJob(jobId: string)</name>
+        <kind>React Query Hook</kind>
+        <signature>useJob(jobId: string) =&gt; UseQueryResult&lt;Job&gt;</signature>
+        <path>apps/web/hooks/use-jobs.ts:43-63</path>
+        <usage>Fetch job data for detail page - will be enhanced with Realtime subscription in Task 6</usage>
+      </interface>
+      <interface>
+        <name>subscribeToJob(jobId, callback)</name>
+        <kind>Realtime Service Function</kind>
+        <signature>subscribeToJob(jobId: string, callback: JobCallback): RealtimeChannel</signature>
+        <path>apps/web/lib/realtime-service.ts:46-74</path>
+        <usage>Set up Supabase Realtime subscription for single job UPDATE events</usage>
+      </interface>
+      <interface>
+        <name>Job Type</name>
+        <kind>TypeScript Interface</kind>
+        <signature>interface Job { progressPercentage: number; processingRate: number | null; estimatedTimeRemaining: number | null; successfulUrls: number; failedUrls: number; ... }</signature>
+        <path>packages/shared/src/types/job.ts:4-25</path>
+        <usage>Complete type definition with all metric fields needed for progress display</usage>
+      </interface>
+    </api>
+    <components>
+      <interface>
+        <name>Progress (shadcn/ui)</name>
+        <kind>UI Component</kind>
+        <signature>&lt;Progress value={number} className={string} /&gt;</signature>
+        <path>apps/web/components/ui/progress.tsx</path>
+        <usage>Base component to be wrapped by custom ProgressBar with color variants and ARIA labels</usage>
+      </interface>
+      <interface>
+        <name>Card (shadcn/ui)</name>
+        <kind>UI Component</kind>
+        <signature>&lt;Card&gt;&lt;CardHeader&gt;&lt;CardTitle /&gt;&lt;/CardHeader&gt;&lt;CardContent /&gt;&lt;/Card&gt;</signature>
+        <path>apps/web/components/ui/card.tsx</path>
+        <usage>Layout container for MetricsPanel component</usage>
+      </interface>
+      <interface>
+        <name>Badge (shadcn/ui)</name>
+        <kind>UI Component</kind>
+        <signature>&lt;Badge variant="default|secondary|destructive|outline"&gt;text&lt;/Badge&gt;</signature>
+        <path>apps/web/components/ui/badge.tsx</path>
+        <usage>"Live" badge in ProcessingIndicator with pulse animation</usage>
+      </interface>
+    </components>
+    <utilities>
+      <interface>
+        <name>Format Utilities (TO BE CREATED)</name>
+        <kind>Utility Functions</kind>
+        <signature>formatDuration(seconds: number): string, formatNumber(num: number): string, calculateProcessingRate(processed: number, elapsedSeconds: number): number</signature>
+        <path>packages/shared/src/utils/format.ts (NEW)</path>
+        <usage>Shared formatting functions for time, numbers, and rate calculations - Task 1</usage>
+      </interface>
+    </utilities>
+  </interfaces>
+  <tests>
+    <standards>
+Manual testing via Chrome DevTools MCP for functional verification of UI components and user interactions. Integration testing with Supabase MCP to trigger database changes and verify real-time UI updates. Unit tests with Jest for format utility functions (formatDuration, formatNumber, calculateProcessingRate) with 100% coverage target. Component unit tests deferred for MVP velocity (following Story 1.1 pattern). E2E tests with Playwright deferred to later sprint. Testing approach emphasizes rapid validation using MCP tools over comprehensive automated test suites.
+    </standards>
+    <locations>
+      <location>packages/shared/src/utils/__tests__/format.test.ts - Unit tests for format utilities</location>
+      <location>apps/web/app/jobs/[id]/page.tsx - Manual Chrome DevTools testing entry point</location>
+      <location>Supabase database jobs table - Direct UPDATE queries via Supabase MCP for real-time testing</location>
+    </locations>
+    <ideas>
+      <test id="T1" ac="AC1,AC8" method="Chrome DevTools + Supabase MCP">
+        <scenario>Progress bar rendering and color changes</scenario>
+        <steps>1. Navigate to /jobs/[test-job-id] via Chrome DevTools. 2. Take snapshot, verify progress bar displays. 3. Update job processed_urls to 50% via Supabase MCP. 4. Verify progress bar updates within 1-2 seconds. 5. Set success rate to 98%, 85%, 75% and verify color changes (green, yellow, red).</steps>
+      </test>
+      <test id="T2" ac="AC2,AC3,AC4,AC5" method="Chrome DevTools + Supabase MCP">
+        <scenario>Metrics panel display and real-time updates</scenario>
+        <steps>1. Verify all metrics render: "Processed X/Y", "XX URLs/min", "Elapsed HH:MM:SS", "Est. Remaining HH:MM:SS", "Success X | Failed Y". 2. Update job metrics via Supabase MCP. 3. Verify all counters update within 1-2 seconds with correct formatting.</steps>
+      </test>
+      <test id="T3" ac="AC6" method="Supabase MCP">
+        <scenario>Real-time subscription latency</scenario>
+        <steps>1. Open job detail page. 2. Execute UPDATE jobs SET processed_urls=processed_urls+10 WHERE id='test-id'. 3. Measure time from query execution to UI update (target: &lt;500ms, acceptable: &lt;2s per AC6).</steps>
+      </test>
+      <test id="T4" ac="AC7" method="Chrome DevTools + Supabase MCP">
+        <scenario>Processing indicator pulse animation</scenario>
+        <steps>1. Set job status='processing' via Supabase MCP. 2. Verify "Live" badge with pulse animation appears. 3. Set status='paused'. 4. Verify pulse indicator disappears.</steps>
+      </test>
+      <test id="T5" ac="AC1" method="Chrome DevTools">
+        <scenario>ARIA labels and accessibility</scenario>
+        <steps>1. Open Chrome DevTools Accessibility panel. 2. Verify progress bar has role="progressbar", aria-valuenow, aria-valuemin="0", aria-valuemax="100", aria-label. 3. Test keyboard navigation (Tab, Shift+Tab). 4. Verify focus indicators visible.</steps>
+      </test>
+      <test id="T6" ac="N/A" method="Jest">
+        <scenario>Format utility functions</scenario>
+        <steps>Unit test formatDuration(3661) === "01:01:01", formatNumber(1234567) === "1,234,567", calculateProcessingRate(120, 60) === 120 URLs/min. Edge cases: 0 seconds, null values, very large numbers.</steps>
+      </test>
+      <test id="T7" ac="N/A" method="Supabase MCP">
+        <scenario>Fallback polling on Realtime failure</scenario>
+        <steps>Simulate Realtime WebSocket disconnection (disable Realtime in Supabase dashboard temporarily). Verify UI switches to polling mode (5s interval). Update job in database and verify UI still updates within 5-10 seconds.</steps>
+      </test>
+      <test id="T8" ac="AC1-AC8" method="Chrome DevTools">
+        <scenario>Edge cases and error states</scenario>
+        <steps>1. Test with 0% progress, 100% progress. 2. Test with job not found (invalid ID). 3. Test with very large URL counts (10K+). 4. Test with null estimatedTimeRemaining. 5. Verify loading states (Loader2 spinner). 6. Verify error states display appropriately.</steps>
+      </test>
+    </ideas>
+  </tests>
+</story-context>

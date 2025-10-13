@@ -1,7 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase-client';
 import { jobsApi } from '@/lib/api-client';
+import { subscribeToJob, unsubscribe } from '@/lib/realtime-service';
 import type { Job } from '@website-scraper/shared';
+
+// Constants for cache management and polling configuration
+const REALTIME_FALLBACK_POLL_INTERVAL_MS = 5000; // Fallback polling when Realtime WebSocket fails (NFR001-R7)
 
 // Query key factory for cache management
 export const jobKeys = {
@@ -38,10 +43,19 @@ export function useJobs() {
 }
 
 /**
- * Fetch a single job by ID from Supabase
+ * Fetch a single job by ID from Supabase with real-time updates
+ *
+ * Features:
+ * - Real-time Supabase subscription for instant updates
+ * - Fallback polling (5s interval) if Realtime WebSocket fails
+ * - Proper cleanup using channel.unsubscribe() (NOT unsubscribeAll)
+ * - React Query cache invalidation on UPDATE events
  */
-export function useJob(jobId: string) {
-  return useQuery({
+export function useJob(jobId: string, options?: { enableRealtime?: boolean }) {
+  const queryClient = useQueryClient();
+  const enableRealtime = options?.enableRealtime ?? true; // Default to enabled
+
+  const query = useQuery({
     queryKey: jobKeys.detail(jobId),
     queryFn: async (): Promise<Job> => {
       const { data, error } = await supabase
@@ -58,8 +72,38 @@ export function useJob(jobId: string) {
       return transformJobFromDB(data);
     },
     enabled: !!jobId,
-    staleTime: 10 * 1000, // Consider data fresh for 10 seconds (more frequent for detail view)
+    staleTime: 10 * 1000, // Consider data fresh for 10 seconds
+    // Fallback polling: refetch every 5 seconds when window is focused
+    // This ensures updates even if Realtime WebSocket fails (NFR001-R7)
+    refetchInterval: enableRealtime ? REALTIME_FALLBACK_POLL_INTERVAL_MS : false,
+    refetchIntervalInBackground: false, // Only poll when window is active
   });
+
+  // Set up Realtime subscription for instant updates
+  useEffect(() => {
+    if (!jobId || !enableRealtime) return;
+
+    console.log(`[useJob] Setting up Realtime subscription for job ${jobId}`);
+
+    // Subscribe to job updates via Realtime
+    const channel = subscribeToJob(jobId, (payload) => {
+      console.log(`[useJob] Received UPDATE event for job ${jobId}`);
+
+      // Invalidate React Query cache to trigger refetch
+      // This ensures UI updates with the latest data
+      queryClient.invalidateQueries({ queryKey: jobKeys.detail(jobId) });
+    });
+
+    // Cleanup: unsubscribe when component unmounts or jobId changes
+    // IMPORTANT: Use unsubscribe(channel), NOT unsubscribeAll()
+    // to avoid breaking other components' subscriptions
+    return () => {
+      console.log(`[useJob] Cleaning up Realtime subscription for job ${jobId}`);
+      unsubscribe(channel);
+    };
+  }, [jobId, enableRealtime, queryClient]);
+
+  return query;
 }
 
 /**
