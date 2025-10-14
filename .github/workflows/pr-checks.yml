@@ -1,0 +1,148 @@
+name: PR Quality Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pr-metadata:
+    name: PR Metadata Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+          scopes: |
+            api
+            web
+            shared
+            infra
+            deps
+          requireScope: false
+
+  changed-files:
+    name: Detect Changed Files
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      web: ${{ steps.filter.outputs.web }}
+      shared: ${{ steps.filter.outputs.shared }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check changed files
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'apps/api/**'
+              - 'packages/shared/**'
+            web:
+              - 'apps/web/**'
+              - 'packages/shared/**'
+            shared:
+              - 'packages/shared/**'
+
+  test-api:
+    name: Test API Changes
+    runs-on: ubuntu-latest
+    needs: changed-files
+    if: needs.changed-files.outputs.api == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run API tests
+        run: cd apps/api && npm test
+
+      - name: Check test coverage
+        run: |
+          cd apps/api
+          npm run test:cov
+
+          # Fail if coverage is below 70%
+          coverage=$(grep -oP '(?<=All files\s{2,}\|\s{2,})\d+(?=\.\d+)' coverage/coverage-summary.json || echo "0")
+          if [ "$coverage" -lt 70 ]; then
+            echo "Coverage is below 70%: ${coverage}%"
+            exit 1
+          fi
+
+  size-check:
+    name: Bundle Size Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build packages
+        run: npm run build
+
+      - name: Check bundle size
+        uses: andresz1/size-limit-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          skip_step: install
+
+  comment-coverage:
+    name: Comment Test Coverage
+    runs-on: ubuntu-latest
+    needs: test-api
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate coverage report
+        run: cd apps/api && npm run test:cov
+        continue-on-error: true
+
+      - name: Comment coverage on PR
+        uses: romeovs/lcov-reporter-action@v0.3.1
+        with:
+          lcov-file: ./apps/api/coverage/lcov.info
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          delete-old-comments: true

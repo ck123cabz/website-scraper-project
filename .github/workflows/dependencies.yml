@@ -1,0 +1,123 @@
+name: Dependency Updates
+
+on:
+  schedule:
+    # Run every Monday at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  update-dependencies:
+    name: Check for Dependency Updates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Check for outdated packages
+        id: outdated
+        run: |
+          npm outdated --json > outdated.json || true
+          cat outdated.json
+
+      - name: Create issue for outdated packages
+        uses: actions/github-script@v7
+        if: steps.outdated.outputs.result != '{}'
+        with:
+          script: |
+            const fs = require('fs');
+            const outdated = JSON.parse(fs.readFileSync('outdated.json', 'utf8'));
+
+            let body = '## Outdated Dependencies\n\n';
+            body += 'The following packages have updates available:\n\n';
+            body += '| Package | Current | Wanted | Latest |\n';
+            body += '|---------|---------|--------|--------|\n';
+
+            for (const [name, info] of Object.entries(outdated)) {
+              body += `| ${name} | ${info.current} | ${info.wanted} | ${info.latest} |\n`;
+            }
+
+            body += '\n### Actions\n';
+            body += '- Review the updates\n';
+            body += '- Test compatibility\n';
+            body += '- Create PR to update dependencies\n';
+
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'dependencies',
+              state: 'open'
+            });
+
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '📦 Weekly Dependency Updates Available',
+                body: body,
+                labels: ['dependencies', 'enhancement']
+              });
+            }
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Run security audit
+        run: |
+          npm audit --json > audit.json || true
+          cat audit.json
+
+      - name: Create issue for vulnerabilities
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const audit = JSON.parse(fs.readFileSync('audit.json', 'utf8'));
+
+            if (audit.metadata && audit.metadata.vulnerabilities) {
+              const vulns = audit.metadata.vulnerabilities;
+              const total = vulns.critical + vulns.high + vulns.moderate + vulns.low;
+
+              if (total > 0) {
+                let body = '## Security Vulnerabilities Detected\n\n';
+                body += '### Summary\n';
+                body += `- Critical: ${vulns.critical}\n`;
+                body += `- High: ${vulns.high}\n`;
+                body += `- Moderate: ${vulns.moderate}\n`;
+                body += `- Low: ${vulns.low}\n\n`;
+                body += '### Action Required\n';
+                body += 'Run `npm audit fix` to automatically fix vulnerabilities.\n';
+                body += 'For critical/high vulnerabilities, prioritize immediate fixes.\n';
+
+                const issues = await github.rest.issues.listForRepo({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  labels: 'security',
+                  state: 'open'
+                });
+
+                if (issues.data.length === 0) {
+                  await github.rest.issues.create({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    title: '🚨 Security Vulnerabilities Detected',
+                    body: body,
+                    labels: ['security', 'bug']
+                  });
+                }
+              }
+            }
