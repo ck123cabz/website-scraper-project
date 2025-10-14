@@ -14,12 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          context: Json | null
+          created_at: string
+          id: string
+          job_id: string
+          message: string
+          severity: string
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          job_id: string
+          message: string
+          severity: string
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          job_id?: string
+          message?: string
+          severity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           completed_at: string | null
           created_at: string
           current_stage: Database["public"]["Enums"]["processing_stage"] | null
           current_url: string | null
+          current_url_started_at: string | null
           estimated_time_remaining: number | null
           failed_urls: number
           gemini_cost: number
@@ -42,6 +78,7 @@ export type Database = {
           created_at?: string
           current_stage?: Database["public"]["Enums"]["processing_stage"] | null
           current_url?: string | null
+          current_url_started_at?: string | null
           estimated_time_remaining?: number | null
           failed_urls?: number
           gemini_cost?: number
@@ -64,6 +101,7 @@ export type Database = {
           created_at?: string
           current_stage?: Database["public"]["Enums"]["processing_stage"] | null
           current_url?: string | null
+          current_url_started_at?: string | null
           estimated_time_remaining?: number | null
           failed_urls?: number
           gemini_cost?: number
@@ -83,6 +121,71 @@ export type Database = {
         }
         Relationships: []
       }
+      results: {
+        Row: {
+          classification_reasoning: string | null
+          classification_result:
+            | Database["public"]["Enums"]["classification_result"]
+            | null
+          classification_score: number | null
+          created_at: string
+          error_message: string | null
+          id: string
+          job_id: string
+          llm_cost: number | null
+          llm_provider: Database["public"]["Enums"]["llm_provider"] | null
+          processed_at: string
+          processing_time_ms: number | null
+          retry_count: number | null
+          status: Database["public"]["Enums"]["result_status"]
+          url: string
+        }
+        Insert: {
+          classification_reasoning?: string | null
+          classification_result?:
+            | Database["public"]["Enums"]["classification_result"]
+            | null
+          classification_score?: number | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          job_id: string
+          llm_cost?: number | null
+          llm_provider?: Database["public"]["Enums"]["llm_provider"] | null
+          processed_at?: string
+          processing_time_ms?: number | null
+          retry_count?: number | null
+          status: Database["public"]["Enums"]["result_status"]
+          url: string
+        }
+        Update: {
+          classification_reasoning?: string | null
+          classification_result?:
+            | Database["public"]["Enums"]["classification_result"]
+            | null
+          classification_score?: number | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          job_id?: string
+          llm_cost?: number | null
+          llm_provider?: Database["public"]["Enums"]["llm_provider"] | null
+          processed_at?: string
+          processing_time_ms?: number | null
+          retry_count?: number | null
+          status?: Database["public"]["Enums"]["result_status"]
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "results_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -91,8 +194,17 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      job_status: "pending" | "processing" | "paused" | "completed" | "failed"
+      classification_result: "suitable" | "not_suitable" | "rejected_prefilter"
+      job_status:
+        | "pending"
+        | "processing"
+        | "paused"
+        | "completed"
+        | "failed"
+        | "cancelled"
+      llm_provider: "gemini" | "gpt" | "none"
       processing_stage: "fetching" | "filtering" | "classifying"
+      result_status: "success" | "rejected" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -220,8 +332,18 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      job_status: ["pending", "processing", "paused", "completed", "failed"],
+      classification_result: ["suitable", "not_suitable", "rejected_prefilter"],
+      job_status: [
+        "pending",
+        "processing",
+        "paused",
+        "completed",
+        "failed",
+        "cancelled",
+      ],
+      llm_provider: ["gemini", "gpt", "none"],
       processing_stage: ["fetching", "filtering", "classifying"],
+      result_status: ["success", "rejected", "failed"],
     },
   },
 } as const

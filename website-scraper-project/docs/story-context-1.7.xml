@@ -1,0 +1,126 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>7</storyId>
+    <title>Job Control Actions</title>
+    <status>Draft</status>
+    <generatedAt>2025-10-14</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/website-scraper-project/docs/stories/story-1.7.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>team member</asA>
+    <iWant>pause, resume, or cancel active jobs</iWant>
+    <soThat>I can control processing and respond to issues</soThat>
+    <tasks>
+      <task id="1">Define job control API endpoints - Add pauseJob, resumeJob, cancelJob functions to api-client.ts with TypeScript types</task>
+      <task id="2">Create React Query mutation hooks - usePauseJob, useResumeJob, useCancelJob with optimistic updates and error handling</task>
+      <task id="3">Create JobControls component - Render pause/resume/cancel buttons conditionally based on job status</task>
+      <task id="4">Implement cancel confirmation dialog - AlertDialog with "Cancel job? Processed results will be saved." message</task>
+      <task id="5">Implement optimistic UI updates - Configure onMutate, onError, onSuccess for instant feedback and rollback</task>
+      <task id="6">Integrate JobControls into job views - Add to job-card.tsx and job-detail-client.tsx</task>
+      <task id="7">Add loading and disabled states - Disable buttons during mutations with loading spinner</task>
+      <task id="8">Add error handling and user feedback - Success/error toasts using sonner library</task>
+      <task id="9">Verify Realtime synchronization - Test status updates broadcast to all connected users</task>
+      <task id="10">Testing and verification - Manual testing via Chrome DevTools MCP and Supabase MCP</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">Control buttons displayed for active jobs: "Pause", "Cancel"</criterion>
+    <criterion id="AC2">Paused jobs show: "Resume", "Cancel"</criterion>
+    <criterion id="AC3">Pause button immediately stops processing new URLs (current URL completes)</criterion>
+    <criterion id="AC4">UI updates to "Paused" state instantly with optimistic update</criterion>
+    <criterion id="AC5">Resume button continues from last processed URL</criterion>
+    <criterion id="AC6">Cancel button shows confirmation: "Cancel job? Processed results will be saved."</criterion>
+    <criterion id="AC7">Cancelled jobs marked as "Cancelled" with results preserved</criterion>
+    <criterion id="AC8">All control actions broadcast via Supabase - all connected users see state change</criterion>
+    <criterion id="AC9">Disabled states: can't pause/resume when system is already transitioning</criterion>
+    <criterion id="AC10">Tooltips explain what each action does</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/PRD.md" section="FR010" title="Job Control Actions Requirement">
+        Users shall pause, resume, or cancel active scraping jobs with immediate effect, preserving processed results and allowing continuation from last processed URL.
+      </doc>
+      <doc path="docs/PRD.md" section="NFR001" title="Real-Time UI Responsiveness">
+        Dashboard updates shall reflect job state changes within 500ms via Supabase Realtime subscriptions. UI shall remain responsive during processing with optimistic updates.
+      </doc>
+      <doc path="docs/tech-spec-epic-1.md" section="Story 1.7" title="Job Control Actions Technical Spec">
+        AC1.7.1-AC1.7.10 specify control buttons, optimistic UI updates, confirmation dialogs, Realtime synchronization, disabled states, and tooltips for job control actions.
+      </doc>
+      <doc path="docs/solution-architecture.md" section="Pattern 3: Job Control" title="Job Control Pattern">
+        User clicks "Pause" → Optimistic UI update (button disabled) → Frontend sends PATCH /jobs/:id/pause → Backend updates DB → Supabase Realtime broadcasts → All connected users see status change.
+      </doc>
+      <doc path="docs/epic-stories.md" section="Story 1.7" title="Job Control Actions Story">
+        3 story points. Depends on Stories 1.1, 1.2. Implements pause/resume/cancel with optimistic UI, confirmation dialog, real-time sync, and tooltips.
+      </doc>
+      <doc path="docs/stories/story-1.2.md" section="Completion Notes" title="Optimistic UI Patterns">
+        Story 1.2 established optimistic update patterns with TanStack Query mutations - use onMutate for instant feedback, onError for rollback, onSuccess for query invalidation.
+      </doc>
+    </docs>
+    <code>
+      <artifact path="apps/web/hooks/use-jobs.ts" kind="hook" symbol="useJob" lines="1-180" reason="Existing TanStack Query hook for job data - extends this file to add usePauseJob, useResumeJob, useCancelJob mutations with optimistic updates"/>
+      <artifact path="apps/web/lib/api-client.ts" kind="api-client" symbol="jobsApi" lines="1-80" reason="Existing API client - add pauseJob, resumeJob, cancelJob functions for PATCH/DELETE endpoints"/>
+      <artifact path="apps/web/lib/supabase-client.ts" kind="client" symbol="supabaseClient" lines="1-30" reason="Supabase client instance - already configured, no changes needed for Story 1.7"/>
+      <artifact path="apps/web/lib/realtime-service.ts" kind="service" symbol="subscribeToJob" lines="1-120" reason="Realtime subscription service - existing job subscription from Story 1.1 will broadcast status changes"/>
+      <artifact path="apps/web/components/job-card.tsx" kind="component" symbol="JobCard" lines="1-150" reason="Job card component - integrate JobControls into card footer or action area"/>
+      <artifact path="apps/web/components/job-detail-client.tsx" kind="component" symbol="JobDetailClient" lines="1-250" reason="Job detail page - integrate JobControls into page header near job title"/>
+      <artifact path="packages/shared/src/types/job.ts" kind="type" symbol="JobStatus" lines="1-50" reason="Job type definition - verify JobStatus enum includes 'cancelled' status"/>
+    </code>
+    <dependencies>
+      <node>
+        <package name="@tanstack/react-query" version="^5.90.2" note="TanStack Query for mutations with optimistic updates"/>
+        <package name="@radix-ui/react-tooltip" version="^1.2.8" note="Tooltip component for button explanations"/>
+        <package name="lucide-react" version="^0.545.0" note="Icons: Pause, Play, X, AlertCircle, Loader2"/>
+        <package name="axios" version="^1.12.2" note="HTTP client for API calls to pause/resume/cancel endpoints"/>
+        <package name="@supabase/supabase-js" version="^2.75.0" note="Supabase Realtime for status broadcast"/>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Next.js 14.2+ with App Router - use 'use client' directive for JobControls component</constraint>
+    <constraint>TypeScript strict mode - all functions and props must be typed</constraint>
+    <constraint>shadcn/ui components - use Button, AlertDialog, Tooltip primitives</constraint>
+    <constraint>TanStack Query mutations - configure onMutate, onError, onSuccess for optimistic updates</constraint>
+    <constraint>Optimistic UI - status change must appear instantly (&lt;50ms) before API response</constraint>
+    <constraint>Realtime sync - all control actions must broadcast to connected users via Supabase within 500ms</constraint>
+    <constraint>Disabled states - buttons must disable during transitions (isPending) to prevent double-clicks</constraint>
+    <constraint>WCAG 2.1 AA - tooltips, ARIA labels, keyboard navigation (Tab, Enter, Escape)</constraint>
+    <constraint>Backend dependency - Story 1.7 frontend-only, backend PATCH/DELETE endpoints will be implemented in Epic 2</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="usePauseJob" kind="hook" signature="() => UseMutationResult&lt;Job, Error, string&gt;" path="apps/web/hooks/use-jobs.ts" note="TanStack Query mutation hook for pause action with optimistic update"/>
+    <interface name="useResumeJob" kind="hook" signature="() => UseMutationResult&lt;Job, Error, string&gt;" path="apps/web/hooks/use-jobs.ts" note="TanStack Query mutation hook for resume action with optimistic update"/>
+    <interface name="useCancelJob" kind="hook" signature="() => UseMutationResult&lt;Job, Error, string&gt;" path="apps/web/hooks/use-jobs.ts" note="TanStack Query mutation hook for cancel action with confirmation and optimistic update"/>
+    <interface name="jobsApi.pauseJob" kind="api-function" signature="(jobId: string) => Promise&lt;Job&gt;" path="apps/web/lib/api-client.ts" note="API client function for PATCH /jobs/:id/pause endpoint"/>
+    <interface name="jobsApi.resumeJob" kind="api-function" signature="(jobId: string) => Promise&lt;Job&gt;" path="apps/web/lib/api-client.ts" note="API client function for PATCH /jobs/:id/resume endpoint"/>
+    <interface name="jobsApi.cancelJob" kind="api-function" signature="(jobId: string) => Promise&lt;Job&gt;" path="apps/web/lib/api-client.ts" note="API client function for DELETE /jobs/:id/cancel endpoint"/>
+    <interface name="JobControls" kind="component" signature="({ jobId, status, className? }: { jobId: string, status: JobStatus, className?: string }) => JSX.Element" path="apps/web/components/job-controls.tsx" note="New component - conditional buttons (Pause/Resume/Cancel) with tooltips, disabled states, loading spinners"/>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Manual testing via Chrome DevTools MCP for functional verification. Integration testing with Supabase MCP for real-time status updates. Backend API mocking for mutation testing. Component tests with Jest + React Testing Library deferred for MVP velocity. E2E tests with Playwright deferred to later sprint. Focus on optimistic update behavior, mutation success/error handling, and Realtime synchronization across browser tabs.
+    </standards>
+    <locations>
+      <location>apps/web/hooks/__tests__/ - Jest unit tests for mutation hooks</location>
+      <location>apps/web/components/__tests__/ - React Testing Library component tests</location>
+    </locations>
+    <ideas>
+      <idea ac="AC1,AC2">Test JobControls renders correct buttons based on job status (processing → Pause+Cancel, paused → Resume+Cancel)</idea>
+      <idea ac="AC3,AC4">Test Pause button - verify optimistic UI update (status changes to 'paused' instantly), then mock API 200 OK, verify success toast</idea>
+      <idea ac="AC5">Test Resume button - verify optimistic UI update (status changes to 'processing'), verify API call, verify success toast</idea>
+      <idea ac="AC6">Test Cancel button - verify AlertDialog opens with correct message, click confirm, verify mutation executes</idea>
+      <idea ac="AC7">Test Cancel mutation - verify job status updates to 'cancelled' in database (Supabase MCP)</idea>
+      <idea ac="AC8">Test Realtime sync - open job in two browser tabs, pause in tab 1, verify tab 2 updates to 'paused' within 1 second</idea>
+      <idea ac="AC9">Test disabled states - click Pause, verify all buttons disabled during mutation (isPending), verify re-enabled after success/error</idea>
+      <idea ac="AC10">Test tooltips - hover over each button, verify tooltip text appears explaining action</idea>
+      <idea ac="AC4">Test error handling - mock API 500 error, verify optimistic update rolls back, verify error toast displays</idea>
+    </ideas>
+  </tests>
+</story-context>

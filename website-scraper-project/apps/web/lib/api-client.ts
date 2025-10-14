@@ -75,3 +75,36 @@ export const jobsApi = {
     return response.data;
   },
 };
+
+// Results API
+export interface GetResultsParams {
+  page?: number;
+  limit?: number;
+  status?: 'success' | 'rejected' | 'failed';
+  classification?: 'suitable' | 'not_suitable' | 'rejected_prefilter';
+  search?: string;
+}
+
+export interface ExportResultsParams {
+  format: 'csv' | 'json';
+  status?: 'success' | 'rejected' | 'failed';
+  classification?: 'suitable' | 'not_suitable' | 'rejected_prefilter';
+  search?: string;
+}
+
+export const resultsApi = {
+  // Get job results with pagination and filtering
+  getJobResults: async (jobId: string, params?: GetResultsParams) => {
+    const response = await apiClient.get(`/jobs/${jobId}/results`, { params });
+    return response.data;
+  },
+
+  // Export job results
+  exportJobResults: async (jobId: string, params: ExportResultsParams) => {
+    const response = await apiClient.get(`/jobs/${jobId}/export`, {
+      params,
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+};

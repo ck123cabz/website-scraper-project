@@ -1,0 +1,251 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1.5</storyId>
+    <title>Cost Tracking Display</title>
+    <status>Draft</status>
+    <generatedAt>2025-10-14</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/website-scraper-project/docs/stories/story-1.5.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>team member</asA>
+    <iWant>to see real-time cost tracking for LLM API usage</iWant>
+    <soThat>I can monitor budget and understand cost per job</soThat>
+    <tasks>
+      - Task 1: Update Job types with cost calculation fields (AC: 1, 2, 3, 4, 5)
+      - Task 2: Create formatCurrency utility (AC: 1, 2, 3)
+      - Task 3: Create CostTracker component (AC: 1, 2, 3, 4, 5, 8)
+      - Task 4: Add cost display to job cards (AC: 7)
+      - Task 5: Integrate CostTracker into job detail page (AC: 6)
+      - Task 6: Testing and verification (AC: ALL) [Chrome DevTools MCP + Supabase MCP]
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Cost panel displays: "Total Cost: $XX.XX"
+    2. Cost per URL displayed: "$X.XXXXX/URL"
+    3. Provider breakdown: "Gemini: $XX.XX | GPT: $XX.XX"
+    4. Projected total cost: "Projected: $XX.XX" (based on remaining URLs × avg cost/URL)
+    5. Savings indicator: "40% saved vs GPT-only" (if pre-filtering working)
+    6. Cost updates in real-time as URLs processed
+    7. Historical job costs shown in job list
+    8. Warning shown if projected cost exceeds $50 (configurable threshold)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR006: Cost Tracking Display</section>
+        <snippet>Users shall see real-time cost tracking showing total LLM API costs for current job, cost per URL, breakdown by provider (Gemini vs GPT), and projected total cost based on remaining URLs.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>NFR003: Cost Efficiency</section>
+        <snippet>LLM API costs shall be reduced by minimum 40% compared to current system through pre-filtering. System shall track and display real-time cost metrics per job. Gemini 2.0 Flash shall be primary provider (33% cheaper than GPT-4o-mini).</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>Goal 2: Cost-Optimized Classification Pipeline</section>
+        <snippet>Implement intelligent pre-filtering and Gemini 2.0 Flash primary usage to achieve 40-60% reduction in LLM API costs while maintaining classification quality. Include real-time cost tracking visible in the dashboard.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epic-stories.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 1.5: Cost Tracking Display (lines 130-148)</section>
+        <snippet>Story Points: 3. Dependencies: Story 1.2. 8 acceptance criteria covering cost display, provider breakdown, projections, warnings, and real-time updates.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Technical Specification: Real-Time Transparency Dashboard</title>
+        <section>Story 1.5 (AC1.5.1-AC1.5.8)</section>
+        <snippet>Cost panel displays total cost, cost per URL, provider breakdown (Gemini/GPT), projected total, savings indicator, real-time updates, historical costs in job list, and warnings for threshold exceedance.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Technical Specification: Real-Time Transparency Dashboard</title>
+        <section>Data Models - Job Type (lines 94-120)</section>
+        <snippet>Job interface includes: totalCost: number, geminiCost: number, gptCost: number, plus derived calculations for avgCostPerUrl and projectedTotalCost.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Technical Specification: Real-Time Transparency Dashboard</title>
+        <section>Non-Functional Requirements (NFR001-P1)</section>
+        <snippet>Dashboard updates shall reflect job state changes within 500ms via Supabase Realtime subscriptions. Cost updates piggyback on existing job subscriptions.</snippet>
+      </doc>
+      <doc>
+        <path>docs/solution-architecture.md</path>
+        <title>Solution Architecture</title>
+        <section>Frontend Stack</section>
+        <snippet>Next.js 14.2+ with App Router, React 18.3+, shadcn/ui (Radix UI + Tailwind CSS), TanStack Query v5 for server state, Supabase Realtime for live updates.</snippet>
+      </doc>
+      <doc>
+        <path>docs/solution-architecture.md</path>
+        <title>Solution Architecture</title>
+        <section>Monorepo Structure</section>
+        <snippet>apps/web/ for Next.js frontend, packages/shared/ for TypeScript types, Zod schemas, and utility functions like formatCurrency.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/story-1.1.md</path>
+        <title>Story 1.1: Job Dashboard Foundation</title>
+        <section>Completion Notes - useJobs hook pattern</section>
+        <snippet>Established React Query hook pattern with useJob() for fetching job data, Supabase Realtime subscriptions for live updates, proper cleanup with unsubscribe.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/story-1.2.md</path>
+        <title>Story 1.2: Live Progress Tracking</title>
+        <section>Dev Notes - Real-time metric updates pattern</section>
+        <snippet>Real-time metrics update via Supabase Realtime job subscription. No additional subscriptions needed for derived fields - calculate client-side.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/story-1.4.md</path>
+        <title>Story 1.4: Live Activity Log Streaming</title>
+        <section>Dev Notes - formatTimestamp utility</section>
+        <snippet>Utility functions placed in packages/shared/src/utils/format.ts and exported from packages/shared/src/index.ts. Pattern to follow for formatCurrency.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <file>
+        <path>packages/shared/src/types/job.ts</path>
+        <kind>TypeScript Interface</kind>
+        <symbol>Job</symbol>
+        <lines>4-26</lines>
+        <reason>Job interface already includes totalCost, geminiCost, gptCost fields (lines 19-21). Need to add derived calculations for avgCostPerUrl and projectedTotalCost.</reason>
+      </file>
+      <file>
+        <path>packages/shared/src/utils/format.ts</path>
+        <kind>Utility Functions</kind>
+        <symbol>formatDuration, formatNumber, formatTimestamp</symbol>
+        <lines>1-98</lines>
+        <reason>Existing format utilities - follow same pattern for formatCurrency. Demonstrates error handling (non-finite values), documentation style, and export pattern.</reason>
+      </file>
+      <file>
+        <path>apps/web/hooks/use-jobs.ts</path>
+        <kind>React Query Hook</kind>
+        <symbol>useJob, jobKeys</symbol>
+        <lines>54-107</lines>
+        <reason>Demonstrates pattern for accessing job data with real-time Supabase subscriptions. CostTracker will use useJob() hook to get job with cost fields, no new subscription needed.</reason>
+      </file>
+      <file>
+        <path>apps/web/hooks/use-jobs.ts</path>
+        <kind>Transformation Function</kind>
+        <symbol>transformJobFromDB</symbol>
+        <lines>228-252</lines>
+        <reason>Shows snake_case to camelCase transformation pattern. totalCost/geminiCost/gptCost already mapped (lines 244-246). Demonstrates Number() conversion for database values.</reason>
+      </file>
+    </code>
+    <dependencies>
+      <node>
+        <package>next</package>
+        <version>14.2.15</version>
+        <usage>Next.js framework with App Router for server/client components</usage>
+      </node>
+      <node>
+        <package>react</package>
+        <version>^18</version>
+        <usage>React 18.3+ for UI components</usage>
+      </node>
+      <node>
+        <package>@tanstack/react-query</package>
+        <version>^5.90.2</version>
+        <usage>Server state management - useJob hook for fetching job data</usage>
+      </node>
+      <node>
+        <package>@supabase/supabase-js</package>
+        <version>^2.75.0</version>
+        <usage>Supabase client for real-time subscriptions (cost updates)</usage>
+      </node>
+      <node>
+        <package>lucide-react</package>
+        <version>^0.545.0</version>
+        <usage>Icons: DollarSign, TrendingDown, AlertTriangle</usage>
+      </node>
+      <node>
+        <package>@radix-ui/react-slot</package>
+        <version>^1.2.3</version>
+        <usage>shadcn/ui Card component dependency</usage>
+      </node>
+      <node>
+        <package>clsx</package>
+        <version>^2.1.1</version>
+        <usage>Conditional className utility (cn helper)</usage>
+      </node>
+      <node>
+        <package>tailwind-merge</package>
+        <version>^3.3.1</version>
+        <usage>Tailwind class merging for shadcn/ui components</usage>
+      </node>
+      <node>
+        <package>tailwindcss</package>
+        <version>^3.4.1</version>
+        <usage>Utility-first CSS framework for styling</usage>
+      </node>
+      <node>
+        <package>typescript</package>
+        <version>^5</version>
+        <usage>TypeScript 5.5+ with strict mode for type safety</usage>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Component naming: kebab-case files, PascalCase exports (e.g., cost-tracker.tsx exports CostTracker)</constraint>
+    <constraint>Utilities must be placed in packages/shared/src/utils/ and exported from packages/shared/src/index.ts</constraint>
+    <constraint>Use existing useJob() hook for data - do NOT create new Supabase subscriptions for cost updates</constraint>
+    <constraint>Client-side calculations for derived metrics (avgCostPerUrl, projectedTotalCost, savings %)</constraint>
+    <constraint>shadcn/ui components: Card for container, Alert for warnings, lucide-react icons (DollarSign, TrendingDown, AlertTriangle)</constraint>
+    <constraint>WCAG 2.1 AA accessibility: semantic HTML, ARIA labels, proper color contrast for warnings</constraint>
+    <constraint>Currency formatting: High precision for micro-costs ($X.XXXXX for cost per URL using 5 decimal places)</constraint>
+    <constraint>Real-time updates: Target &lt;1s latency from backend cost update to UI display (NFR001-P1)</constraint>
+    <constraint>Follow formatDuration/formatTimestamp pattern: handle edge cases (null, undefined, non-finite), error handling, JSDoc comments</constraint>
+    <constraint>Backend requirement: NestJS must update totalCost, geminiCost, gptCost fields in jobs table in real-time</constraint>
+  </constraints>
+  <interfaces>
+    <interface>
+      <name>useJob</name>
+      <kind>React Query Hook</kind>
+      <signature>function useJob(jobId: string, options?: { enableRealtime?: boolean }): UseQueryResult&lt;Job&gt;</signature>
+      <path>apps/web/hooks/use-jobs.ts</path>
+      <usage>Call to fetch job data with cost fields. Real-time updates handled automatically via Supabase Realtime subscription.</usage>
+    </interface>
+    <interface>
+      <name>Job</name>
+      <kind>TypeScript Interface</kind>
+      <signature>interface Job { totalCost: number; geminiCost: number; gptCost: number; totalUrls: number; processedUrls: number; ... }</signature>
+      <path>packages/shared/src/types/job.ts</path>
+      <usage>Use existing cost fields. Add derived calculations: avgCostPerUrl = totalCost / processedUrls, projectedTotalCost = totalUrls * avgCostPerUrl</usage>
+    </interface>
+    <interface>
+      <name>formatDuration / formatNumber / formatTimestamp</name>
+      <kind>Utility Functions</kind>
+      <signature>function formatDuration(seconds: number): string; function formatNumber(num: number): string; function formatTimestamp(timestamp: string): string</signature>
+      <path>packages/shared/src/utils/format.ts</path>
+      <usage>Follow same pattern for formatCurrency: handle edge cases, add JSDoc, export from packages/shared/src/index.ts</usage>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>
+Testing approach from Stories 1.1-1.4: Manual testing via Chrome DevTools MCP for functional verification, integration testing with Supabase MCP for real-time behavior. Component tests deferred for MVP velocity. E2E tests with Playwright deferred to later sprint. MCP testing workflow: Chrome DevTools for UI verification (navigate, snapshot, verify rendering), Supabase MCP for data updates (UPDATE jobs SET total_cost=X), Chrome DevTools to verify real-time UI updates. Test coverage target: All 8 acceptance criteria must pass functional testing.
+    </standards>
+    <locations>
+      <location>apps/web/hooks/__tests__/</location>
+      <location>packages/shared/src/utils/format.test.ts</location>
+    </locations>
+    <ideas>
+      <idea ac="AC1,AC2,AC3">Test CostTracker component rendering with mock job data: totalCost=$10.50, geminiCost=$7.00, gptCost=$3.50. Verify currency formatting displays correctly for standard amounts ($X.XX) and micro-costs ($X.XXXXX).</idea>
+      <idea ac="AC4">Test projected cost calculation: Set totalUrls=1000, processedUrls=100, totalCost=10.00. Verify projectedTotalCost displays $100.00 (1000 * $0.10 avg).</idea>
+      <idea ac="AC5">Test savings indicator calculation: Mock pre-filter rejection rate. Verify savings percentage displays "XX% saved vs GPT-only" when pre-filtering active.</idea>
+      <idea ac="AC6">Test real-time cost updates: Use Supabase MCP to UPDATE jobs SET total_cost=20.00. Use Chrome DevTools to verify CostTracker displays updated value within 1 second.</idea>
+      <idea ac="AC7">Test job card cost display: Navigate to job list, verify each job card shows "Cost: $XX.XX" in muted text below progress indicator.</idea>
+      <idea ac="AC8">Test warning alert: Use Supabase MCP to set projectedTotalCost > $50. Verify AlertTriangle icon and warning message appear in CostTracker.</idea>
+      <idea ac="ALL">Test edge cases: $0.00 cost (no URLs processed), null cost fields, processedUrls=0 (avoid division by zero), very large costs ($1,000+), very small costs ($0.00001/URL).</idea>
+      <idea ac="ALL">Test responsive layout: Chrome DevTools mobile viewport (375px), verify CostTracker stacks properly on mobile, side-by-side on desktop (1024px+).</idea>
+      <idea>Unit test formatCurrency utility: Test formatCurrency(10.50) = "$10.50", formatCurrency(0.00045, 5) = "$0.00045", formatCurrency(null) = "$0.00", formatCurrency(NaN) = "$0.00".</idea>
+    </ideas>
+  </tests>
+</story-context>

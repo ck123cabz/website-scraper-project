@@ -208,7 +208,7 @@ export function useCancelJob() {
     mutationFn: async (jobId: string) => {
       const { data, error } = await supabase
         .from('jobs')
-        .update({ status: 'failed' }) // Use 'failed' status for cancelled jobs
+        .update({ status: 'cancelled' })
         .eq('id', jobId)
         .select()
         .single();
@@ -216,7 +216,30 @@ export function useCancelJob() {
       if (error) throw new Error(error.message);
       return transformJobFromDB(data);
     },
+    onMutate: async (jobId) => {
+      // Optimistic update
+      await queryClient.cancelQueries({ queryKey: jobKeys.detail(jobId) });
+
+      const previousJob = queryClient.getQueryData<Job>(jobKeys.detail(jobId));
+
+      if (previousJob) {
+        queryClient.setQueryData<Job>(jobKeys.detail(jobId), {
+          ...previousJob,
+          status: 'cancelled',
+        });
+      }
+
+      return { previousJob };
+    },
+    onError: (err, jobId, context) => {
+      // Rollback on error
+      if (context?.previousJob) {
+        queryClient.setQueryData(jobKeys.detail(jobId), context.previousJob);
+      }
+      console.error('[useCancelJob] Error:', err);
+    },
     onSuccess: () => {
+      // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: jobKeys.lists() });
     },
   });
@@ -226,6 +249,16 @@ export function useCancelJob() {
  * Transform job data from snake_case (DB) to camelCase (frontend)
  */
 function transformJobFromDB(dbJob: any): Job {
+  const processedUrls = dbJob.processed_urls || 0;
+  const totalUrls = dbJob.total_urls || 0;
+  const totalCost = Number(dbJob.total_cost) || 0;
+
+  // Calculate derived cost fields (Story 1.5)
+  const avgCostPerUrl = processedUrls > 0 ? totalCost / processedUrls : null;
+  const projectedTotalCost = avgCostPerUrl !== null && totalUrls > 0
+    ? totalUrls * avgCostPerUrl
+    : null;
+
   return {
     id: dbJob.id,
     name: dbJob.name,
@@ -237,12 +270,15 @@ function transformJobFromDB(dbJob: any): Job {
     rejectedUrls: dbJob.rejected_urls,
     currentUrl: dbJob.current_url,
     currentStage: dbJob.current_stage,
+    currentUrlStartedAt: dbJob.current_url_started_at,
     progressPercentage: Number(dbJob.progress_percentage),
     processingRate: dbJob.processing_rate ? Number(dbJob.processing_rate) : null,
     estimatedTimeRemaining: dbJob.estimated_time_remaining,
     totalCost: Number(dbJob.total_cost),
     geminiCost: Number(dbJob.gemini_cost),
     gptCost: Number(dbJob.gpt_cost),
+    avgCostPerUrl,
+    projectedTotalCost,
     startedAt: dbJob.started_at,
     completedAt: dbJob.completed_at,
     createdAt: dbJob.created_at,

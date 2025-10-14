@@ -68,3 +68,73 @@ export function calculateProcessingRate(processed: number, elapsedSeconds: numbe
   // Round to 1 decimal place
   return Math.round(rate * 10) / 10;
 }
+
+/**
+ * Formats a timestamp to HH:MM:SS format for activity logs
+ * @param timestamp - ISO 8601 timestamp string
+ * @returns Formatted string in HH:MM:SS format
+ * @example
+ * formatTimestamp("2025-10-14T16:30:45.123Z") // "16:30:45"
+ * formatTimestamp("2025-10-14T09:05:02.000Z") // "09:05:02"
+ */
+export function formatTimestamp(timestamp: string): string {
+  try {
+    const date = new Date(timestamp);
+
+    // Check if date is valid
+    if (!Number.isFinite(date.getTime())) {
+      return "00:00:00";
+    }
+
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+
+    return `${hours}:${minutes}:${seconds}`;
+  } catch (error) {
+    return "00:00:00";
+  }
+}
+
+/**
+ * Formats a currency amount in USD with appropriate precision
+ * @param amount - Amount to format (can be null/undefined)
+ * @param precision - Number of decimal places (default: auto-detect based on amount)
+ * @returns Formatted string in USD format
+ * @example
+ * formatCurrency(10.50) // "$10.50"
+ * formatCurrency(0.00045, 5) // "$0.00045"
+ * formatCurrency(123.456) // "$123.46"
+ * formatCurrency(null) // "$0.00"
+ * formatCurrency(0) // "$0.00"
+ */
+export function formatCurrency(amount: number | null | undefined, precision?: number): string {
+  // Handle null, undefined, or non-finite values
+  if (amount == null || !Number.isFinite(amount)) {
+    return "$0.00";
+  }
+
+  // Handle negative amounts
+  if (amount < 0) {
+    return "-" + formatCurrency(Math.abs(amount), precision);
+  }
+
+  // Auto-detect precision if not provided
+  if (precision === undefined) {
+    // Use high precision for micro-costs (< $0.01)
+    if (amount > 0 && amount < 0.01) {
+      precision = 5;
+    } else {
+      precision = 2;
+    }
+  }
+
+  // Format with fixed precision
+  const formatted = amount.toFixed(precision);
+
+  // Add thousands separators for the integer part
+  const parts = formatted.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+  return '$' + parts.join('.');
+}

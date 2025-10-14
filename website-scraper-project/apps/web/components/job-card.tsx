@@ -3,9 +3,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import type { Job } from '@website-scraper/shared';
+import { Job, formatCurrency } from '@website-scraper/shared';
 import { formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'next/navigation';
+import { JobControls } from '@/components/job-controls';
 
 interface JobCardProps {
   job: Job;
@@ -17,6 +18,7 @@ const statusColors: Record<Job['status'], string> = {
   paused: 'bg-yellow-500',
   completed: 'bg-green-500',
   failed: 'bg-red-500',
+  cancelled: 'bg-orange-500',
 };
 
 const statusLabels: Record<Job['status'], string> = {
@@ -25,6 +27,7 @@ const statusLabels: Record<Job['status'], string> = {
   paused: 'Paused',
   completed: 'Completed',
   failed: 'Failed',
+  cancelled: 'Cancelled',
 };
 
 export function JobCard({ job }: JobCardProps) {
@@ -81,13 +84,18 @@ export function JobCard({ job }: JobCardProps) {
           </span>
         </div>
 
-        {/* Cost (if available) */}
-        {job.totalCost > 0 && (
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Cost</span>
-            <span className="font-medium">${job.totalCost.toFixed(4)}</span>
-          </div>
-        )}
+        {/* Cost Display */}
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">Cost</span>
+          <span className="font-medium">
+            {job.totalCost > 0 ? formatCurrency(job.totalCost) : formatCurrency(0)}
+          </span>
+        </div>
+
+        {/* Job Controls - Prevent click propagation to card */}
+        <div onClick={(e) => e.stopPropagation()} className="pt-3 border-t">
+          <JobControls jobId={job.id} status={job.status} className="flex items-center justify-end" />
+        </div>
       </CardContent>
     </Card>
   );

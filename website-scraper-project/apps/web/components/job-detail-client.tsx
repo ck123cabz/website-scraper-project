@@ -4,8 +4,15 @@ import { useJob } from "@/hooks/use-jobs"
 import { ProgressBar, getVariantFromSuccessRate } from "@/components/progress-bar"
 import { MetricsPanel } from "@/components/metrics-panel"
 import { ProcessingIndicator } from "@/components/processing-indicator"
+import { CurrentURLPanel } from "@/components/current-url-panel"
+import { RecentURLsList } from "@/components/recent-urls-list"
+import { LiveActivityLog } from "@/components/live-activity-log"
+import { CostTracker } from "@/components/cost-tracker"
+import { ResultsTable } from "@/components/results-table"
+import { JobControls } from "@/components/job-controls"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import Link from "next/link"
 
@@ -92,52 +99,67 @@ export function JobDetailClient({ jobId }: JobDetailClientProps) {
               Created {new Date(job.createdAt).toLocaleString()}
             </p>
           </div>
-          <ProcessingIndicator status={job.status} />
+          <div className="flex items-center gap-4">
+            <JobControls jobId={job.id} status={job.status} className="flex items-center gap-2" />
+            <ProcessingIndicator status={job.status} />
+          </div>
         </div>
 
-        {/* Progress Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Progress Overview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ProgressBar
-              percentage={job.progressPercentage}
-              variant={progressVariant}
-              label={`Job progress: ${Math.round(job.progressPercentage)}%`}
-            />
-          </CardContent>
-        </Card>
+        {/* Progress and Cost Section - Responsive Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Progress Overview */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Progress Overview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ProgressBar
+                percentage={job.progressPercentage}
+                variant={progressVariant}
+                label={`Job progress: ${Math.round(job.progressPercentage)}%`}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Cost Tracker - Story 1.5 */}
+          <CostTracker job={job} />
+        </div>
 
         {/* Metrics Panel */}
         <MetricsPanel job={job} />
 
-        {/* Status Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <span className="text-sm text-gray-500">Current Status</span>
-                <p className="text-lg font-semibold capitalize">{job.status}</p>
+        {/* Tabbed Content - Stories 1.3, 1.4, 1.6 */}
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="logs">Activity Logs</TabsTrigger>
+            <TabsTrigger value="results">Results</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            {/* Current URL Processing Panel - Story 1.3 */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <CurrentURLPanel job={job} />
               </div>
-              {job.currentStage && (
-                <div>
-                  <span className="text-sm text-gray-500">Current Stage</span>
-                  <p className="text-lg font-semibold capitalize">{job.currentStage}</p>
-                </div>
-              )}
-              {job.currentUrl && (
-                <div className="col-span-2">
-                  <span className="text-sm text-gray-500">Current URL</span>
-                  <p className="text-sm font-mono truncate">{job.currentUrl}</p>
-                </div>
-              )}
+              <div>
+                <RecentURLsList jobId={job.id} />
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </TabsContent>
+
+          <TabsContent value="logs">
+            {/* Live Activity Log - Story 1.4 */}
+            <div className="h-96">
+              <LiveActivityLog jobId={job.id} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="results">
+            {/* Results Table - Story 1.6 */}
+            <ResultsTable jobId={job.id} jobName={job.name || undefined} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

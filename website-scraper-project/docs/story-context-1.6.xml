@@ -1,0 +1,582 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id="story-1.6-historical-results-table" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>6</storyId>
+    <title>Historical Results Table</title>
+    <status>Draft</status>
+    <generatedAt>2025-10-14</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-1.6.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>team member</asA>
+    <iWant>view searchable table of all processed URLs with results</iWant>
+    <soThat>I can review classifications and reference past results</soThat>
+
+    <tasks>
+      <task id="1" acs="1,9">
+        <description>Create Result type and API integration</description>
+        <subtasks>
+          <subtask id="1.1">Review packages/shared/src/types/result.ts - verify Result interface matches AC columns</subtask>
+          <subtask id="1.2">Ensure fields exist: url, status, classificationResult, classificationScore, llmCost, processingTimeMs, processedAt</subtask>
+          <subtask id="1.3">Create apps/web/hooks/use-results.ts - useJobResults() hook with TanStack Query</subtask>
+          <subtask id="1.4">Add API client function in apps/web/lib/api/results.ts - GET /jobs/:id/results</subtask>
+          <subtask id="1.5">Support query params: page, limit, status, classification, search</subtask>
+        </subtasks>
+      </task>
+
+      <task id="2" acs="2,3,4,5">
+        <description>Install and configure @tanstack/react-table</description>
+        <subtasks>
+          <subtask id="2.1">Run npm install @tanstack/react-table@^8.20.0 in apps/web/</subtask>
+          <subtask id="2.2">Create apps/web/components/results-table.tsx with TanStack Table setup</subtask>
+          <subtask id="2.3">Define column definitions with all AC1 columns</subtask>
+          <subtask id="2.4">Configure sorting state with getSortedRowModel()</subtask>
+          <subtask id="2.5">Configure pagination state with getPaginationRowModel()</subtask>
+          <subtask id="2.6">Configure filtering state with getFilteredRowModel()</subtask>
+        </subtasks>
+      </task>
+
+      <task id="3" acs="3,4">
+        <description>Implement search and filter UI</description>
+        <subtasks>
+          <subtask id="3.1">Create search input component with debounced onChange (500ms delay)</subtask>
+          <subtask id="3.2">Create Status filter dropdown using shadcn/ui Select component</subtask>
+          <subtask id="3.3">Create Classification filter dropdown</subtask>
+          <subtask id="3.4">Wire filter state to table globalFilter and columnFilters</subtask>
+          <subtask id="3.5">Add "Clear Filters" button to reset all filters</subtask>
+        </subtasks>
+      </task>
+
+      <task id="4" acs="7">
+        <description>Implement expandable rows</description>
+        <subtasks>
+          <subtask id="4.1">Add row expansion state management (useState for expandedRows)</subtask>
+          <subtask id="4.2">Create expanded row content component showing full details</subtask>
+          <subtask id="4.3">Display full URL, classification reasoning, llmProvider, retry count</subtask>
+          <subtask id="4.4">Show error details if status === 'failed'</subtask>
+          <subtask id="4.5">Add expand/collapse icon in first column (ChevronRight/ChevronDown)</subtask>
+        </subtasks>
+      </task>
+
+      <task id="5" acs="6">
+        <description>Implement real-time updates</description>
+        <subtasks>
+          <subtask id="5.1">Add Supabase Realtime subscription in useJobResults hook</subtask>
+          <subtask id="5.2">Subscribe to INSERT events on results table filtered by job_id</subtask>
+          <subtask id="5.3">On INSERT, invalidate TanStack Query cache for results</subtask>
+          <subtask id="5.4">Ensure table refreshes without losing pagination/filter state</subtask>
+          <subtask id="5.5">Add visual indicator showing "Live" status (pulsing dot)</subtask>
+        </subtasks>
+      </task>
+
+      <task id="6" acs="8">
+        <description>Implement export functionality</description>
+        <subtasks>
+          <subtask id="6.1">Create apps/web/hooks/use-export-results.ts - useExportResults() mutation</subtask>
+          <subtask id="6.2">Add API client function - GET /jobs/:id/export?format=csv&amp;columns=[]</subtask>
+          <subtask id="6.3">Create Export button with dropdown: CSV / JSON options</subtask>
+          <subtask id="6.4">On export, trigger download with current filters applied</subtask>
+          <subtask id="6.5">Show loading spinner during export (use mutation.isPending)</subtask>
+        </subtasks>
+      </task>
+
+      <task id="7" acs="ALL">
+        <description>Integrate into job detail page</description>
+        <subtasks>
+          <subtask id="7.1">Open apps/web/components/job-detail-client.tsx for editing</subtask>
+          <subtask id="7.2">Import ResultsTable component</subtask>
+          <subtask id="7.3">Add ResultsTable to page layout below progress/logs sections</subtask>
+          <subtask id="7.4">Pass jobId prop from useParams()</subtask>
+          <subtask id="7.5">Use TabsRoot from shadcn/ui to organize: Overview / Logs / Results tabs</subtask>
+          <subtask id="7.6">Verify responsive layout on mobile (scroll table horizontally)</subtask>
+        </subtasks>
+      </task>
+
+      <task id="8" acs="ALL" mcp="chrome-devtools,supabase">
+        <description>Testing and verification (Chrome DevTools MCP + Supabase MCP)</description>
+        <subtasks>
+          <subtask id="8.1" tool="chrome-devtools">Navigate to job detail page, select Results tab</subtask>
+          <subtask id="8.2" tool="chrome-devtools">Take snapshot to verify ResultsTable renders</subtask>
+          <subtask id="8.3" tool="chrome-devtools">Verify all 7 columns display correctly</subtask>
+          <subtask id="8.4" tool="chrome-devtools">Click column header, verify sorting (ascending/descending)</subtask>
+          <subtask id="8.5" tool="chrome-devtools">Type in search box, verify filtering by URL text</subtask>
+          <subtask id="8.6" tool="chrome-devtools">Select Status filter, verify table updates</subtask>
+          <subtask id="8.7" tool="chrome-devtools">Select Classification filter, verify table updates</subtask>
+          <subtask id="8.8" tool="chrome-devtools">Navigate pagination, verify 50 results per page</subtask>
+          <subtask id="8.9" tool="chrome-devtools">Click row, verify expansion shows full details</subtask>
+          <subtask id="8.10" tool="supabase">Insert new result record for test job</subtask>
+          <subtask id="8.11" tool="chrome-devtools">Verify table updates in real-time (&lt;1s latency)</subtask>
+          <subtask id="8.12" tool="chrome-devtools">Click Export button, select CSV, verify download</subtask>
+          <subtask id="8.13" tool="chrome-devtools">Refresh page, verify table state persists</subtask>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1" priority="critical">
+      <description>Data table shows columns: URL, Status, Classification, Score, Cost, Processing Time, Timestamp</description>
+      <testIdea>Verify all 7 columns render with correct headers and data formatting</testIdea>
+    </criterion>
+
+    <criterion id="AC2" priority="critical">
+      <description>Table supports sorting by any column (ascending/descending)</description>
+      <testIdea>Click each column header twice, verify sort indicators and data reordering</testIdea>
+    </criterion>
+
+    <criterion id="AC3" priority="high">
+      <description>Search/filter bar: search by URL text</description>
+      <testIdea>Type "example.com" in search box, verify only matching URLs display</testIdea>
+    </criterion>
+
+    <criterion id="AC4" priority="high">
+      <description>Filter dropdowns: Status (All | Success | Failed), Classification (All | SUITABLE | NOT_SUITABLE)</description>
+      <testIdea>Select each filter option, verify table updates with correct filtered results</testIdea>
+    </criterion>
+
+    <criterion id="AC5" priority="high">
+      <description>Pagination: 50 results per page with page controls</description>
+      <testIdea>Create test job with 200 results, verify 4 pages at 50/page with working navigation</testIdea>
+    </criterion>
+
+    <criterion id="AC6" priority="critical">
+      <description>Table updates in real-time as new URLs processed</description>
+      <testIdea>Use Supabase MCP to INSERT result, verify table updates within 1 second without refresh</testIdea>
+    </criterion>
+
+    <criterion id="AC7" priority="high">
+      <description>Row click expands to show: full URL, classification reasoning, API calls made, error details (if failed)</description>
+      <testIdea>Click row with successful result, verify expansion shows reasoning. Click failed row, verify error details display</testIdea>
+    </criterion>
+
+    <criterion id="AC8" priority="medium">
+      <description>"Export" button to download filtered results</description>
+      <testIdea>Apply filters, click Export CSV button, verify downloaded file contains only filtered results</testIdea>
+    </criterion>
+
+    <criterion id="AC9" priority="critical">
+      <description>Table persists across page refreshes (data from Supabase)</description>
+      <testIdea>Apply filters/sorting, refresh browser, verify table state and data persist</testIdea>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/PRD.md" title="Product Requirements Document" section="FR004">
+        <snippet lines="85-86">
+**FR004: Historical Results View**
+Users shall view a searchable table of all processed URLs with columns for URL, classification result, processing time, cost, timestamp, and status - with filtering by date, status, and classification outcome.
+        </snippet>
+      </doc>
+
+      <doc path="docs/PRD.md" title="Product Requirements Document" section="NFR001">
+        <snippet lines="120-124">
+**NFR001: Real-Time UI Responsiveness**
+- Dashboard updates shall reflect job state changes within 500ms via Supabase Realtime subscriptions
+- Live logs shall stream with &lt;1 second latency
+- Progress indicators shall update at minimum 1Hz (once per second)
+- UI shall remain responsive during processing of 10K+ URL batches
+        </snippet>
+      </doc>
+
+      <doc path="docs/tech-spec-epic-1.md" title="Epic 1 Technical Specification" section="Story 1.6 AC">
+        <snippet lines="382-391">
+### Story 1.6: Historical Results Table
+- AC1.6.1: Data table shows columns: URL, Status, Classification, Score, Cost, Processing Time, Timestamp
+- AC1.6.2: Table supports sorting by any column (ascending/descending)
+- AC1.6.3: Search/filter bar: search by URL text
+- AC1.6.4: Filter dropdowns: Status (All | Success | Failed), Classification (All | SUITABLE | NOT_SUITABLE)
+- AC1.6.5: Pagination: 50 results per page with page controls
+- AC1.6.6: Table updates in real-time as new URLs processed
+- AC1.6.7: Row click expands to show: full URL, classification reasoning, API calls made, error details (if failed)
+- AC1.6.8: "Export" button to download filtered results
+- AC1.6.9: Table persists across page refreshes (data from Supabase)
+        </snippet>
+      </doc>
+
+      <doc path="docs/tech-spec-epic-1.md" title="Epic 1 Technical Specification" section="Data Models">
+        <snippet lines="122-145">
+**Result Type** (`types/result.ts`):
+```typescript
+export type ResultStatus = 'success' | 'rejected' | 'failed';
+export type ClassificationResult = 'suitable' | 'not_suitable' | 'rejected_prefilter';
+export type LLMProvider = 'gemini' | 'gpt' | 'none';
+
+export interface Result {
+  id: string;
+  jobId: string;
+  url: string;
+  status: ResultStatus;
+  classificationResult: ClassificationResult | null;
+  classificationScore: number | null; // 0-1
+  classificationReasoning: string | null;
+  llmProvider: LLMProvider;
+  llmCost: number;
+  processingTimeMs: number;
+  retryCount: number;
+  errorMessage: string | null;
+  scrapedContentLength: number | null;
+  processedAt: string;
+  createdAt: string;
+}
+```
+        </snippet>
+      </doc>
+
+      <doc path="docs/architecture-summary.md" title="Architecture Summary" section="Database Schema">
+        <snippet lines="145-152">
+**`results` table** - Individual URL results (Realtime enabled)
+- `id` (UUID, PK), `job_id` (UUID, FK → jobs)
+- `url` (TEXT), `status` (enum: success/rejected/failed)
+- `classification_result` (enum: suitable/not_suitable/rejected_prefilter)
+- `classification_score` (DECIMAL 0-1), `classification_reasoning` (TEXT)
+- `llm_provider` (enum: gemini/gpt/none), `llm_cost` (DECIMAL)
+- `processing_time_ms`, `retry_count`, `error_message`
+- `processed_at`, `created_at` (TIMESTAMP)
+        </snippet>
+      </doc>
+
+      <doc path="docs/architecture-summary.md" title="Architecture Summary" section="API Endpoints">
+        <snippet lines="185-187">
+### Results API
+- `GET /jobs/:id/results` - Get job results (query: `page, limit, status, classification, search`)
+- `GET /jobs/:id/export` - Export results (query: `format=csv|json|xlsx, columns[]`)
+        </snippet>
+      </doc>
+
+      <doc path="docs/epic-stories.md" title="Epic Stories" section="Story 1.6">
+        <snippet lines="151-169">
+### Story 1.6: Historical Results Table
+
+**As a** team member
+**I want to** view searchable table of all processed URLs with results
+**So that** I can review classifications and reference past results
+
+**Acceptance Criteria:**
+- [ ] Data table shows columns: URL, Status, Classification, Score, Cost, Processing Time, Timestamp
+- [ ] Table supports sorting by any column (ascending/descending)
+- [ ] Search/filter bar: search by URL text
+- [ ] Filter dropdowns: Status (All | Success | Failed), Classification (All | SUITABLE | NOT_SUITABLE)
+- [ ] Pagination: 50 results per page with page controls
+- [ ] Table updates in real-time as new URLs processed
+- [ ] Row click expands to show: full URL, classification reasoning, API calls made, error details (if failed)
+- [ ] "Export" button to download filtered results
+- [ ] Table persists across page refreshes (data from Supabase)
+
+**Story Points:** 4
+**Dependencies:** Story 1.4
+        </snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <code path="apps/web/hooks/use-jobs.ts" kind="hook" symbol="useJob" lines="54-107" reason="Real-time subscription pattern with TanStack Query - model for useJobResults implementation"/>
+
+      <code path="apps/web/lib/realtime-service.ts" kind="service" symbol="subscribeToJob" lines="47-75" reason="Supabase Realtime subscription pattern - extend for results table subscriptions"/>
+
+      <code path="apps/web/lib/realtime-service.ts" kind="service" symbol="subscribeToLogs" lines="114-151" reason="INSERT event subscription pattern - similar pattern needed for results"/>
+
+      <code path="apps/web/lib/supabase-client.ts" kind="client" symbol="supabase" lines="11-20" reason="Supabase client configuration with Realtime settings"/>
+
+      <code path="apps/web/components/job-detail-client.tsx" kind="component" symbol="JobDetailClient" lines="1-142" reason="Integration point for ResultsTable component - add to layout"/>
+
+      <code path="packages/shared/src/types/job.ts" kind="types" symbol="Job" lines="1-28" reason="Job type structure - similar structure needed for Result type"/>
+
+      <code path="packages/shared/src/utils/format.ts" kind="utils" symbol="formatCurrency" lines="111-140" reason="Currency formatting utility for Cost column"/>
+
+      <code path="packages/shared/src/utils/format.ts" kind="utils" symbol="formatTimestamp" lines="80-97" reason="Timestamp formatting utility for Timestamp column"/>
+
+      <code path="apps/web/components/ui/button.tsx" kind="ui-component" reason="shadcn/ui Button component for Export button"/>
+
+      <code path="apps/web/components/ui/scroll-area.tsx" kind="ui-component" reason="shadcn/ui ScrollArea for table scrolling"/>
+    </code>
+
+    <dependencies>
+      <dep ecosystem="npm" package="@tanstack/react-table" version="^8.20.0" reason="Core table functionality: sorting, filtering, pagination, expansion"/>
+      <dep ecosystem="npm" package="@tanstack/react-query" version="^5.90.2" reason="Server state management and caching for results data"/>
+      <dep ecosystem="npm" package="@supabase/supabase-js" version="^2.75.0" reason="Realtime subscriptions for live table updates"/>
+      <dep ecosystem="npm" package="@radix-ui/react-scroll-area" version="^1.2.10" reason="Table scrolling component"/>
+      <dep ecosystem="npm" package="lucide-react" version="^0.545.0" reason="Icons: ChevronRight, ChevronDown, Search, Filter, Download"/>
+      <dep ecosystem="npm" package="zod" version="^3.25.76" reason="Runtime validation for Result schema"/>
+      <dep ecosystem="npm" package="date-fns" version="^3.6.0" reason="Date formatting utilities"/>
+      <dep ecosystem="npm" package="class-variance-authority" version="^0.7.1" reason="Component variant styling"/>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint category="architecture" rule="Next.js 14.2+ with App Router - builds on Stories 1.1-1.5 foundation"/>
+    <constraint category="architecture" rule="React 18.3+ with Server Components for layout, Client Components for table interactivity"/>
+    <constraint category="architecture" rule="TypeScript 5.5+ with strict mode"/>
+    <constraint category="architecture" rule="Monorepo structure: components in apps/web/components/, shared types in packages/shared/"/>
+
+    <constraint category="ui-library" rule="@tanstack/react-table v8.20+ for table functionality (sorting, filtering, pagination)"/>
+    <constraint category="ui-library" rule="shadcn/ui components: Table, Select, Input, Button, Tabs for UI primitives"/>
+    <constraint category="ui-library" rule="lucide-react icons: ChevronRight, ChevronDown, Search, Filter, Download"/>
+    <constraint category="ui-library" rule="Design principle: Radical Transparency - show all result details on expansion"/>
+    <constraint category="ui-library" rule="WCAG 2.1 AA compliance: ARIA labels, semantic HTML, keyboard navigation"/>
+
+    <constraint category="table-features" rule="Columns: URL, Status, Classification, Score, Cost, Processing Time, Timestamp"/>
+    <constraint category="table-features" rule="Sorting: Client-side sorting on all columns (TanStack Table getSortedRowModel)"/>
+    <constraint category="table-features" rule="Filtering: Global search (URL text) + column filters (Status, Classification)"/>
+    <constraint category="table-features" rule="Pagination: Server-side pagination (50 results/page, reduce initial load)"/>
+    <constraint category="table-features" rule="Expansion: Row click expands to show full details (reasoning, error messages)"/>
+    <constraint category="table-features" rule="Real-Time: Supabase Realtime subscription adds new results without refresh"/>
+
+    <constraint category="state-management" rule="TanStack Query for results data fetching (useJobResults hook)"/>
+    <constraint category="state-management" rule="TanStack Table for table state (sorting, filtering, pagination, expansion)"/>
+    <constraint category="state-management" rule="Supabase Realtime for live result INSERTs"/>
+    <constraint category="state-management" rule="No Zustand needed - table library handles all state"/>
+
+    <constraint category="real-time" rule="Subscribe to INSERT events on results table filtered by job_id"/>
+    <constraint category="real-time" rule="On new result, invalidate TanStack Query cache → table re-fetches"/>
+    <constraint category="real-time" rule="Maintain current page/filters during refresh (TanStack Table preserves state)"/>
+    <constraint category="real-time" rule="Target latency: &lt;1 second from backend INSERT to table update (NFR001-P1)"/>
+    <constraint category="real-time" rule="Backend requirement: NestJS must insert results in real-time as URLs processed"/>
+
+    <constraint category="performance" rule="Initial table load: &lt;500ms for 50 results (server-side pagination)"/>
+    <constraint category="performance" rule="Sorting: Client-side, instant (&lt;100ms)"/>
+    <constraint category="performance" rule="Filtering: Client-side search debounced 500ms, dropdown filters instant"/>
+    <constraint category="performance" rule="Pagination: Server-side fetch &lt;500ms per page"/>
+    <constraint category="performance" rule="Real-time updates: &lt;1s latency from INSERT to UI"/>
+    <constraint category="performance" rule="Handle 10K+ results per job without UI lag (pagination prevents loading all at once)"/>
+
+    <constraint category="accessibility" rule="Table has semantic HTML: &lt;table role=&quot;table&quot;&gt;"/>
+    <constraint category="accessibility" rule="Column headers have &lt;th scope=&quot;col&quot;&gt; and sort indicators"/>
+    <constraint category="accessibility" rule="Row expansion triggered by keyboard (Enter key) and click"/>
+    <constraint category="accessibility" rule="Expanded content has role=&quot;region&quot; aria-label=&quot;Row details&quot;"/>
+    <constraint category="accessibility" rule="Filter controls have proper labels: &lt;label for=&quot;status-filter&quot;&gt;Status&lt;/label&gt;"/>
+    <constraint category="accessibility" rule="Export button has clear text: Export Results (CSV/JSON)"/>
+
+    <constraint category="testing" rule="Manual testing via Chrome DevTools MCP for functional verification"/>
+    <constraint category="testing" rule="Integration testing with Supabase MCP for real-time result INSERTs"/>
+    <constraint category="testing" rule="Component tests deferred for MVP velocity"/>
+    <constraint category="testing" rule="All 9 acceptance criteria must pass functional testing"/>
+  </constraints>
+
+  <interfaces>
+    <interface name="useJobResults" kind="hook" signature="useJobResults(jobId: string, filters?: ResultFilters): UseQueryResult&lt;Result[]&gt;" path="apps/web/hooks/use-results.ts" description="TanStack Query hook for fetching job results with filtering and pagination"/>
+
+    <interface name="useExportResults" kind="hook" signature="useExportResults(jobId: string, format: 'csv' | 'json'): UseMutationResult" path="apps/web/hooks/use-export-results.ts" description="TanStack Query mutation for exporting filtered results"/>
+
+    <interface name="subscribeToResults" kind="service" signature="subscribeToResults(jobId: string, onInsert: (result: Result) =&gt; void): RealtimeChannel" path="apps/web/lib/realtime-service.ts" description="Supabase Realtime subscription for result INSERT events"/>
+
+    <interface name="Result" kind="type" signature="interface Result { id: string; jobId: string; url: string; status: ResultStatus; classificationResult: ClassificationResult | null; classificationScore: number | null; classificationReasoning: string | null; llmProvider: LLMProvider; llmCost: number; processingTimeMs: number; retryCount: number; errorMessage: string | null; processedAt: string; createdAt: string; }" path="packages/shared/src/types/result.ts" description="TypeScript type for result data structure"/>
+
+    <interface name="ResultStatus" kind="type" signature="type ResultStatus = 'success' | 'rejected' | 'failed'" path="packages/shared/src/types/result.ts" description="Result status enum"/>
+
+    <interface name="ClassificationResult" kind="type" signature="type ClassificationResult = 'suitable' | 'not_suitable' | 'rejected_prefilter'" path="packages/shared/src/types/result.ts" description="Classification outcome enum"/>
+
+    <interface name="LLMProvider" kind="type" signature="type LLMProvider = 'gemini' | 'gpt' | 'none'" path="packages/shared/src/types/result.ts" description="LLM provider enum"/>
+
+    <interface name="useReactTable" kind="library" signature="useReactTable&lt;TData&gt;(options: TableOptions&lt;TData&gt;): Table&lt;TData&gt;" path="@tanstack/react-table" description="Core TanStack Table hook for table state management"/>
+
+    <interface name="getCoreRowModel" kind="library" signature="getCoreRowModel&lt;TData&gt;(): (table: Table&lt;TData&gt;) =&gt; () =&gt; RowModel&lt;TData&gt;" path="@tanstack/react-table" description="Core row model for basic table functionality"/>
+
+    <interface name="getSortedRowModel" kind="library" signature="getSortedRowModel&lt;TData&gt;(): (table: Table&lt;TData&gt;) =&gt; () =&gt; RowModel&lt;TData&gt;" path="@tanstack/react-table" description="Sorted row model for sorting functionality"/>
+
+    <interface name="getFilteredRowModel" kind="library" signature="getFilteredRowModel&lt;TData&gt;(): (table: Table&lt;TData&gt;) =&gt; () =&gt; RowModel&lt;TData&gt;" path="@tanstack/react-table" description="Filtered row model for filtering functionality"/>
+
+    <interface name="getPaginationRowModel" kind="library" signature="getPaginationRowModel&lt;TData&gt;(): (table: Table&lt;TData&gt;) =&gt; () =&gt; RowModel&lt;TData&gt;" path="@tanstack/react-table" description="Pagination row model for pagination functionality"/>
+
+    <interface name="GET /jobs/:id/results" kind="api" signature="GET /jobs/:id/results?page=1&amp;limit=50&amp;status=success&amp;classification=suitable&amp;search=example" path="backend-api" description="Backend API endpoint for fetching job results with filters"/>
+
+    <interface name="GET /jobs/:id/export" kind="api" signature="GET /jobs/:id/export?format=csv&amp;columns[]=url&amp;columns[]=classification" path="backend-api" description="Backend API endpoint for exporting filtered results"/>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <standard>Manual testing via Chrome DevTools MCP for functional verification</standard>
+      <standard>Integration testing with Supabase MCP for real-time result INSERTs</standard>
+      <standard>Component tests deferred for MVP velocity</standard>
+      <standard>E2E tests with Playwright deferred to later sprint</standard>
+      <standard>All 9 acceptance criteria must pass functional testing</standard>
+      <standard>Test with 200 result dataset (4 pages at 50/page)</standard>
+      <standard>Mix of statuses: success, rejected, failed</standard>
+      <standard>Mix of classifications: suitable, not_suitable, rejected_prefilter</standard>
+      <standard>Include failed results with error messages for expansion testing</standard>
+    </standards>
+
+    <locations>
+      <location path="apps/web/hooks/__tests__/" description="Jest unit tests for hooks"/>
+      <location path="apps/web/components/__tests__/" description="React Testing Library component tests (deferred)"/>
+    </locations>
+
+    <ideas>
+      <testIdea ac="AC1" tool="chrome-devtools">
+        <description>Verify all 7 columns render with correct headers and data types</description>
+        <steps>
+          <step>Navigate to /jobs/[test-job-id] with 50+ results</step>
+          <step>Take snapshot of ResultsTable component</step>
+          <step>Verify column headers: URL, Status, Classification, Score, Cost, Processing Time, Timestamp</step>
+          <step>Verify data formatting: Cost as currency, Time as duration, Timestamp as HH:MM:SS</step>
+        </steps>
+      </testIdea>
+
+      <testIdea ac="AC2" tool="chrome-devtools">
+        <description>Test sorting on all columns (ascending/descending)</description>
+        <steps>
+          <step>Click "URL" column header, verify ascending sort (A-Z)</step>
+          <step>Click "URL" header again, verify descending sort (Z-A)</step>
+          <step>Repeat for all 7 columns, verify sort indicators update</step>
+          <step>Verify data reorders correctly for each column</step>
+        </steps>
+      </testIdea>
+
+      <testIdea ac="AC3" tool="chrome-devtools">
+        <description>Test URL text search filtering</description>
+        <steps>
+          <step>Type "example.com" in search input</step>
+          <step>Wait 500ms for debounce</step>
+          <step>Verify only URLs containing "example.com" display</step>
+          <step>Clear search, verify all results return</step>
+        </steps>
+      </testIdea>
+
+      <testIdea ac="AC4" tool="chrome-devtools">
+        <description>Test Status and Classification filter dropdowns</description>
+        <steps>
+          <step>Select Status filter "Success", verify only success results show</step>
+          <step>Select Status filter "Failed", verify only failed results show</step>
+          <step>Reset Status to "All"</step>
+          <step>Select Classification "SUITABLE", verify only suitable results show</step>
+          <step>Select Classification "NOT_SUITABLE", verify only not_suitable results show</step>
+          <step>Test combined filters: Status=Success AND Classification=SUITABLE</step>
+        </steps>
+      </testIdea>
+
+      <testIdea ac="AC5" tool="chrome-devtools">
+        <description>Test pagination with 50 results per page</description>
+        <steps>
+          <step>Create test job with 200 results</step>
+          <step>Verify page 1 shows results 1-50</step>
+          <step>Click "Next" button, verify page 2 shows results 51-100</step>
+          <step>Navigate to page 4, verify results 151-200</step>
+          <step>Verify page controls show "Page 4 of 4"</step>
+          <step>Click "Previous", verify returns to page 3</step>
+        </steps>
+      </testIdea>
+
+      <testIdea ac="AC6" tool="supabase,chrome-devtools">
+        <description>Test real-time table updates on new result INSERT</description>
+        <steps>
+          <step>Open job detail page with active job processing</step>
+          <step>Use Supabase MCP: execute_sql INSERT INTO results (...) VALUES (...)</step>
+          <step>Verify new result appears in table within 1 second</step>
+          <step>Verify "Live" indicator shows active connection</step>
+          <step>Verify pagination/filters preserved during update</step>
+        </steps>
+      </testIdea>
+
+      <testIdea ac="AC7" tool="chrome-devtools">
+        <description>Test row expansion showing full details</description>
+        <steps>
+          <step>Click row with successful classification result</step>
+          <step>Verify expansion shows: full URL, classification reasoning, llmProvider, retry count</step>
+          <step>Click ChevronDown icon to collapse</step>
+          <step>Click row with failed result</step>
+          <step>Verify expansion shows error details and error message</step>
+          <step>Test keyboard navigation: Tab to row, press Enter to expand</step>
+        </steps>
+      </testIdea>
+
+      <testIdea ac="AC8" tool="chrome-devtools">
+        <description>Test export functionality with filters</description>
+        <steps>
+          <step>Apply filter: Status=Success</step>
+          <step>Click "Export" button, select "CSV"</step>
+          <step>Verify loading spinner displays</step>
+          <step>Verify CSV file downloads</step>
+          <step>Open CSV file, verify contains only filtered results</step>
+          <step>Test JSON export format</step>
+        </steps>
+      </testIdea>
+
+      <testIdea ac="AC9" tool="chrome-devtools">
+        <description>Test table persistence across page refresh</description>
+        <steps>
+          <step>Apply filters: Status=Success, Classification=SUITABLE</step>
+          <step>Sort by Cost column descending</step>
+          <step>Navigate to page 2</step>
+          <step>Refresh browser (Ctrl+R)</step>
+          <step>Verify table data persists (same results display)</step>
+          <step>Note: Filter/sort state may reset (acceptable for MVP)</step>
+        </steps>
+      </testIdea>
+    </ideas>
+  </tests>
+
+  <integration>
+    <integrationPoint>
+      <component>apps/web/components/job-detail-client.tsx</component>
+      <description>Add ResultsTable component below LiveActivityLog section</description>
+      <modification>Import ResultsTable, add Tabs component to organize Overview/Logs/Results sections</modification>
+    </integrationPoint>
+
+    <integrationPoint>
+      <component>apps/web/lib/realtime-service.ts</component>
+      <description>Add subscribeToResults() function for result INSERT events</description>
+      <modification>Follow pattern from subscribeToLogs() (lines 114-151)</modification>
+    </integrationPoint>
+
+    <integrationPoint>
+      <component>packages/shared/src/types/result.ts</component>
+      <description>Create Result type if not exists, verify matches database schema</description>
+      <modification>Add Result interface with all required fields from AC1</modification>
+    </integrationPoint>
+
+    <integrationPoint>
+      <component>packages/shared/src/schemas/result.ts</component>
+      <description>Create Zod schema for Result type runtime validation</description>
+      <modification>Add ResultSchema with validation rules</modification>
+    </integrationPoint>
+  </integration>
+
+  <references>
+    <reference source="docs/stories/story-1.6.md" section="full" description="Complete story specification with all tasks and subtasks"/>
+    <reference source="docs/tech-spec-epic-1.md" section="Story 1.6" lines="382-391" description="Detailed AC mapping (AC1.6.1-AC1.6.9)"/>
+    <reference source="docs/tech-spec-epic-1.md" section="Data Models" lines="122-145" description="Result TypeScript type definition"/>
+    <reference source="docs/architecture-summary.md" section="Database Schema" lines="145-152" description="results table schema"/>
+    <reference source="docs/PRD.md" section="FR004" lines="85-86" description="Historical Results View requirement"/>
+    <reference source="docs/PRD.md" section="NFR001" lines="120-124" description="Real-Time UI Responsiveness requirements"/>
+    <reference source="docs/epic-stories.md" section="Story 1.6" lines="151-169" description="User story and acceptance criteria"/>
+    <reference source="apps/web/hooks/use-jobs.ts" section="useJob" lines="54-107" description="Real-time subscription pattern with TanStack Query"/>
+    <reference source="apps/web/lib/realtime-service.ts" section="subscribeToLogs" lines="114-151" description="INSERT event subscription pattern"/>
+  </references>
+
+  <notes>
+    <note category="architecture">
+      Story 1.6 extends Stories 1.1-1.5 without conflicts. Reuses established patterns: Realtime subscriptions, React Query, shadcn/ui, @tanstack/react-table.
+    </note>
+
+    <note category="backend-dependency">
+      Story 1.6 depends on backend providing results API endpoints: GET /jobs/:id/results and GET /jobs/:id/export. Backend Story 2.5 (Worker Processing) must insert results as URLs are processed.
+    </note>
+
+    <note category="new-files">
+      New files to create: apps/web/components/results-table.tsx, apps/web/hooks/use-results.ts, apps/web/hooks/use-export-results.ts, packages/shared/src/types/result.ts (if not exists), packages/shared/src/schemas/result.ts (if not exists)
+    </note>
+
+    <note category="existing-files">
+      Files to modify: apps/web/components/job-detail-client.tsx (add ResultsTable), apps/web/lib/realtime-service.ts (add subscribeToResults)
+    </note>
+
+    <note category="testing-approach">
+      Manual testing via Chrome DevTools MCP for functional verification. Integration testing with Supabase MCP for real-time result INSERTs. Component tests deferred for MVP velocity.
+    </note>
+
+    <note category="naming-conventions">
+      Components: PascalCase (ResultsTable), Files: kebab-case (results-table.tsx), Hooks: camelCase with use prefix (useJobResults), API functions: camelCase (getJobResults, exportJobResults)
+    </note>
+
+    <note category="performance">
+      Handle 10K+ results per job without UI lag through server-side pagination (50 results/page). Client-side sorting and filtering for instant feedback. Real-time updates must maintain &lt;1s latency (NFR001-P1).
+    </note>
+
+    <note category="accessibility">
+      WCAG 2.1 AA compliance required: semantic HTML table, ARIA labels, keyboard navigation (Enter to expand rows), screen reader support for sort indicators and filter controls.
+    </note>
+  </notes>
+</story-context>

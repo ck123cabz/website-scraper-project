@@ -22,7 +22,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 // Test connection function
 export async function testSupabaseConnection() {
   try {
-    const { data, error } = await supabase.from('jobs').select('count').single();
+    const { error } = await supabase.from('jobs').select('count').single();
 
     if (error) {
       console.error('[Supabase] Connection test failed:', error);

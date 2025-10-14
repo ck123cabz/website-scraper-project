@@ -17,7 +17,7 @@ export function JobList() {
   useEffect(() => {
     console.log('[JobList] Setting up Realtime subscription');
 
-    const channel = subscribeToJobList((payload) => {
+    subscribeToJobList((payload) => {
       console.log('[JobList] Received Realtime event:', payload.eventType);
       // Invalidate queries to trigger refetch
       queryClient.invalidateQueries({ queryKey: jobKeys.lists() });
