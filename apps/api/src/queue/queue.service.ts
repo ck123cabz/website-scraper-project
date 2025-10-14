@@ -13,7 +13,12 @@ export class QueueService {
   constructor(
     @InjectQueue('url-processing-queue')
     private readonly urlProcessingQueue: Queue<UrlProcessingJob>,
-  ) {}
+  ) {
+    // Add error event listener (Story 2.1 follow-up)
+    this.urlProcessingQueue.on('error', (err) => {
+      console.error('[QueueService] Queue error:', err);
+    });
+  }
 
   async addUrlToQueue(data: UrlProcessingJob): Promise<void> {
     await this.urlProcessingQueue.add('process-url', data, {
