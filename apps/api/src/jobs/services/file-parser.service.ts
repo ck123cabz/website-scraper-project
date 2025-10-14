@@ -1,22 +1,26 @@
 import { Injectable } from '@nestjs/common';
 import * as Papa from 'papaparse';
-import * as fs from 'fs';
 
 @Injectable()
 export class FileParserService {
   /**
    * Parse a CSV or TXT file and extract URLs
-   * @param filePath Path to the uploaded file
+   * @param fileBuffer File buffer from memory storage
    * @param fileType File extension (.csv or .txt)
    * @returns Array of URLs extracted from the file
    */
-  async parseFile(filePath: string, fileType: string): Promise<string[]> {
+  async parseFile(fileBuffer: Buffer, fileType: string): Promise<string[]> {
+    // L1 Fix: More specific error messages for better UX
+    if (fileBuffer.length === 0) {
+      throw new Error('Empty file uploaded. Please upload a file with valid URLs.');
+    }
+
     if (fileType === '.csv') {
-      return this.parseCsv(filePath);
+      return this.parseCsv(fileBuffer);
     } else if (fileType === '.txt') {
-      return this.parseTxt(filePath);
+      return this.parseTxt(fileBuffer);
     } else {
-      throw new Error(`Unsupported file type: ${fileType}`);
+      throw new Error(`Unsupported file type: ${fileType}. Only .csv and .txt files are allowed.`);
     }
   }
 
@@ -24,8 +28,8 @@ export class FileParserService {
    * Parse CSV file with auto-detection of URL column
    * Handles: single column, multi-column, headers/no headers
    */
-  private async parseCsv(filePath: string): Promise<string[]> {
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
+  private async parseCsv(fileBuffer: Buffer): Promise<string[]> {
+    const fileContent = fileBuffer.toString('utf-8');
 
     return new Promise((resolve, reject) => {
       Papa.parse(fileContent, {
@@ -44,13 +48,19 @@ export class FileParserService {
               urls = this.extractUrlsFromSimpleCsv(fileContent);
             }
 
+            // L1 Fix: Specific error if no URLs found after parsing
+            if (urls.length === 0) {
+              reject(new Error('Empty CSV file or no valid data found. Please ensure your CSV contains URLs.'));
+            }
+
             resolve(urls);
           } catch (error) {
             reject(error);
           }
         },
         error: (error: Error) => {
-          reject(new Error(`CSV parsing error: ${error.message}`));
+          // L1 Fix: More specific CSV parsing error
+          reject(new Error(`Malformed CSV file: ${error.message}. Please check your file format.`));
         },
       });
     });
@@ -86,9 +96,11 @@ export class FileParserService {
       }
     }
 
-    // If still no URL column found, throw error
+    // L1 Fix: More specific error message when URL column not found
     if (!urlColumn) {
-      throw new Error('Could not auto-detect URL column in CSV file');
+      throw new Error(
+        'Could not auto-detect URL column in CSV file. Please ensure your CSV has a column named "url", "link", or "website", or that URLs are in the first column.',
+      );
     }
 
     // Extract URLs from the detected column
@@ -114,8 +126,8 @@ export class FileParserService {
   /**
    * Parse TXT file (line-by-line)
    */
-  private async parseTxt(filePath: string): Promise<string[]> {
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
+  private async parseTxt(fileBuffer: Buffer): Promise<string[]> {
+    const fileContent = fileBuffer.toString('utf-8');
 
     return fileContent
       .split('\n')

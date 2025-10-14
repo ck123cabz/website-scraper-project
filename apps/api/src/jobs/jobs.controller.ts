@@ -41,9 +41,9 @@ export class JobsController {
 
       // Content-type detection
       if (file) {
-        // multipart/form-data with file upload
+        // multipart/form-data with file upload (using memory storage - H1/H2 fix)
         const fileExt = extname(file.originalname).toLowerCase();
-        urls = await this.fileParserService.parseFile(file.path, fileExt);
+        urls = await this.fileParserService.parseFile(file.buffer, fileExt);
       } else if (body.urls && Array.isArray(body.urls)) {
         // application/json with urls array
         urls = body.urls;
@@ -110,10 +110,12 @@ export class JobsController {
         throw error;
       }
 
+      // M2 Fix: Log detailed errors server-side but return generic message to client
+      console.error('[JobsController] Error creating job with URLs:', error);
       throw new HttpException(
         {
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: 'Failed to process upload. Please try again or contact support.',
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
@@ -129,10 +131,12 @@ export class JobsController {
         data: job,
       };
     } catch (error) {
+      // M2 Fix: Log detailed errors server-side but return generic message to client
+      console.error('[JobsController] Error creating job:', error);
       throw new HttpException(
         {
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: 'Failed to create job. Please try again.',
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
@@ -163,10 +167,12 @@ export class JobsController {
         throw error;
       }
 
+      // M2 Fix: Log detailed errors server-side but return generic message to client
+      console.error('[JobsController] Error fetching job:', error);
       throw new HttpException(
         {
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: 'Failed to retrieve job. Please try again.',
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
@@ -182,10 +188,12 @@ export class JobsController {
         data: jobs,
       };
     } catch (error) {
+      // M2 Fix: Log detailed errors server-side but return generic message to client
+      console.error('[JobsController] Error fetching jobs:', error);
       throw new HttpException(
         {
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: 'Failed to retrieve jobs. Please try again.',
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );

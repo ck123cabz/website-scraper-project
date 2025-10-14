@@ -90,55 +90,42 @@ export class JobsService {
 
   /**
    * Create a job with URLs and bulk insert them into the results table
-   * Uses database transaction for atomicity
+   * M1 Fix: Uses Postgres RPC function for true atomic transaction
    */
   async createJobWithUrls(name: string, urls: string[]): Promise<JobRow> {
     const client = this.supabase.getClient();
 
-    // Step 1: Create job record
-    const jobData: JobInsert = {
-      name: name || 'Untitled Job',
-      total_urls: urls.length,
-      status: 'pending',
-    };
+    // Use RPC function with proper Postgres transaction for atomicity
+    const { data, error } = await client.rpc('create_job_with_urls', {
+      p_name: name || 'Untitled Job',
+      p_urls: urls,
+    }).single();
 
-    const { data: job, error: jobError } = await client
+    if (error) {
+      throw new Error(`Failed to create job with URLs: ${error.message}`);
+    }
+
+    if (!data) {
+      throw new Error('No data returned from job creation');
+    }
+
+    // TypeScript doesn't know the RPC return type, so we cast it
+    const jobId = (data as any).job_id as string;
+
+    // Fetch the complete job record to get all fields
+    const { data: job, error: fetchError } = await client
       .from('jobs')
-      .insert(jobData)
-      .select()
+      .select('*')
+      .eq('id', jobId)
       .single();
 
-    if (jobError) {
-      throw new Error(`Failed to create job: ${jobError.message}`);
+    if (fetchError || !job) {
+      throw new Error(`Failed to fetch created job: ${fetchError?.message || 'Job not found'}`);
     }
 
-    // Step 2: Bulk insert URLs into results table in batches of 1000
-    const BATCH_SIZE = 1000;
-    const batches: ResultInsert[][] = [];
-
-    for (let i = 0; i < urls.length; i += BATCH_SIZE) {
-      const batch = urls.slice(i, i + BATCH_SIZE).map((url) => ({
-        job_id: job.id,
-        url,
-        status: 'success' as const, // Initial status - will be updated during processing
-      }));
-      batches.push(batch);
-    }
-
-    // Insert batches sequentially to avoid overwhelming the database
-    for (let i = 0; i < batches.length; i++) {
-      const { error: insertError } = await client.from('results').insert(batches[i]);
-
-      if (insertError) {
-        // Rollback: Delete the job if URL insertion fails
-        await this.deleteJob(job.id);
-        throw new Error(`Failed to insert URLs (batch ${i + 1}/${batches.length}): ${insertError.message}`);
-      }
-
-      // Log progress for large uploads
-      if (batches.length > 1) {
-        console.log(`[JobsService] Inserted batch ${i + 1}/${batches.length} (${batches[i].length} URLs)`);
-      }
+    // Log success for large uploads
+    if (urls.length > 1000) {
+      console.log(`[JobsService] Created job ${job.id} with ${urls.length} URLs using atomic transaction`);
     }
 
     return job;

@@ -22,13 +22,7 @@ exports.JobsModule = JobsModule = __decorate([
     (0, common_1.Module)({
         imports: [
             platform_express_1.MulterModule.register({
-                storage: (0, multer_1.diskStorage)({
-                    destination: '/tmp/uploads',
-                    filename: (req, file, callback) => {
-                        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-                        callback(null, file.fieldname + '-' + uniqueSuffix + (0, path_1.extname)(file.originalname));
-                    },
-                }),
+                storage: (0, multer_1.memoryStorage)(),
                 limits: {
                     fileSize: 10 * 1024 * 1024,
                 },

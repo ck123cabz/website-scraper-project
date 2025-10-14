@@ -42,21 +42,23 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.FileParserService = void 0;
 const common_1 = require("@nestjs/common");
 const Papa = __importStar(require("papaparse"));
-const fs = __importStar(require("fs"));
 let FileParserService = class FileParserService {
-    async parseFile(filePath, fileType) {
+    async parseFile(fileBuffer, fileType) {
+        if (fileBuffer.length === 0) {
+            throw new Error('Empty file uploaded. Please upload a file with valid URLs.');
+        }
         if (fileType === '.csv') {
-            return this.parseCsv(filePath);
+            return this.parseCsv(fileBuffer);
         }
         else if (fileType === '.txt') {
-            return this.parseTxt(filePath);
+            return this.parseTxt(fileBuffer);
         }
         else {
-            throw new Error(`Unsupported file type: ${fileType}`);
+            throw new Error(`Unsupported file type: ${fileType}. Only .csv and .txt files are allowed.`);
         }
     }
-    async parseCsv(filePath) {
-        const fileContent = fs.readFileSync(filePath, 'utf-8');
+    async parseCsv(fileBuffer) {
+        const fileContent = fileBuffer.toString('utf-8');
         return new Promise((resolve, reject) => {
             Papa.parse(fileContent, {
                 header: true,
@@ -70,6 +72,9 @@ let FileParserService = class FileParserService {
                         else {
                             urls = this.extractUrlsFromSimpleCsv(fileContent);
                         }
+                        if (urls.length === 0) {
+                            reject(new Error('Empty CSV file or no valid data found. Please ensure your CSV contains URLs.'));
+                        }
                         resolve(urls);
                     }
                     catch (error) {
@@ -77,7 +82,7 @@ let FileParserService = class FileParserService {
                     }
                 },
                 error: (error) => {
-                    reject(new Error(`CSV parsing error: ${error.message}`));
+                    reject(new Error(`Malformed CSV file: ${error.message}. Please check your file format.`));
                 },
             });
         });
@@ -103,7 +108,7 @@ let FileParserService = class FileParserService {
             }
         }
         if (!urlColumn) {
-            throw new Error('Could not auto-detect URL column in CSV file');
+            throw new Error('Could not auto-detect URL column in CSV file. Please ensure your CSV has a column named "url", "link", or "website", or that URLs are in the first column.');
         }
         return data
             .map((row) => (typeof row[urlColumn] === 'string' ? row[urlColumn].trim() : ''))
@@ -116,8 +121,8 @@ let FileParserService = class FileParserService {
             return parts[0].trim();
         }).filter((url) => url.length > 0);
     }
-    async parseTxt(filePath) {
-        const fileContent = fs.readFileSync(filePath, 'utf-8');
+    async parseTxt(fileBuffer) {
+        const fileContent = fileBuffer.toString('utf-8');
         return fileContent
             .split('\n')
             .map((line) => line.trim())

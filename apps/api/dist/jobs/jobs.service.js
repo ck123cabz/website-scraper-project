@@ -80,38 +80,27 @@ let JobsService = class JobsService {
     }
     async createJobWithUrls(name, urls) {
         const client = this.supabase.getClient();
-        const jobData = {
-            name: name || 'Untitled Job',
-            total_urls: urls.length,
-            status: 'pending',
-        };
-        const { data: job, error: jobError } = await client
+        const { data, error } = await client.rpc('create_job_with_urls', {
+            p_name: name || 'Untitled Job',
+            p_urls: urls,
+        }).single();
+        if (error) {
+            throw new Error(`Failed to create job with URLs: ${error.message}`);
+        }
+        if (!data) {
+            throw new Error('No data returned from job creation');
+        }
+        const jobId = data.job_id;
+        const { data: job, error: fetchError } = await client
             .from('jobs')
-            .insert(jobData)
-            .select()
+            .select('*')
+            .eq('id', jobId)
             .single();
-        if (jobError) {
-            throw new Error(`Failed to create job: ${jobError.message}`);
+        if (fetchError || !job) {
+            throw new Error(`Failed to fetch created job: ${fetchError?.message || 'Job not found'}`);
         }
-        const BATCH_SIZE = 1000;
-        const batches = [];
-        for (let i = 0; i < urls.length; i += BATCH_SIZE) {
-            const batch = urls.slice(i, i + BATCH_SIZE).map((url) => ({
-                job_id: job.id,
-                url,
-                status: 'success',
-            }));
-            batches.push(batch);
-        }
-        for (let i = 0; i < batches.length; i++) {
-            const { error: insertError } = await client.from('results').insert(batches[i]);
-            if (insertError) {
-                await this.deleteJob(job.id);
-                throw new Error(`Failed to insert URLs (batch ${i + 1}/${batches.length}): ${insertError.message}`);
-            }
-            if (batches.length > 1) {
-                console.log(`[JobsService] Inserted batch ${i + 1}/${batches.length} (${batches[i].length} URLs)`);
-            }
+        if (urls.length > 1000) {
+            console.log(`[JobsService] Created job ${job.id} with ${urls.length} URLs using atomic transaction`);
         }
         return job;
     }

@@ -4,19 +4,13 @@ import { JobsController } from './jobs.controller';
 import { JobsService } from './jobs.service';
 import { FileParserService } from './services/file-parser.service';
 import { UrlValidationService } from './services/url-validation.service';
-import { diskStorage } from 'multer';
+import { memoryStorage } from 'multer';
 import { extname } from 'path';
 
 @Module({
   imports: [
     MulterModule.register({
-      storage: diskStorage({
-        destination: '/tmp/uploads',
-        filename: (req, file, callback) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          callback(null, file.fieldname + '-' + uniqueSuffix + extname(file.originalname));
-        },
-      }),
+      storage: memoryStorage(), // Use memory storage to avoid file cleanup issues (H2 fix)
       limits: {
         fileSize: 10 * 1024 * 1024, // 10MB
       },

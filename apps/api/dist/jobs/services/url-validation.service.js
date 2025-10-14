@@ -11,6 +11,7 @@ const common_1 = require("@nestjs/common");
 let UrlValidationService = class UrlValidationService {
     constructor() {
         this.URL_PATTERN = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
+        this.ALLOWED_PROTOCOLS = ['http:', 'https:'];
     }
     validateAndNormalizeUrls(urls) {
         let invalidCount = 0;
@@ -31,7 +32,19 @@ let UrlValidationService = class UrlValidationService {
         return { validUrls, invalidCount };
     }
     isValidUrl(url) {
-        return this.URL_PATTERN.test(url);
+        if (!this.URL_PATTERN.test(url)) {
+            return false;
+        }
+        try {
+            const urlObj = new URL(url);
+            if (!this.ALLOWED_PROTOCOLS.includes(urlObj.protocol)) {
+                return false;
+            }
+            return true;
+        }
+        catch {
+            return false;
+        }
     }
     normalizeUrl(url) {
         let normalized = url.trim();
@@ -45,6 +58,7 @@ let UrlValidationService = class UrlValidationService {
             return urlObj.toString();
         }
         catch (error) {
+            console.warn('[UrlValidationService] URL normalization failed for:', normalized, error);
             return normalized;
         }
     }
@@ -65,6 +79,7 @@ let UrlValidationService = class UrlValidationService {
             return urlObj.toString();
         }
         catch (error) {
+            console.warn('[UrlValidationService] Deduplication normalization failed for:', url, error);
             return url;
         }
     }

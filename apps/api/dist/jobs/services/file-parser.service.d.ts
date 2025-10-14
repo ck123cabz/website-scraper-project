@@ -1,5 +1,5 @@
 export declare class FileParserService {
-    parseFile(filePath: string, fileType: string): Promise<string[]>;
+    parseFile(fileBuffer: Buffer, fileType: string): Promise<string[]>;
     private parseCsv;
     private extractUrlsFromHeaderedCsv;
     private extractUrlsFromSimpleCsv;

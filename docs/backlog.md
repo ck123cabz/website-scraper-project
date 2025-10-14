@@ -19,6 +19,14 @@
 | 2025-10-14 | 1.5 | 1 | Enhancement | Low | TBD | Open | Simplify job card cost display (`apps/web/components/job-card.tsx:88`). Remove redundant ternary - formatCurrency handles 0. See Story 1.5 Review L1. |
 | 2025-10-14 | 1.5 | 1 | Test | Low | TBD | Open | Add unit tests for formatCurrency utility. Create `packages/shared/src/utils/__tests__/format-currency.test.ts` covering standard amounts, micro-costs, edge cases. See Story 1.5 Review L3. |
 | 2025-10-14 | 1.5 | 1 | Review | Low | TBD | Open | Verify test screenshot exists (`docs/story-1.5-test-screenshot.png`) and shows cost tracking features. See Story 1.5 Review L2. |
+| 2025-10-15 | 2.2 | 2 | Bug | High | Epic 2 Lead | Open | **SECURITY:** Implement file path validation and cleanup (`apps/api/src/jobs/jobs.controller.ts:46`, `jobs.module.ts:14`). Validate file.path is within /tmp/uploads, add fs.unlink() in finally block, verify directory exists at startup. Fixes H1, H2. AC1, AC9. |
+| 2025-10-15 | 2.2 | 2 | Bug | High | Epic 2 Lead | Open | **SECURITY:** Strengthen URL validation against injection (`apps/api/src/jobs/services/url-validation.service.ts:6-7`). Add protocol whitelist check, reject javascript:, data:, file: schemes. Fixes H3. AC3. |
+| 2025-10-15 | 2.2 | 2 | Bug | Medium | Epic 2 Lead | Open | Implement proper database transactions (`apps/api/src/jobs/jobs.service.ts:95-145`). Replace manual rollback with Supabase RPC using Postgres BEGIN...COMMIT. Fixes M1. AC5, AC6. |
+| 2025-10-15 | 2.2 | 2 | TechDebt | Medium | Epic 2 Lead | Open | Sanitize error messages (`apps/api/src/jobs/jobs.controller.ts:116, 133, 169`). Log detailed errors server-side, return generic client messages. Fixes M2. AC9. |
+| 2025-10-15 | 2.2 | 2 | Enhancement | Medium | Epic 2 Lead | Open | Complete DTO validation decorators (`apps/api/src/jobs/dto/create-job.dto.ts:8-10`). Add @ArrayMaxSize(10000), @IsString({ each: true }), consider @IsUrl(). Fixes M3. AC2, AC8. |
+| 2025-10-15 | 2.2 | 2 | Test | Low | TBD | Open | Add unit tests for FileParserService and UrlValidationService (`apps/api/src/jobs/__tests__/`). Create file-parser.service.spec.ts, url-validation.service.spec.ts. Fixes L3. Tasks 2.5, 3.5, 4.4. |
+| 2025-10-15 | 2.2 | 2 | Enhancement | Low | TBD | Open | Improve error specificity in file parser (`apps/api/src/jobs/services/file-parser.service.ts:19, 53, 91`). Return specific errors for each failure case. Fixes L1. AC9. |
+| 2025-10-15 | 2.2 | 2 | Test | Low | TBD | Open | Run performance verification test for 10K URLs. Generate test file, measure end-to-end time, document results (target: <5s). AC8. |
 
 ---
 
@@ -40,4 +48,4 @@
 - **Type Values:** Bug / TechDebt / Enhancement / Feature / Test / Review / Backend
 - **Epic References:** 1 (Real-Time Dashboard), 2 (Processing Pipeline)
 
-**Last Updated:** 2025-10-14 by CK via Senior Developer Review workflow (Story 1.5 review completed)
+**Last Updated:** 2025-10-15 by CK via Senior Developer Review workflow (Story 2.2 review completed, 8 action items added)

@@ -32,7 +32,7 @@ let JobsController = class JobsController {
             const jobName = body.name || 'Untitled Job';
             if (file) {
                 const fileExt = (0, path_1.extname)(file.originalname).toLowerCase();
-                urls = await this.fileParserService.parseFile(file.path, fileExt);
+                urls = await this.fileParserService.parseFile(file.buffer, fileExt);
             }
             else if (body.urls && Array.isArray(body.urls)) {
                 urls = body.urls;
@@ -83,9 +83,10 @@ let JobsController = class JobsController {
             if (error instanceof common_1.HttpException) {
                 throw error;
             }
+            console.error('[JobsController] Error creating job with URLs:', error);
             throw new common_1.HttpException({
                 success: false,
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: 'Failed to process upload. Please try again or contact support.',
             }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -98,9 +99,10 @@ let JobsController = class JobsController {
             };
         }
         catch (error) {
+            console.error('[JobsController] Error creating job:', error);
             throw new common_1.HttpException({
                 success: false,
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: 'Failed to create job. Please try again.',
             }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -122,9 +124,10 @@ let JobsController = class JobsController {
             if (error instanceof common_1.HttpException) {
                 throw error;
             }
+            console.error('[JobsController] Error fetching job:', error);
             throw new common_1.HttpException({
                 success: false,
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: 'Failed to retrieve job. Please try again.',
             }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -137,9 +140,10 @@ let JobsController = class JobsController {
             };
         }
         catch (error) {
+            console.error('[JobsController] Error fetching jobs:', error);
             throw new common_1.HttpException({
                 success: false,
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: 'Failed to retrieve jobs. Please try again.',
             }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
