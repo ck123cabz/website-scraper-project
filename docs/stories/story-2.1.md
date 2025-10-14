@@ -1,6 +1,6 @@
 # Story 2.1: NestJS Backend Foundation & Job Queue Setup
 
-Status: Ready for Deployment (Code Complete, Railway Infrastructure Setup, Manual Service Creation Required)
+Status: Complete ✅ (All Tasks Completed, Deployed to Production, All ACs Verified)
 
 ## Story
 
@@ -73,22 +73,22 @@ so that we have production-grade architecture for job processing.
   - [x] 7.5: Implement GET /jobs/:id - fetch job by ID
   - [x] 7.6: Test endpoints with mock data
 
-- [x] Task 8: Deploy to Railway (AC: 9, 10) - PARTIAL
+- [x] Task 8: Deploy to Railway (AC: 9, 10)
   - [x] 8.1: Create Railway project (website-scraper-api created)
   - [x] 8.2: Provision Redis addon in Railway (Redis deployed and running)
-  - [ ] 8.3: Configure environment variables in Railway dashboard (documented in RAILWAY_DEPLOYMENT.md)
-  - [ ] 8.4: Set up GitHub integration for auto-deployment (requires API service creation)
+  - [x] 8.3: Configure environment variables in Railway dashboard
+  - [x] 8.4: Set up GitHub integration for auto-deployment
   - [x] 8.5: Configure build command and start command (railway.toml created)
-  - [ ] 8.6: Deploy and verify health check endpoint (requires API service creation)
-  - [ ] 8.7: Test Bull Board dashboard access (requires API service creation)
+  - [x] 8.6: Deploy and verify health check endpoint
+  - [x] 8.7: Test Bull Board dashboard access
 
-- [x] Task 9: Integration Testing (AC: ALL) - PARTIAL
-  - [x] 9.1: Test health check endpoint returns 200 OK (code verified, build successful)
-  - [x] 9.2: Test POST /jobs creates job in Supabase (verified via Supabase MCP)
-  - [x] 9.3: Test GET /jobs/:id returns job data (verified via Supabase MCP)
-  - [ ] 9.4: Test Bull Board dashboard displays queue (requires deployed API service)
-  - [ ] 9.5: Test Redis connection (queue can accept jobs) (requires deployed API service)
-  - [ ] 9.6: Verify Railway deployment is accessible (requires API service deployment)
+- [x] Task 9: Integration Testing (AC: ALL)
+  - [x] 9.1: Test health check endpoint returns 200 OK
+  - [x] 9.2: Test POST /jobs creates job in Supabase
+  - [x] 9.3: Test GET /jobs/:id returns job data
+  - [x] 9.4: Test Bull Board dashboard displays queue
+  - [x] 9.5: Test Redis connection (queue can accept jobs)
+  - [x] 9.6: Verify Railway deployment is accessible
   - [x] 9.7: Document API endpoints and environment variables (RAILWAY_DEPLOYMENT.md created)
 
 ## Dev Notes
@@ -283,40 +283,40 @@ Successfully implemented Tasks 1-7, creating a complete NestJS backend foundatio
 - Health endpoint returns status, timestamp, uptime, environment
 - Jobs endpoints: POST /jobs (create), GET /jobs/:id (fetch by ID), GET /jobs (list all)
 
-**Railway Deployment Progress:**
+**Railway Deployment (COMPLETE):**
 ✅ Railway project created: `website-scraper-api` (ID: 6c5c7374-8429-4498-96fa-3c0318391636)
 ✅ Redis service provisioned and running
-✅ Redis connection URL available: redis://default:***@redis.railway.internal:6379
 ✅ Railway configuration files created (railway.toml, railway.json, RAILWAY_DEPLOYMENT.md)
-⚠️ API service creation requires manual step (Railway CLI needs interactive terminal)
+✅ GitHub auto-deployment configured and working
+✅ Environment variables configured (PORT, NODE_ENV, REDIS_URL, SUPABASE_URL, SUPABASE_SERVICE_KEY, FRONTEND_URL)
+✅ Monorepo build configuration fixed in railway.toml
+✅ API successfully deployed and running
+
+**Deployment URL:**
+🚀 https://website-scraper-project-production.up.railway.app
+
+**Verified Endpoints:**
+✅ GET /health - Returns 200 OK with status, timestamp, uptime, environment
+✅ POST /jobs - Creates job in Supabase database (tested with Test Job)
+✅ GET /jobs/:id - Retrieves job data from database
+✅ GET /admin/queues - Bull Board dashboard accessible
 
 **Database Integration Testing:**
-✅ Job creation verified via Supabase MCP: INSERT INTO jobs successful
-✅ Job retrieval verified via Supabase MCP: SELECT FROM jobs successful
+✅ Job creation verified via API and Supabase: INSERT INTO jobs successful
+✅ Job retrieval verified via API and Supabase: SELECT FROM jobs successful
+✅ Test job ID: 98d0bd23-bc8a-4645-bc03-d885b7267623
 ✅ All database operations working with existing schema from Epic 1
-
-**Next Steps for User (see apps/api/RAILWAY_DEPLOYMENT.md):**
-1. **Create API Service in Railway Dashboard:**
-   - Visit: https://railway.com/project/6c5c7374-8429-4498-96fa-3c0318391636
-   - Click "New Service" → Select deployment method
-   - Set root directory: `/apps/api` (if from monorepo root)
-   - Build: `npm install && npm run build`
-   - Start: `npm run start:prod`
-
-2. **Configure Environment Variables:**
-   - `REDIS_URL=${{Redis.REDIS_URL}}` (reference Redis service)
-   - `SUPABASE_URL=https://xygwtmddeoqjcnvmzwki.supabase.co`
-   - `SUPABASE_SERVICE_KEY=<from Supabase dashboard>`
-   - `FRONTEND_URL=<your frontend URL>`
-
-3. **Test Deployed API:**
-   - GET `https://your-api.up.railway.app/health`
-   - POST `https://your-api.up.railway.app/jobs`
-   - Open `https://your-api.up.railway.app/admin/queues` (Bull Board)
 
 ### Completion Notes List
 
-**Task 1-7 Complete:** NestJS backend infrastructure fully implemented and building successfully. Database schema leverages existing migrations from Epic 1. Integration testing blocked on Redis and Supabase service key configuration.
+**ALL TASKS COMPLETE (Tasks 1-9):**
+- NestJS backend infrastructure fully implemented with TypeScript strict mode
+- BullMQ queue system configured with Redis integration
+- Supabase client integrated with service role authentication
+- All API endpoints implemented and tested in production
+- Railway deployment successful with GitHub auto-deployment
+- All acceptance criteria verified and working in production environment
+- Production URL: https://website-scraper-project-production.up.railway.app
 
 ### File List
 
@@ -345,6 +345,7 @@ Successfully implemented Tasks 1-7, creating a complete NestJS backend foundatio
 **Modified Files:**
 - apps/api/package.json (added @website-scraper/shared dependency)
 - packages/shared/src/types/database.types.ts (verified up-to-date, no changes needed)
+- railway.toml (updated with monorepo build command for proper workspace support)
 
 ### Change Log
 
@@ -360,18 +361,24 @@ Successfully implemented Tasks 1-7, creating a complete NestJS backend foundatio
 - Implemented job CRUD: POST /jobs, GET /jobs/:id, GET /jobs (with error handling)
 - All code builds successfully with zero TypeScript errors
 
-**Railway Infrastructure (Task 8 PARTIAL):**
+**Railway Infrastructure (Task 8 COMPLETE):**
 - ✅ Railway project created: website-scraper-api (6c5c7374-8429-4498-96fa-3c0318391636)
 - ✅ Redis service provisioned with credentials and connection URL
 - ✅ Deployment config files created (railway.toml, railway.json)
 - ✅ Comprehensive deployment guide created (RAILWAY_DEPLOYMENT.md)
-- ⚠️ API service creation requires manual step (Railway CLI non-interactive limitation)
+- ✅ GitHub auto-deployment configured (pushes to main trigger deployments)
+- ✅ Environment variables configured (PORT, NODE_ENV, REDIS_URL, SUPABASE_URL, SUPABASE_SERVICE_KEY, FRONTEND_URL)
+- ✅ Monorepo build fixed with proper workspace build command
+- ✅ API successfully deployed to production
 
-**Integration Testing (Task 9 PARTIAL):**
-- ✅ Database operations verified via Supabase MCP (INSERT/SELECT working)
+**Integration Testing (Task 9 COMPLETE):**
+- ✅ Database operations verified via Supabase MCP and live API
 - ✅ Build verification complete (TypeScript strict mode passes)
-- ✅ API endpoints documented with curl examples
-- ⚠️ End-to-end testing requires deployed API service
+- ✅ Health endpoint tested: GET /health returns 200 OK
+- ✅ Job creation tested: POST /jobs creates records in database
+- ✅ Job retrieval tested: GET /jobs/:id fetches data successfully
+- ✅ Bull Board dashboard verified accessible at /admin/queues
+- ✅ NestJS application logs show successful startup with all modules initialized
+- ✅ Production deployment accessible at https://website-scraper-project-production.up.railway.app
 
-**Remaining Manual Step:**
-User must create API service in Railway dashboard and set environment variables. Complete instructions in apps/api/RAILWAY_DEPLOYMENT.md
+**Story 2.1 COMPLETE - All Acceptance Criteria Met**
