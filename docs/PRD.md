@@ -115,6 +115,9 @@ System shall automatically retry failed URLs up to 3 times with exponential back
 **FR012: Multiple Export Formats**
 Users shall export classification results in multiple formats (CSV, JSON, Excel) with customizable column selection including URL, classification, score, processing time, and cost.
 
+**FR013: Classification Settings Management**
+Users shall configure classification parameters through a settings interface including: pre-filter regex rules (enable/disable, add/edit/remove), classification indicators (keywords and criteria), LLM temperature (0-1), confidence threshold (0-1), and content truncation limits. Settings shall be persisted globally (single configuration applies to all users) and take effect immediately for new jobs without requiring redeployment.
+
 ### Non-Functional Requirements
 
 **NFR001: Real-Time UI Responsiveness**
@@ -246,13 +249,13 @@ Implement NestJS + BullMQ queue architecture with intelligent pre-filtering and 
 - **Key Features:** NestJS + BullMQ setup, bulk URL upload, intelligent pre-filtering, Gemini/GPT classification, worker processing with real-time updates
 
 ### Epic 3: Local Testing & Production Deployment (DevOps & Testing)
-Validate complete system through local end-to-end testing with real external APIs, then deploy to Railway production environment with proper configuration, monitoring, and production validation.
+Validate complete system through local end-to-end testing with real external APIs, then deploy to Railway production environment with proper configuration, monitoring, and production validation. Includes settings management feature to enable user configuration of classification parameters.
 - **Priority:** P0 (Must Have - blocks production launch)
-- **Stories:** 3 stories (~12 points)
-- **Timeline:** Weeks 13-14
-- **Key Features:** Local E2E testing with real ScrapingBee/Gemini/GPT/Supabase APIs, Railway deployment automation, production validation, monitoring and health checks
+- **Stories:** 4 stories (~17 points)
+- **Timeline:** Weeks 13-15
+- **Key Features:** Classification settings management UI, Local E2E testing with real ScrapingBee/Gemini/GPT/Supabase APIs, Railway deployment automation, production validation, monitoring and health checks
 
-**Total:** 15 stories, ~51 story points, 12-14 week timeline
+**Total:** 16 stories, ~56 story points, 13-15 week timeline
 
 _See `epic-stories.md` for detailed user stories with acceptance criteria._
 

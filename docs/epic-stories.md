@@ -348,12 +348,12 @@ Replaces basic Python threading with production-grade queue system. Enables scal
 
 ## Epic 3: Local Testing & Production Deployment
 
-**Epic Goal:** Validate complete system functionality through comprehensive local end-to-end testing with real external APIs, then deploy to Railway production environment with proper configuration, monitoring, and production validation.
+**Epic Goal:** Enable user configuration of classification parameters, validate complete system functionality through comprehensive local end-to-end testing with real external APIs, then deploy to Railway production environment with proper configuration, monitoring, and production validation.
 
 **Priority:** P0 (Must Have - blocks production launch)
-**Timeline:** Weeks 13-14 (after Epic 2 completion)
-**Story Count:** 3 stories
-**Story Points:** ~12 points
+**Timeline:** Weeks 13-15 (after Epic 2 completion)
+**Story Count:** 4 stories
+**Story Points:** ~17 points
 
 **Why This Epic Matters:**
 MVP implementation (Epic 1 & 2) is code-complete but untested with real external services and not deployed to production. This epic ensures the system works end-to-end with actual APIs (ScrapingBee, Gemini, GPT, Supabase Realtime) in local environment before deploying to Railway, then validates production deployment. Without this epic, the team cannot use the system for actual work.
@@ -365,6 +365,58 @@ MVP implementation (Epic 1 & 2) is code-complete but untested with real external
 - Supabase MCP for database validation
 - Production environment configuration and secrets management
 - Health checks and monitoring setup
+
+---
+
+### Story 3.0: Classification Settings Management
+
+**As a** team member
+**I want to** configure classification parameters through a settings UI
+**So that** I can optimize pre-filtering and LLM classification without code changes
+
+**Acceptance Criteria:**
+
+**Backend - Settings Persistence:**
+- [ ] Database table created: `classification_settings` with fields:
+  - id (UUID, primary key)
+  - prefilter_rules (JSONB) - array of {category, pattern, reasoning, enabled}
+  - classification_indicators (JSONB) - array of indicator strings
+  - llm_temperature (decimal, 0-1, default 0.3)
+  - confidence_threshold (decimal, 0-1, default 0.0)
+  - content_truncation_limit (integer, default 10000)
+  - updated_at (timestamp)
+- [ ] GET /api/settings endpoint returns current settings (with defaults if none exist)
+- [ ] PUT /api/settings endpoint updates settings with validation
+- [ ] Settings validation: regex patterns checked with safe-regex, temperature/confidence 0-1 range
+- [ ] Migration created to seed default settings from current hardcoded values
+
+**Backend - Service Integration:**
+- [ ] PreFilterService refactored to load rules from database (fallback to defaults if DB unavailable)
+- [ ] LLMService refactored to build prompt from database indicators (fallback to defaults)
+- [ ] LLMService uses temperature from settings
+- [ ] Classification results filtered by confidence_threshold setting
+- [ ] Settings cached in-memory with TTL, refreshed on PUT
+
+**Frontend - Settings UI:**
+- [ ] Settings page accessible from dashboard navigation ("Settings" link in header)
+- [ ] Form sections: (1) Pre-filter Rules, (2) Classification Indicators, (3) LLM Parameters, (4) Confidence Threshold
+- [ ] Pre-filter rules: Expandable list with enable/disable toggles, edit pattern/reasoning, add new rule, delete rule
+- [ ] Classification indicators: Multi-line textarea with one indicator per line
+- [ ] LLM parameters: Temperature slider (0-1, step 0.1), content limit input (1000-50000)
+- [ ] Confidence threshold: Slider (0-1, step 0.05) with explanation text
+- [ ] "Save Settings" button with optimistic UI update
+- [ ] "Reset to Defaults" button with confirmation dialog
+- [ ] Form validation: Invalid regex shows error, temperature/confidence range validated
+- [ ] Success/error toast notifications on save
+
+**Testing:**
+- [ ] Unit tests: Settings service CRUD operations
+- [ ] Integration tests: Services use database settings correctly
+- [ ] E2E test: Update settings via UI, create job, verify new settings applied to classification
+- [ ] Test fallback behavior: Settings service unavailable → uses hardcoded defaults
+
+**Story Points:** 5
+**Dependencies:** Story 2.5 complete (requires existing classification services)
 
 ---
 
