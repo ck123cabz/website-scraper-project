@@ -67,9 +67,6 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
         return; // Ack job without processing
       }
 
-      // Update job status to 'processing' if this is the first URL
-      await this.updateJobStatusToProcessing(jobId);
-
       // STEP 1: Update current processing stage to 'fetching'
       await this.updateJobProgress(jobId, url, 'fetching');
 
@@ -184,25 +181,6 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
   }
 
   /**
-   * Update job status from 'pending' to 'processing' on first URL
-   * @private
-   */
-  private async updateJobStatusToProcessing(jobId: string): Promise<void> {
-    const { data: job } = await this.supabase
-      .getClient()
-      .from('jobs')
-      .select('status')
-      .eq('id', jobId)
-      .single();
-
-    if (job && job.status === 'pending') {
-      await this.supabase.getClient().from('jobs').update({ status: 'processing' }).eq('id', jobId);
-
-      this.logger.log(`[Job ${jobId}] Status updated: pending → processing`);
-    }
-  }
-
-  /**
    * Update job progress with current URL and stage
    * @private
    */
@@ -236,8 +214,8 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
   ): Promise<void> {
     const processingTimeMs = Date.now() - startTime;
 
-    // Insert result
-    await this.supabase.getClient().from('results').insert({
+    // UPSERT result (update if exists, insert if not) - prevents duplicates on resume
+    await this.supabase.getClient().from('results').upsert({
       job_id: jobId,
       url: url,
       status: 'rejected',
@@ -249,42 +227,53 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
       processing_time_ms: processingTimeMs,
       prefilter_passed: false,
       prefilter_reasoning: preFilterResult.reasoning,
-      scraped_title: scrapeResult.title,
-      scraped_meta: scrapeResult.metaDescription,
+    }, {
+      onConflict: 'job_id,url', // Update existing row with same job_id + url
     });
 
-    // Update job counters
-    const { data: job } = await this.supabase
+    // FIX: Use atomic increment to prevent race condition with concurrent workers
+    // First, get total_urls for progress calculation
+    const { data: jobMeta } = await this.supabase
       .getClient()
       .from('jobs')
-      .select('processed_urls, total_urls, prefilter_rejected_count')
+      .select('total_urls')
       .eq('id', jobId)
       .single();
 
-    if (job) {
-      const processedUrls = (job.processed_urls || 0) + 1;
-      const progressPercentage = ((processedUrls / job.total_urls) * 100).toFixed(2);
+    if (!jobMeta) return;
 
-      await this.supabase
-        .getClient()
-        .from('jobs')
-        .update({
-          processed_urls: processedUrls,
-          prefilter_rejected_count: (job.prefilter_rejected_count || 0) + 1,
-          progress_percentage: parseFloat(progressPercentage),
-          current_url: null,
-          current_stage: null,
-        })
-        .eq('id', jobId);
+    // Atomic update with SQL increment - prevents race condition
+    const { data: job } = await this.supabase
+      .getClient()
+      .rpc('increment_job_counters', {
+        p_job_id: jobId,
+        p_processed_urls_delta: 1,
+        p_prefilter_rejected_delta: 1,
+      })
+      .single();
 
-      this.logger.log(
-        `[Job ${jobId}] Pre-filter rejected ${url.slice(0, 100)} (${processedUrls}/${job.total_urls})`,
-      );
+    // Calculate progress after atomic update
+    const processedUrls = (job as any)?.processed_urls || 0;
+    const progressPercentage = ((processedUrls / jobMeta.total_urls) * 100).toFixed(2);
 
-      // Check if job complete
-      if (processedUrls >= job.total_urls) {
-        await this.markJobComplete(jobId);
-      }
+    // Update progress percentage separately (non-critical)
+    await this.supabase
+      .getClient()
+      .from('jobs')
+      .update({
+        progress_percentage: parseFloat(progressPercentage),
+        current_url: null,
+        current_stage: null,
+      })
+      .eq('id', jobId);
+
+    this.logger.log(
+      `[Job ${jobId}] Pre-filter rejected ${url.slice(0, 100)} (${processedUrls}/${jobMeta.total_urls})`,
+    );
+
+    // Check if job complete
+    if (processedUrls >= jobMeta.total_urls) {
+      await this.markJobComplete(jobId);
     }
   }
 
@@ -303,8 +292,8 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
   ): Promise<void> {
     const processingTimeMs = Date.now() - startTime;
 
-    // Insert result
-    await this.supabase.getClient().from('results').insert({
+    // UPSERT result (update if exists, insert if not) - prevents duplicates on resume
+    await this.supabase.getClient().from('results').upsert({
       job_id: jobId,
       url: url,
       status: 'success',
@@ -316,53 +305,62 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
       processing_time_ms: processingTimeMs,
       prefilter_passed: true,
       prefilter_reasoning: preFilterResult.reasoning,
-      scraped_title: scrapeResult.title,
-      scraped_meta: scrapeResult.metaDescription,
+    }, {
+      onConflict: 'job_id,url', // Update existing row with same job_id + url
     });
 
-    // Update job counters
-    const { data: job } = await this.supabase
+    // FIX: Use atomic increment to prevent race condition with concurrent workers
+    // First, get total_urls for progress calculation
+    const { data: jobMeta } = await this.supabase
       .getClient()
       .from('jobs')
-      .select(
-        'processed_urls, total_urls, successful_urls, total_cost, gemini_cost, gpt_cost, prefilter_passed_count',
-      )
+      .select('total_urls')
       .eq('id', jobId)
       .single();
 
-    if (job) {
-      const processedUrls = (job.processed_urls || 0) + 1;
-      const successfulUrls = (job.successful_urls || 0) + 1;
-      const totalCost = (job.total_cost || 0) + classification.cost;
-      const progressPercentage = ((processedUrls / job.total_urls) * 100).toFixed(2);
+    if (!jobMeta) return;
 
-      // Update provider-specific costs
-      const updates: any = {
-        processed_urls: processedUrls,
-        successful_urls: successfulUrls,
-        total_cost: totalCost,
-        prefilter_passed_count: (job.prefilter_passed_count || 0) + 1,
+    // Determine provider-specific cost deltas
+    const geminiCostDelta = classification.provider === 'gemini' ? classification.cost : 0;
+    const gptCostDelta = classification.provider === 'gpt' ? classification.cost : 0;
+
+    // Atomic update with SQL increment - prevents race condition
+    const { data: job } = await this.supabase
+      .getClient()
+      .rpc('increment_job_counters', {
+        p_job_id: jobId,
+        p_processed_urls_delta: 1,
+        p_successful_urls_delta: 1,
+        p_prefilter_passed_delta: 1,
+        p_total_cost_delta: classification.cost,
+        p_gemini_cost_delta: geminiCostDelta,
+        p_gpt_cost_delta: gptCostDelta,
+      })
+      .single();
+
+    // Calculate progress after atomic update
+    const processedUrls = (job as any)?.processed_urls || 0;
+    const totalCost = (job as any)?.total_cost || 0;
+    const progressPercentage = ((processedUrls / jobMeta.total_urls) * 100).toFixed(2);
+
+    // Update progress percentage separately (non-critical)
+    await this.supabase
+      .getClient()
+      .from('jobs')
+      .update({
         progress_percentage: parseFloat(progressPercentage),
         current_url: null,
         current_stage: null,
-      };
+      })
+      .eq('id', jobId);
 
-      if (classification.provider === 'gemini') {
-        updates.gemini_cost = (job.gemini_cost || 0) + classification.cost;
-      } else if (classification.provider === 'gpt') {
-        updates.gpt_cost = (job.gpt_cost || 0) + classification.cost;
-      }
+    this.logger.log(
+      `[Job ${jobId}] Stored result for ${url.slice(0, 100)} (${processedUrls}/${jobMeta.total_urls}, $${totalCost.toFixed(6)})`,
+    );
 
-      await this.supabase.getClient().from('jobs').update(updates).eq('id', jobId);
-
-      this.logger.log(
-        `[Job ${jobId}] Stored result for ${url.slice(0, 100)} (${processedUrls}/${job.total_urls}, $${totalCost.toFixed(6)})`,
-      );
-
-      // Check if job complete
-      if (processedUrls >= job.total_urls) {
-        await this.markJobComplete(jobId);
-      }
+    // Check if job complete
+    if (processedUrls >= jobMeta.total_urls) {
+      await this.markJobComplete(jobId);
     }
   }
 
@@ -383,11 +381,11 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     const sanitizedError =
       errorMessage.length > 200 ? errorMessage.slice(0, 200) + '...' : errorMessage;
 
-    // Insert failed result
+    // UPSERT failed result (update if exists, insert if not) - prevents duplicates on resume
     await this.supabase
       .getClient()
       .from('results')
-      .insert({
+      .upsert({
         job_id: jobId,
         url: url,
         status: 'failed',
@@ -399,43 +397,54 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
         processing_time_ms: processingTimeMs,
         prefilter_passed: false,
         prefilter_reasoning: `Failed: ${sanitizedError}`,
-        scraped_title: null,
-        scraped_meta: null,
+        error_message: sanitizedError,
+      }, {
+        onConflict: 'job_id,url', // Update existing row with same job_id + url
       });
 
-    // Update job counters
-    const { data: job } = await this.supabase
+    // FIX: Use atomic increment to prevent race condition with concurrent workers
+    // First, get total_urls for progress calculation
+    const { data: jobMeta } = await this.supabase
       .getClient()
       .from('jobs')
-      .select('processed_urls, total_urls, failed_urls')
+      .select('total_urls')
       .eq('id', jobId)
       .single();
 
-    if (job) {
-      const processedUrls = (job.processed_urls || 0) + 1;
-      const failedUrls = (job.failed_urls || 0) + 1;
-      const progressPercentage = ((processedUrls / job.total_urls) * 100).toFixed(2);
+    if (!jobMeta) return;
 
-      await this.supabase
-        .getClient()
-        .from('jobs')
-        .update({
-          processed_urls: processedUrls,
-          failed_urls: failedUrls,
-          progress_percentage: parseFloat(progressPercentage),
-          current_url: null,
-          current_stage: null,
-        })
-        .eq('id', jobId);
+    // Atomic update with SQL increment - prevents race condition
+    const { data: job } = await this.supabase
+      .getClient()
+      .rpc('increment_job_counters', {
+        p_job_id: jobId,
+        p_processed_urls_delta: 1,
+        p_failed_urls_delta: 1,
+      })
+      .single();
 
-      this.logger.warn(`[Job ${jobId}] Failed URL ${url.slice(0, 100)}: ${sanitizedError}`);
+    // Calculate progress after atomic update
+    const processedUrls = (job as any)?.processed_urls || 0;
+    const progressPercentage = ((processedUrls / jobMeta.total_urls) * 100).toFixed(2);
 
-      await this.insertActivityLog(jobId, 'error', `Failed: ${sanitizedError}`, { url });
+    // Update progress percentage separately (non-critical)
+    await this.supabase
+      .getClient()
+      .from('jobs')
+      .update({
+        progress_percentage: parseFloat(progressPercentage),
+        current_url: null,
+        current_stage: null,
+      })
+      .eq('id', jobId);
 
-      // Check if job complete
-      if (processedUrls >= job.total_urls) {
-        await this.markJobComplete(jobId);
-      }
+    this.logger.warn(`[Job ${jobId}] Failed URL ${url.slice(0, 100)}: ${sanitizedError}`);
+
+    await this.insertActivityLog(jobId, 'error', `Failed: ${sanitizedError}`, { url });
+
+    // Check if job complete
+    if (processedUrls >= jobMeta.total_urls) {
+      await this.markJobComplete(jobId);
     }
   }
 

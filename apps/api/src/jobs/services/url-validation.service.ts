@@ -41,16 +41,23 @@ export class UrlValidationService {
   /**
    * Check if a string is a valid URL
    * H3 Fix: Enforces protocol whitelist to prevent javascript:, data:, file: injection
+   * M4 Fix: Auto-prepend https:// to URLs without protocol (e.g., "example.com" → "https://example.com")
    */
   isValidUrl(url: string): boolean {
-    // First check with regex pattern
-    if (!this.URL_PATTERN.test(url)) {
+    // M4 Fix: If URL doesn't start with protocol, prepend https://
+    let urlToValidate = url;
+    if (!url.match(/^https?:\/\//i)) {
+      urlToValidate = `https://${url}`;
+    }
+
+    // Check with regex pattern
+    if (!this.URL_PATTERN.test(urlToValidate)) {
       return false;
     }
 
     // Strict protocol validation to prevent injection attacks (OWASP URL Validation)
     try {
-      const urlObj = new URL(url);
+      const urlObj = new URL(urlToValidate);
       if (!this.ALLOWED_PROTOCOLS.includes(urlObj.protocol)) {
         return false;
       }
@@ -66,9 +73,15 @@ export class UrlValidationService {
    * - Lowercase domain
    * - Remove trailing slash
    * L2 Fix: Log warnings when normalization fails instead of silently returning original
+   * M4 Fix: Auto-prepend https:// to URLs without protocol before normalizing
    */
   normalizeUrl(url: string): string {
-    const normalized = url.trim();
+    let normalized = url.trim();
+
+    // M4 Fix: If URL doesn't start with protocol, prepend https://
+    if (!normalized.match(/^https?:\/\//i)) {
+      normalized = `https://${normalized}`;
+    }
 
     try {
       const urlObj = new URL(normalized);

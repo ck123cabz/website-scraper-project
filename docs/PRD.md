@@ -245,7 +245,14 @@ Implement NestJS + BullMQ queue architecture with intelligent pre-filtering and 
 - **Timeline:** Weeks 3-8
 - **Key Features:** NestJS + BullMQ setup, bulk URL upload, intelligent pre-filtering, Gemini/GPT classification, worker processing with real-time updates
 
-**Total:** 12 stories, ~39 story points, 8-12 week timeline
+### Epic 3: Local Testing & Production Deployment (DevOps & Testing)
+Validate complete system through local end-to-end testing with real external APIs, then deploy to Railway production environment with proper configuration, monitoring, and production validation.
+- **Priority:** P0 (Must Have - blocks production launch)
+- **Stories:** 3 stories (~12 points)
+- **Timeline:** Weeks 13-14
+- **Key Features:** Local E2E testing with real ScrapingBee/Gemini/GPT/Supabase APIs, Railway deployment automation, production validation, monitoring and health checks
+
+**Total:** 15 stories, ~51 story points, 12-14 week timeline
 
 _See `epic-stories.md` for detailed user stories with acceptance criteria._
 

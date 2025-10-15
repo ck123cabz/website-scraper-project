@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
+    "start:prod": "concurrently \"cd apps/api && npm run start:prod\" \"cd apps/web && npm run start\"",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "test": "turbo run test",
@@ -17,7 +18,10 @@
     "test:cov": "turbo run test:cov"
   },
   "devDependencies": {
-    "turbo": "^2.0.0",
-    "shadcn": "^3.4.0"
+    "@faker-js/faker": "^10.1.0",
+    "@playwright/test": "^1.56.0",
+    "concurrently": "^9.2.1",
+    "shadcn": "^3.4.0",
+    "turbo": "^2.0.0"
   }
 }

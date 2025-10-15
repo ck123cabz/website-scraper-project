@@ -25,14 +25,31 @@ export interface MetricsPanelProps {
  */
 export function MetricsPanel({ job }: MetricsPanelProps) {
   // Calculate elapsed time in seconds
+  // For completed jobs, use completed_at as end time (not current time)
+  // This ensures metrics reflect actual job duration, not time since completion
   const elapsedSeconds = job.startedAt
-    ? Math.floor((new Date().getTime() - new Date(job.startedAt).getTime()) / 1000)
+    ? Math.floor(
+        (
+          (job.completedAt ? new Date(job.completedAt).getTime() : new Date().getTime()) -
+          new Date(job.startedAt).getTime()
+        ) / 1000
+      )
     : 0;
 
   // Calculate processing rate using utility function
   // Only calculate if job has started (startedAt is not null)
   const processingRate = job.processingRate ??
     (job.startedAt ? calculateProcessingRate(job.processedUrls, elapsedSeconds) : 0);
+
+  // Calculate estimated remaining time
+  // Only calculate if:
+  // - Job is processing or paused (not completed/cancelled)
+  // - We have processed at least 3 URLs (to establish reliable rate)
+  // - Processing rate > 0
+  const estimatedRemainingSeconds =
+    ((job.status === 'processing' || job.status === 'paused') && job.processedUrls >= 3 && processingRate > 0)
+      ? Math.ceil((job.totalUrls - job.processedUrls) / processingRate * 60)
+      : null;
 
   return (
     <Card>
@@ -63,9 +80,13 @@ export function MetricsPanel({ job }: MetricsPanelProps) {
           <MetricItem
             label="Est. Remaining"
             value={
-              job.estimatedTimeRemaining !== null
-                ? formatDuration(job.estimatedTimeRemaining)
-                : "Calculating..."
+              job.status === 'completed' || job.status === 'cancelled'
+                ? formatDuration(0) // Show 00:00:00 for completed/cancelled jobs
+                : estimatedRemainingSeconds !== null
+                  ? formatDuration(estimatedRemainingSeconds)
+                  : job.estimatedTimeRemaining !== null
+                    ? formatDuration(job.estimatedTimeRemaining)
+                    : "Calculating..."
             }
           />
 

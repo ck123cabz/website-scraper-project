@@ -11,8 +11,8 @@
 
 This Level 2 project focuses on modernizing an existing Python scraper into a production-ready NestJS platform with **PRIMARY emphasis on real-time UI/UX transparency**. The two epics are designed for overlapping development: Epic 1 (Dashboard) begins first to establish UI foundation, Epic 2 (Pipeline) builds backend in parallel.
 
-**Total Stories:** 12 stories across 2 epics
-**Estimated Timeline:** 8-12 weeks
+**Total Stories:** 15 stories across 3 epics
+**Estimated Timeline:** 12-14 weeks
 **Key Constraint:** Solo developer with AI assistance, no authentication required
 
 ---
@@ -346,6 +346,117 @@ Replaces basic Python threading with production-grade queue system. Enables scal
 
 ---
 
+## Epic 3: Local Testing & Production Deployment
+
+**Epic Goal:** Validate complete system functionality through comprehensive local end-to-end testing with real external APIs, then deploy to Railway production environment with proper configuration, monitoring, and production validation.
+
+**Priority:** P0 (Must Have - blocks production launch)
+**Timeline:** Weeks 13-14 (after Epic 2 completion)
+**Story Count:** 3 stories
+**Story Points:** ~12 points
+
+**Why This Epic Matters:**
+MVP implementation (Epic 1 & 2) is code-complete but untested with real external services and not deployed to production. This epic ensures the system works end-to-end with actual APIs (ScrapingBee, Gemini, GPT, Supabase Realtime) in local environment before deploying to Railway, then validates production deployment. Without this epic, the team cannot use the system for actual work.
+
+**Technical Foundation:**
+- Local testing with real API credentials
+- Chrome DevTools MCP for UI testing and validation
+- Railway MCP for automated deployment
+- Supabase MCP for database validation
+- Production environment configuration and secrets management
+- Health checks and monitoring setup
+
+---
+
+### Story 3.1: Local End-to-End Testing with Real APIs
+
+**As a** developer
+**I want to** test the complete system locally with real external APIs
+**So that** I can verify all integrations work before deploying to production
+
+**Acceptance Criteria:**
+- [ ] Environment configured with real API keys: SCRAPINGBEE_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY
+- [ ] Local Redis running and connected to BullMQ queue
+- [ ] Local Supabase instance configured with Realtime enabled
+- [ ] Test job created with 10-20 real URLs spanning different site types (blogs, news, social media, e-commerce, forums)
+- [ ] Worker processes URLs successfully: ScrapingBee fetches content, pre-filter rules applied, LLM classification executes
+- [ ] Gemini primary usage verified with successful classifications
+- [ ] GPT fallback tested by temporarily disabling Gemini or triggering timeout
+- [ ] Pre-filter correctly rejects known platforms (WordPress, Medium, social media) - 40-60% rejection rate
+- [ ] Supabase Realtime events firing: job updates, result inserts, activity log streaming
+- [ ] Dashboard updates in real-time: progress bars, current URL, live logs, cost tracking, results table
+- [ ] Job controls tested: pause job mid-processing, resume successfully, verify state persistence
+- [ ] Cost tracking validated: Gemini vs GPT costs calculated correctly, projected costs accurate
+- [ ] Error handling tested: API timeouts, rate limits (429), failed URLs don't crash job
+- [ ] Chrome DevTools MCP used to verify UI: screenshot dashboard, test button clicks, verify real-time updates
+- [ ] All acceptance criteria from Epic 1 & 2 validated end-to-end in local environment
+
+**Story Points:** 5
+**Dependencies:** Story 2.5 complete
+
+---
+
+### Story 3.2: Railway Production Deployment & Configuration
+
+**As a** developer
+**I want to** deploy the application to Railway production environment
+**So that** the team can use the system for actual URL classification work
+
+**Acceptance Criteria:**
+- [ ] Railway project created and linked to GitHub repository
+- [ ] Railway services configured: NestJS API, Redis (managed), Frontend (if applicable)
+- [ ] Supabase production database configured with proper schema (migrations applied)
+- [ ] Environment variables configured in Railway:
+  - SCRAPINGBEE_API_KEY (production credits)
+  - GEMINI_API_KEY (production quota)
+  - OPENAI_API_KEY (production tier)
+  - REDIS_URL (Railway managed Redis)
+  - DATABASE_URL (Supabase production)
+  - SUPABASE_URL, SUPABASE_SERVICE_KEY
+- [ ] Railway auto-deploy configured: git push to main triggers deployment
+- [ ] Build succeeds in Railway environment (nixpacks.toml configuration verified)
+- [ ] Health check endpoint accessible: GET /health returns 200
+- [ ] Application starts successfully with all services connected (database, Redis, Supabase)
+- [ ] Environment validation runs at startup: fails fast if required env vars missing
+- [ ] Railway logs accessible and structured (Pino logger output in JSON format)
+- [ ] Domain generated for API access (Railway provided domain or custom domain)
+- [ ] CORS configured for production domain
+- [ ] Graceful shutdown tested: Railway SIGTERM handling verified (deploys don't interrupt mid-processing)
+
+**Story Points:** 4
+**Dependencies:** Story 3.1 complete
+
+---
+
+### Story 3.3: Production Validation & Monitoring Setup
+
+**As a** developer
+**I want to** validate production deployment and set up monitoring
+**So that** I can ensure system reliability and quickly identify issues
+
+**Acceptance Criteria:**
+- [ ] Production smoke test: Create job with 5 URLs, verify complete processing end-to-end
+- [ ] Supabase Realtime validated in production: events firing correctly to dashboard
+- [ ] Dashboard tested in production: all real-time features working (progress, logs, cost tracking)
+- [ ] ScrapingBee production API verified: successful fetches, rate limits respected
+- [ ] Gemini production API tested: classifications working, costs tracked accurately
+- [ ] GPT fallback verified in production environment
+- [ ] Worker concurrency performing as expected: 20 URLs/min target met
+- [ ] Database performance validated: <200ms insert/update latency
+- [ ] Railway metrics reviewed: memory usage stable (<512MB), CPU usage normal
+- [ ] Railway logs validated: structured logs accessible, no critical errors
+- [ ] Error scenarios tested: API failures handled gracefully, retry logic working
+- [ ] Job pause/resume tested in production environment
+- [ ] Cost tracking validated: real production costs match projections
+- [ ] Health check endpoint monitored (set up uptime monitoring if needed)
+- [ ] Production deployment runbook documented (deployment steps, rollback procedure, common issues)
+- [ ] Team access verified: multiple users can access dashboard simultaneously and see same real-time state
+
+**Story Points:** 3
+**Dependencies:** Story 3.2 complete
+
+---
+
 ## Out of Scope (Phase 2)
 
 Features explicitly deferred to future phases:
@@ -371,23 +482,29 @@ Features explicitly deferred to future phases:
 **Weeks 5-6:** Epic 1 Stories 1.4, 1.5, 1.6 (Logs, costs, results table) + Epic 2 Story 2.3 (Pre-filtering)
 **Weeks 7-8:** Epic 2 Stories 2.4, 2.5 (LLM classification + worker processing)
 **Weeks 9-10:** Epic 1 Story 1.7 (Job controls) + Integration testing
-**Weeks 11-12:** Bug fixes, polish, deployment verification
+**Weeks 11-12:** Bug fixes, polish, final Epic 2 integration testing ✅ COMPLETE
+**Week 13:** Epic 3 Story 3.1 (Local E2E testing with real APIs) 🔄 NEXT
+**Week 14:** Epic 3 Stories 3.2, 3.3 (Railway deployment + production validation)
 
-**Total Estimated Effort:** 39 story points (~8-12 weeks for solo developer with AI assistance)
+**Total Estimated Effort:** 51 story points (~12-14 weeks for solo developer with AI assistance)
 
 ---
 
 ## Success Criteria
 
 **MVP is considered successful when:**
-- ✅ Team can upload 5K+ URLs and start processing
-- ✅ Dashboard shows real-time progress with <1s latency
-- ✅ Live logs stream all processing activities
-- ✅ Multiple team members can view same job simultaneously
-- ✅ LLM costs reduced by 40%+ through pre-filtering
-- ✅ Jobs complete reliably with <5% failure rate
-- ✅ System deployed to Railway with automatic deployments
-- ✅ Results exportable to CSV/JSON
+- ✅ Team can upload 5K+ URLs and start processing (Epic 2 ✅)
+- ✅ Dashboard shows real-time progress with <1s latency (Epic 1 ✅)
+- ✅ Live logs stream all processing activities (Epic 1 ✅)
+- ✅ Multiple team members can view same job simultaneously (Epic 1 ✅)
+- ✅ LLM costs reduced by 40%+ through pre-filtering (Epic 2 ✅)
+- ✅ Jobs complete reliably with <5% failure rate (Epic 2 ✅)
+- ✅ Results exportable to CSV/JSON (Epic 1 ✅)
+- [ ] Local E2E testing passes with real APIs (ScrapingBee, Gemini, GPT) (Epic 3 🔄)
+- [ ] Application deployed successfully to Railway production (Epic 3 🔄)
+- [ ] Production validation complete: 5+ URL batch processed successfully (Epic 3 🔄)
+- [ ] Monitoring and health checks operational (Epic 3 🔄)
+- [ ] Team can access production dashboard and create jobs (Epic 3 🔄)
 
 ---
 

@@ -45,13 +45,14 @@ export function JobCard({ job }: JobCardProps) {
         isActive ? 'border-blue-500 border-2' : ''
       }`}
       onClick={handleClick}
+      data-testid={`job-card-${job.id}`}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <CardTitle className="text-lg font-semibold line-clamp-1">
+          <CardTitle className="text-lg font-semibold line-clamp-1" data-testid="job-name">
             {job.name || 'Untitled Job'}
           </CardTitle>
-          <Badge className={statusColors[job.status]} variant="secondary">
+          <Badge className={statusColors[job.status]} variant="secondary" data-testid="job-status">
             {statusLabels[job.status]}
           </Badge>
         </div>
@@ -61,7 +62,7 @@ export function JobCard({ job }: JobCardProps) {
         <div className="space-y-1">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Progress</span>
-            <span className="font-medium">{job.progressPercentage.toFixed(1)}%</span>
+            <span className="font-medium" data-testid="job-progress">{job.progressPercentage.toFixed(1)}%</span>
           </div>
           <Progress value={job.progressPercentage} className="h-2" />
         </div>
@@ -69,7 +70,7 @@ export function JobCard({ job }: JobCardProps) {
         {/* URL Count */}
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">URLs</span>
-          <span className="font-medium">
+          <span className="font-medium" data-testid="job-url-count">
             {job.processedUrls.toLocaleString()} / {job.totalUrls.toLocaleString()}
           </span>
         </div>
@@ -77,7 +78,7 @@ export function JobCard({ job }: JobCardProps) {
         {/* Start Time */}
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Started</span>
-          <span className="font-medium">
+          <span className="font-medium" data-testid="job-started-time">
             {job.startedAt
               ? formatDistanceToNow(new Date(job.startedAt), { addSuffix: true })
               : 'Not started'}
@@ -87,7 +88,7 @@ export function JobCard({ job }: JobCardProps) {
         {/* Cost Display */}
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Cost</span>
-          <span className="font-medium">
+          <span className="font-medium" data-testid="job-cost">
             {job.totalCost > 0 ? formatCurrency(job.totalCost) : formatCurrency(0)}
           </span>
         </div>

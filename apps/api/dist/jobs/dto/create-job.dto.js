@@ -23,7 +23,6 @@ __decorate([
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.ArrayMaxSize)(10000, { message: 'Maximum 10,000 URLs allowed per job' }),
     (0, class_validator_1.IsString)({ each: true, message: 'Each URL must be a string' }),
-    (0, class_validator_1.IsUrl)({ require_protocol: true }, { each: true, message: 'Each URL must be a valid URL with protocol' }),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Array)
 ], CreateJobDto.prototype, "urls", void 0);

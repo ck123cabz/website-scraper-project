@@ -95,9 +95,44 @@ export class QueueService {
 
   /**
    * Resume a paused job by updating its status in database
+   * FIX (Story 3.1): Re-queue URLs that were skipped during pause
    * Story 2.5: Task 9 - Pause/Resume Job Controls
    */
   async resumeJob(jobId: string): Promise<void> {
+    // 1. Find URLs that were never processed (classification_result is NULL)
+    const { data: unprocessedUrls, error: selectError } = await this.supabase
+      .getClient()
+      .from('results')
+      .select('url')
+      .eq('job_id', jobId)
+      .is('classification_result', null);
+
+    if (selectError) {
+      this.logger.error(
+        `Failed to query unprocessed URLs for job ${jobId}: ${selectError.message}`,
+      );
+      // Don't throw - continue with resume even if we can't re-queue
+    }
+
+    // 2. Re-queue unprocessed URLs
+    if (unprocessedUrls && unprocessedUrls.length > 0) {
+      this.logger.log(
+        `Job ${jobId} resume: Found ${unprocessedUrls.length} unprocessed URLs - re-queueing`,
+      );
+
+      const jobs = unprocessedUrls.map((row) => ({
+        jobId,
+        url: row.url,
+      }));
+
+      await this.addUrlsToQueue(jobs);
+
+      this.logger.log(`Job ${jobId} resume: ${unprocessedUrls.length} URLs re-queued`);
+    } else {
+      this.logger.log(`Job ${jobId} resume: No unprocessed URLs to re-queue`);
+    }
+
+    // 3. Update status to 'processing'
     const { error } = await this.supabase
       .getClient()
       .from('jobs')
@@ -109,6 +144,28 @@ export class QueueService {
       throw new Error(`Failed to resume job: ${error.message}`);
     }
 
-    this.logger.log(`Job ${jobId} resumed - worker will continue processing URLs`);
+    this.logger.log(
+      `Job ${jobId} resumed - worker will continue processing (${unprocessedUrls?.length || 0} URLs re-queued)`,
+    );
+  }
+
+  /**
+   * Cancel a job by updating its status in database
+   * Worker will stop processing remaining URLs, results are preserved
+   * Story 3.0: Task 9 - Job Control Actions
+   */
+  async cancelJob(jobId: string): Promise<void> {
+    const { error } = await this.supabase
+      .getClient()
+      .from('jobs')
+      .update({ status: 'cancelled' })
+      .eq('id', jobId);
+
+    if (error) {
+      this.logger.error(`Failed to cancel job ${jobId}: ${error.message}`);
+      throw new Error(`Failed to cancel job: ${error.message}`);
+    }
+
+    this.logger.log(`Job ${jobId} cancelled - worker will stop processing, results preserved`);
   }
 }

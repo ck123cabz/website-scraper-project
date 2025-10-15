@@ -1,3 +1,7 @@
+// Load .env BEFORE any modules are imported (Story 3.0 Task 8 - Mock Services Fix)
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { createBullBoard } from '@bull-board/api';

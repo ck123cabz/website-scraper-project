@@ -18,24 +18,23 @@ export const jobKeys = {
 };
 
 /**
- * Fetch all jobs from Supabase
+ * Fetch all jobs from backend API (Epic 3 Story 3.0 - Integration)
  */
 export function useJobs() {
   return useQuery({
     queryKey: jobKeys.lists(),
     queryFn: async (): Promise<Job[]> => {
-      const { data, error } = await supabase
-        .from('jobs')
-        .select('*')
-        .order('created_at', { ascending: false });
+      console.log('[useJobs] Fetching jobs from backend API');
+      const response = await jobsApi.getAll();
 
-      if (error) {
-        console.error('[useJobs] Error fetching jobs:', error);
-        throw new Error(error.message);
+      if (!response.success) {
+        console.error('[useJobs] Backend API error:', response);
+        throw new Error(response.error?.message || 'Failed to fetch jobs');
       }
 
-      // Transform snake_case to camelCase
-      return (data || []).map(transformJobFromDB);
+      console.log('[useJobs] Received', response.data.length, 'jobs from backend');
+      // Transform snake_case from backend to camelCase for frontend
+      return (response.data || []).map(transformJobFromDB);
     },
     staleTime: 30 * 1000, // Consider data fresh for 30 seconds
     refetchOnWindowFocus: true,
@@ -43,9 +42,10 @@ export function useJobs() {
 }
 
 /**
- * Fetch a single job by ID from Supabase with real-time updates
+ * Fetch a single job by ID from backend API with real-time updates (Epic 3 Story 3.0 - Integration)
  *
  * Features:
+ * - Backend API for initial data fetch
  * - Real-time Supabase subscription for instant updates
  * - Fallback polling (5s interval) if Realtime WebSocket fails
  * - Proper cleanup using channel.unsubscribe() (NOT unsubscribeAll)
@@ -58,18 +58,17 @@ export function useJob(jobId: string, options?: { enableRealtime?: boolean }) {
   const query = useQuery({
     queryKey: jobKeys.detail(jobId),
     queryFn: async (): Promise<Job> => {
-      const { data, error } = await supabase
-        .from('jobs')
-        .select('*')
-        .eq('id', jobId)
-        .single();
+      console.log(`[useJob] Fetching job ${jobId} from backend API`);
+      const response = await jobsApi.getById(jobId);
 
-      if (error) {
-        console.error(`[useJob] Error fetching job ${jobId}:`, error);
-        throw new Error(error.message);
+      if (!response.success) {
+        console.error(`[useJob] Backend API error for job ${jobId}:`, response);
+        throw new Error(response.error?.message || 'Failed to fetch job');
       }
 
-      return transformJobFromDB(data);
+      console.log(`[useJob] Received job ${jobId} from backend`);
+      // Transform snake_case from backend to camelCase for frontend
+      return transformJobFromDB(response.data);
     },
     enabled: !!jobId,
     staleTime: 10 * 1000, // Consider data fresh for 10 seconds

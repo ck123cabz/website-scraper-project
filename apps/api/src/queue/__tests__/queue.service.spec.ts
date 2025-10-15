@@ -24,13 +24,14 @@ describe('QueueService', () => {
       on: jest.fn(),
     };
 
-    // Mock Supabase client
+    // Mock Supabase client with full chain support for resumeJob()
     mockSupabase = {
       getClient: jest.fn().mockReturnValue({
         from: jest.fn().mockReturnValue({
-          update: jest.fn().mockReturnValue({
-            eq: jest.fn().mockResolvedValue({ error: null }),
-          }),
+          select: jest.fn().mockReturnThis(),
+          update: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          is: jest.fn().mockResolvedValue({ data: [], error: null }),
         }),
       }),
     };
@@ -192,12 +193,25 @@ describe('QueueService', () => {
     });
 
     it('should throw error if database update fails', async () => {
-      mockSupabase.getClient.mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          update: jest.fn().mockReturnValue({
-            eq: jest.fn().mockResolvedValue({ error: { message: 'Database error' } }),
-          }),
+      // Mock both the select chain (for unprocessed URLs query) and update chain (for status update)
+      const mockFrom = jest.fn();
+
+      // First call to from('results') - for unprocessed URLs query
+      mockFrom.mockReturnValueOnce({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        is: jest.fn().mockResolvedValue({ data: [], error: null }),
+      });
+
+      // Second call to from('jobs') - for status update (this one fails)
+      mockFrom.mockReturnValueOnce({
+        update: jest.fn().mockReturnValue({
+          eq: jest.fn().mockResolvedValue({ error: { message: 'Database error' } }),
         }),
+      });
+
+      mockSupabase.getClient.mockReturnValue({
+        from: mockFrom,
       });
 
       await expect(service.resumeJob('job-123')).rejects.toThrow(

@@ -38,7 +38,7 @@ export function useJobResults({
     refetchInterval: false, // Don't auto-refetch, rely on realtime
   });
 
-  // Set up Supabase Realtime subscription for new results
+  // Set up Supabase Realtime subscription for new/updated results
   useEffect(() => {
     if (!enabled || !jobId) return;
 
@@ -53,7 +53,22 @@ export function useJobResults({
           filter: `job_id=eq.${jobId}`,
         },
         () => {
-          // Invalidate query to refetch results
+          // Invalidate query to refetch results when new result inserted
+          queryClient.invalidateQueries({
+            queryKey: ['job-results', jobId],
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'results',
+          filter: `job_id=eq.${jobId}`,
+        },
+        () => {
+          // Invalidate query to refetch results when result updated (e.g., on resume after UPSERT)
           queryClient.invalidateQueries({
             queryKey: ['job-results', jobId],
           });

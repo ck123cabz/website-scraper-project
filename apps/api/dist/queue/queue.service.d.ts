@@ -1,4 +1,5 @@
 import { Queue } from 'bullmq';
+import { SupabaseService } from '../supabase/supabase.service';
 export interface UrlProcessingJob {
     jobId: string;
     url: string;
@@ -6,7 +7,9 @@ export interface UrlProcessingJob {
 }
 export declare class QueueService {
     private readonly urlProcessingQueue;
-    constructor(urlProcessingQueue: Queue<UrlProcessingJob>);
+    private readonly supabase;
+    private readonly logger;
+    constructor(urlProcessingQueue: Queue<UrlProcessingJob>, supabase: SupabaseService);
     addUrlToQueue(data: UrlProcessingJob): Promise<void>;
     addUrlsToQueue(jobs: UrlProcessingJob[]): Promise<void>;
     getQueueStats(): Promise<{
@@ -20,4 +23,7 @@ export declare class QueueService {
     pauseQueue(): Promise<void>;
     resumeQueue(): Promise<void>;
     clearQueue(): Promise<void>;
+    pauseJob(jobId: string): Promise<void>;
+    resumeJob(jobId: string): Promise<void>;
+    cancelJob(jobId: string): Promise<void>;
 }

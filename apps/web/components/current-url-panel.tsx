@@ -19,6 +19,22 @@ export function CurrentURLPanel({ job, className }: CurrentURLPanelProps) {
 
   // Empty state when no URL is being processed
   if (!job.currentUrl) {
+    // Determine the appropriate message based on job state
+    let message = 'Waiting to start...';
+
+    if (job.status === 'processing' && job.processedUrls > 0) {
+      // Job is actively running but between URLs
+      message = 'Preparing next URL...';
+    } else if (job.status === 'paused') {
+      message = 'Job is paused';
+    } else if (job.status === 'completed') {
+      message = 'Job completed';
+    } else if (job.status === 'failed') {
+      message = 'Job failed';
+    } else if (job.status === 'cancelled') {
+      message = 'Job cancelled';
+    }
+
     return (
       <section aria-label="Current URL Processing Status" className={className}>
         <Card>
@@ -27,7 +43,7 @@ export function CurrentURLPanel({ job, className }: CurrentURLPanelProps) {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground text-center py-8">
-              Waiting to start...
+              {message}
             </p>
           </CardContent>
         </Card>

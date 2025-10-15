@@ -115,11 +115,16 @@ let FileParserService = class FileParserService {
             .filter((url) => url.length > 0);
     }
     extractUrlsFromSimpleCsv(fileContent) {
-        const lines = fileContent.split('\n').map((line) => line.trim()).filter((line) => line.length > 0);
-        return lines.map((line) => {
+        const lines = fileContent
+            .split('\n')
+            .map((line) => line.trim())
+            .filter((line) => line.length > 0);
+        return lines
+            .map((line) => {
             const parts = line.split(',');
             return parts[0].trim();
-        }).filter((url) => url.length > 0);
+        })
+            .filter((url) => url.length > 0);
     }
     async parseTxt(fileBuffer) {
         const fileContent = fileBuffer.toString('utf-8');

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Fragment } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -382,9 +382,8 @@ export function ResultsTable({ jobId, jobName }: ResultsTableProps) {
               table.getRowModel().rows.map((row) => {
                 const isExpanded = expandedRows.has(row.original.id);
                 return (
-                  <>
+                  <Fragment key={row.id}>
                     <TableRow
-                      key={row.id}
                       data-state={row.getIsSelected() && 'selected'}
                       className="cursor-pointer"
                     >
@@ -441,7 +440,7 @@ export function ResultsTable({ jobId, jobName }: ResultsTableProps) {
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </Fragment>
                 );
               })
             ) : (

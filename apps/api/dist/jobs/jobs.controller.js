@@ -18,13 +18,17 @@ const platform_express_1 = require("@nestjs/platform-express");
 const jobs_service_1 = require("./jobs.service");
 const file_parser_service_1 = require("./services/file-parser.service");
 const url_validation_service_1 = require("./services/url-validation.service");
+const queue_service_1 = require("../queue/queue.service");
+const supabase_service_1 = require("../supabase/supabase.service");
 const create_job_dto_1 = require("./dto/create-job.dto");
 const path_1 = require("path");
 let JobsController = class JobsController {
-    constructor(jobsService, fileParserService, urlValidationService) {
+    constructor(jobsService, fileParserService, urlValidationService, queueService, supabase) {
         this.jobsService = jobsService;
         this.fileParserService = fileParserService;
         this.urlValidationService = urlValidationService;
+        this.queueService = queueService;
+        this.supabase = supabase;
     }
     async createJobWithUrls(file, body, contentType, req) {
         try {
@@ -68,6 +72,15 @@ let JobsController = class JobsController {
             const uniqueUrls = Array.from(deduplicationMap.values());
             const duplicatesRemovedCount = originalCount - uniqueUrls.length;
             const job = await this.jobsService.createJobWithUrls(jobName, uniqueUrls);
+            await this.jobsService.updateJob(job.id, {
+                status: 'processing',
+                started_at: new Date().toISOString(),
+            });
+            const queueJobs = uniqueUrls.map((url) => ({
+                jobId: job.id,
+                url,
+            }));
+            await this.queueService.addUrlsToQueue(queueJobs);
             return {
                 success: true,
                 data: {
@@ -76,6 +89,7 @@ let JobsController = class JobsController {
                     duplicates_removed_count: duplicatesRemovedCount,
                     invalid_urls_count: invalidCount,
                     created_at: job.created_at,
+                    status: 'processing',
                 },
             };
         }
@@ -147,6 +161,195 @@ let JobsController = class JobsController {
             }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    async getJobResults(jobId, page = '1', limit = '50', status, classification, search) {
+        try {
+            const pageNum = parseInt(page, 10) || 1;
+            const limitNum = Math.min(parseInt(limit, 10) || 50, 1000);
+            const offset = (pageNum - 1) * limitNum;
+            let query = this.supabase.getClient()
+                .from('results')
+                .select('*', { count: 'exact' })
+                .eq('job_id', jobId)
+                .order('processed_at', { ascending: false });
+            if (status && status !== '') {
+                query = query.eq('status', status);
+            }
+            if (classification && classification !== '') {
+                query = query.eq('classification_result', classification);
+            }
+            if (search && search !== '') {
+                query = query.ilike('url', `%${search}%`);
+            }
+            query = query.range(offset, offset + limitNum - 1);
+            const { data: results, error, count } = await query;
+            if (error) {
+                throw new Error(error.message);
+            }
+            const totalPages = Math.ceil((count || 0) / limitNum);
+            return {
+                success: true,
+                data: results || [],
+                pagination: {
+                    page: pageNum,
+                    limit: limitNum,
+                    total: count || 0,
+                    totalPages,
+                },
+            };
+        }
+        catch (error) {
+            console.error('[JobsController] Error fetching job results:', error);
+            throw new common_1.HttpException({
+                success: false,
+                error: 'Failed to retrieve results. Please try again.',
+            }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    async exportJobResults(jobId, format = 'csv', status = '', classification = '', search = '', res) {
+        try {
+            let query = this.supabase.getClient()
+                .from('results')
+                .select('*')
+                .eq('job_id', jobId)
+                .order('processed_at', { ascending: false });
+            if (status && status !== '') {
+                query = query.eq('status', status);
+            }
+            if (classification && classification !== '') {
+                query = query.eq('classification_result', classification);
+            }
+            if (search && search !== '') {
+                query = query.ilike('url', `%${search}%`);
+            }
+            const { data: results, error } = await query;
+            if (error) {
+                throw new Error(error.message);
+            }
+            if (!results || results.length === 0) {
+                throw new common_1.HttpException({
+                    success: false,
+                    error: 'No results found to export',
+                }, common_1.HttpStatus.NOT_FOUND);
+            }
+            const { data: job } = await this.supabase.getClient()
+                .from('jobs')
+                .select('name')
+                .eq('id', jobId)
+                .single();
+            const jobName = job?.name || 'job';
+            const timestamp = new Date().toISOString().split('T')[0];
+            const filename = `${jobName.replace(/[^a-z0-9]/gi, '_')}_${timestamp}`;
+            if (format === 'json') {
+                res.setHeader('Content-Type', 'application/json');
+                res.setHeader('Content-Disposition', `attachment; filename="${filename}.json"`);
+                res.send(JSON.stringify(results, null, 2));
+            }
+            else {
+                const headers = [
+                    'URL',
+                    'Status',
+                    'Classification',
+                    'Score',
+                    'Reasoning',
+                    'LLM Provider',
+                    'Cost',
+                    'Processing Time (ms)',
+                    'Retry Count',
+                    'Error Message',
+                    'Prefilter Passed',
+                    'Prefilter Reasoning',
+                    'Processed At',
+                ];
+                const csvRows = [headers.join(',')];
+                for (const result of results) {
+                    const row = [
+                        `"${(result.url || '').replace(/"/g, '""')}"`,
+                        result.status || '',
+                        result.classification_result || '',
+                        result.classification_score || '',
+                        `"${(result.classification_reasoning || '').replace(/"/g, '""')}"`,
+                        result.llm_provider || '',
+                        result.llm_cost || '0',
+                        result.processing_time_ms || '',
+                        result.retry_count || '0',
+                        `"${(result.error_message || '').replace(/"/g, '""')}"`,
+                        result.prefilter_passed !== null ? result.prefilter_passed : '',
+                        `"${(result.prefilter_reasoning || '').replace(/"/g, '""')}"`,
+                        result.processed_at || '',
+                    ];
+                    csvRows.push(row.join(','));
+                }
+                const csvContent = csvRows.join('\n');
+                res.setHeader('Content-Type', 'text/csv');
+                res.setHeader('Content-Disposition', `attachment; filename="${filename}.csv"`);
+                res.send(csvContent);
+            }
+        }
+        catch (error) {
+            if (error instanceof common_1.HttpException) {
+                throw error;
+            }
+            console.error('[JobsController] Error exporting results:', error);
+            throw new common_1.HttpException({
+                success: false,
+                error: 'Failed to export results. Please try again.',
+            }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    async pauseJob(jobId) {
+        try {
+            await this.queueService.pauseJob(jobId);
+            const job = await this.jobsService.getJobById(jobId);
+            return {
+                success: true,
+                data: job,
+                message: 'Job paused successfully',
+            };
+        }
+        catch (error) {
+            console.error('[JobsController] Error pausing job:', error);
+            throw new common_1.HttpException({
+                success: false,
+                error: 'Failed to pause job. Please try again.',
+            }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    async resumeJob(jobId) {
+        try {
+            await this.queueService.resumeJob(jobId);
+            const job = await this.jobsService.getJobById(jobId);
+            return {
+                success: true,
+                data: job,
+                message: 'Job resumed successfully',
+            };
+        }
+        catch (error) {
+            console.error('[JobsController] Error resuming job:', error);
+            throw new common_1.HttpException({
+                success: false,
+                error: 'Failed to resume job. Please try again.',
+            }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    async cancelJob(jobId) {
+        try {
+            await this.queueService.cancelJob(jobId);
+            const job = await this.jobsService.getJobById(jobId);
+            return {
+                success: true,
+                data: job,
+                message: 'Job cancelled successfully',
+            };
+        }
+        catch (error) {
+            console.error('[JobsController] Error cancelling job:', error);
+            throw new common_1.HttpException({
+                success: false,
+                error: 'Failed to cancel job. Please try again.',
+            }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 };
 exports.JobsController = JobsController;
 __decorate([
@@ -180,10 +383,57 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], JobsController.prototype, "getAllJobs", null);
+__decorate([
+    (0, common_1.Get)(':id/results'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('status')),
+    __param(4, (0, common_1.Query)('classification')),
+    __param(5, (0, common_1.Query)('search')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String, String, String, String]),
+    __metadata("design:returntype", Promise)
+], JobsController.prototype, "getJobResults", null);
+__decorate([
+    (0, common_1.Get)(':id/export'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Query)('format')),
+    __param(2, (0, common_1.Query)('status')),
+    __param(3, (0, common_1.Query)('classification')),
+    __param(4, (0, common_1.Query)('search')),
+    __param(5, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String, String, String, Object]),
+    __metadata("design:returntype", Promise)
+], JobsController.prototype, "exportJobResults", null);
+__decorate([
+    (0, common_1.Patch)(':id/pause'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], JobsController.prototype, "pauseJob", null);
+__decorate([
+    (0, common_1.Patch)(':id/resume'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], JobsController.prototype, "resumeJob", null);
+__decorate([
+    (0, common_1.Delete)(':id/cancel'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], JobsController.prototype, "cancelJob", null);
 exports.JobsController = JobsController = __decorate([
     (0, common_1.Controller)('jobs'),
     __metadata("design:paramtypes", [jobs_service_1.JobsService,
         file_parser_service_1.FileParserService,
-        url_validation_service_1.UrlValidationService])
+        url_validation_service_1.UrlValidationService,
+        queue_service_1.QueueService,
+        supabase_service_1.SupabaseService])
 ], JobsController);
 //# sourceMappingURL=jobs.controller.js.map

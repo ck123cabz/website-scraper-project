@@ -1,13 +1,17 @@
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { JobsService } from './jobs.service';
 import { FileParserService } from './services/file-parser.service';
 import { UrlValidationService } from './services/url-validation.service';
+import { QueueService } from '../queue/queue.service';
+import { SupabaseService } from '../supabase/supabase.service';
 import { CreateJobDto } from './dto/create-job.dto';
 export declare class JobsController {
     private readonly jobsService;
     private readonly fileParserService;
     private readonly urlValidationService;
-    constructor(jobsService: JobsService, fileParserService: FileParserService, urlValidationService: UrlValidationService);
+    private readonly queueService;
+    private readonly supabase;
+    constructor(jobsService: JobsService, fileParserService: FileParserService, urlValidationService: UrlValidationService, queueService: QueueService, supabase: SupabaseService);
     createJobWithUrls(file: Express.Multer.File | undefined, body: CreateJobDto, contentType: string, req: Request): Promise<{
         success: boolean;
         data: {
@@ -16,6 +20,7 @@ export declare class JobsController {
             duplicates_removed_count: number;
             invalid_urls_count: number;
             created_at: string;
+            status: string;
         };
     }>;
     createJob(body: {
@@ -35,6 +40,8 @@ export declare class JobsController {
             gpt_cost: number;
             id: string;
             name: string | null;
+            prefilter_passed_count: number | null;
+            prefilter_rejected_count: number | null;
             processed_urls: number;
             processing_rate: number | null;
             progress_percentage: number;
@@ -61,6 +68,8 @@ export declare class JobsController {
             gpt_cost: number;
             id: string;
             name: string | null;
+            prefilter_passed_count: number | null;
+            prefilter_rejected_count: number | null;
             processed_urls: number;
             processing_rate: number | null;
             progress_percentage: number;
@@ -87,6 +96,8 @@ export declare class JobsController {
             gpt_cost: number;
             id: string;
             name: string | null;
+            prefilter_passed_count: number | null;
+            prefilter_rejected_count: number | null;
             processed_urls: number;
             processing_rate: number | null;
             progress_percentage: number;
@@ -98,5 +109,103 @@ export declare class JobsController {
             total_urls: number;
             updated_at: string;
         }[];
+    }>;
+    getJobResults(jobId: string, page?: string, limit?: string, status?: string, classification?: string, search?: string): Promise<{
+        success: boolean;
+        data: any[];
+        pagination: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+        };
+    }>;
+    exportJobResults(jobId: string, format: string | undefined, status: string | undefined, classification: string | undefined, search: string | undefined, res: Response): Promise<void>;
+    pauseJob(jobId: string): Promise<{
+        success: boolean;
+        data: {
+            completed_at: string | null;
+            created_at: string;
+            current_stage: import("@website-scraper/shared").Database["public"]["Enums"]["processing_stage"] | null;
+            current_url: string | null;
+            current_url_started_at: string | null;
+            estimated_time_remaining: number | null;
+            failed_urls: number;
+            gemini_cost: number;
+            gpt_cost: number;
+            id: string;
+            name: string | null;
+            prefilter_passed_count: number | null;
+            prefilter_rejected_count: number | null;
+            processed_urls: number;
+            processing_rate: number | null;
+            progress_percentage: number;
+            rejected_urls: number;
+            started_at: string | null;
+            status: import("@website-scraper/shared").Database["public"]["Enums"]["job_status"];
+            successful_urls: number;
+            total_cost: number;
+            total_urls: number;
+            updated_at: string;
+        } | null;
+        message: string;
+    }>;
+    resumeJob(jobId: string): Promise<{
+        success: boolean;
+        data: {
+            completed_at: string | null;
+            created_at: string;
+            current_stage: import("@website-scraper/shared").Database["public"]["Enums"]["processing_stage"] | null;
+            current_url: string | null;
+            current_url_started_at: string | null;
+            estimated_time_remaining: number | null;
+            failed_urls: number;
+            gemini_cost: number;
+            gpt_cost: number;
+            id: string;
+            name: string | null;
+            prefilter_passed_count: number | null;
+            prefilter_rejected_count: number | null;
+            processed_urls: number;
+            processing_rate: number | null;
+            progress_percentage: number;
+            rejected_urls: number;
+            started_at: string | null;
+            status: import("@website-scraper/shared").Database["public"]["Enums"]["job_status"];
+            successful_urls: number;
+            total_cost: number;
+            total_urls: number;
+            updated_at: string;
+        } | null;
+        message: string;
+    }>;
+    cancelJob(jobId: string): Promise<{
+        success: boolean;
+        data: {
+            completed_at: string | null;
+            created_at: string;
+            current_stage: import("@website-scraper/shared").Database["public"]["Enums"]["processing_stage"] | null;
+            current_url: string | null;
+            current_url_started_at: string | null;
+            estimated_time_remaining: number | null;
+            failed_urls: number;
+            gemini_cost: number;
+            gpt_cost: number;
+            id: string;
+            name: string | null;
+            prefilter_passed_count: number | null;
+            prefilter_rejected_count: number | null;
+            processed_urls: number;
+            processing_rate: number | null;
+            progress_percentage: number;
+            rejected_urls: number;
+            started_at: string | null;
+            status: import("@website-scraper/shared").Database["public"]["Enums"]["job_status"];
+            successful_urls: number;
+            total_cost: number;
+            total_urls: number;
+            updated_at: string;
+        } | null;
+        message: string;
     }>;
 }

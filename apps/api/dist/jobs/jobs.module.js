@@ -13,6 +13,10 @@ const jobs_controller_1 = require("./jobs.controller");
 const jobs_service_1 = require("./jobs.service");
 const file_parser_service_1 = require("./services/file-parser.service");
 const url_validation_service_1 = require("./services/url-validation.service");
+const prefilter_service_1 = require("./services/prefilter.service");
+const llm_service_1 = require("./services/llm.service");
+const llm_service_mock_1 = require("./services/llm.service.mock");
+const queue_module_1 = require("../queue/queue.module");
 const multer_1 = require("multer");
 const path_1 = require("path");
 let JobsModule = class JobsModule {
@@ -21,6 +25,7 @@ exports.JobsModule = JobsModule;
 exports.JobsModule = JobsModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            queue_module_1.QueueModule,
             platform_express_1.MulterModule.register({
                 storage: (0, multer_1.memoryStorage)(),
                 limits: {
@@ -39,8 +44,17 @@ exports.JobsModule = JobsModule = __decorate([
             }),
         ],
         controllers: [jobs_controller_1.JobsController],
-        providers: [jobs_service_1.JobsService, file_parser_service_1.FileParserService, url_validation_service_1.UrlValidationService],
-        exports: [jobs_service_1.JobsService],
+        providers: [
+            jobs_service_1.JobsService,
+            file_parser_service_1.FileParserService,
+            url_validation_service_1.UrlValidationService,
+            prefilter_service_1.PreFilterService,
+            {
+                provide: llm_service_1.LlmService,
+                useClass: process.env.USE_MOCK_SERVICES === 'true' ? llm_service_mock_1.MockLlmService : llm_service_1.LlmService,
+            },
+        ],
+        exports: [jobs_service_1.JobsService, prefilter_service_1.PreFilterService, llm_service_1.LlmService],
     })
 ], JobsModule);
 //# sourceMappingURL=jobs.module.js.map

@@ -31,7 +31,7 @@ export function JobList() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-16">
+      <div className="flex items-center justify-center py-16" data-testid="loading">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
@@ -39,8 +39,8 @@ export function JobList() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-        <p className="text-red-500 mb-2">Error loading jobs</p>
+      <div className="flex flex-col items-center justify-center py-16 px-4 text-center" data-testid="error-state">
+        <p className="text-red-500 mb-2" data-testid="error-message">Error loading jobs</p>
         <p className="text-sm text-muted-foreground">{(error as Error).message}</p>
       </div>
     );
@@ -61,7 +61,7 @@ export function JobList() {
   });
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="job-list">
       {sortedJobs.map((job) => (
         <JobCard key={job.id} job={job} />
       ))}

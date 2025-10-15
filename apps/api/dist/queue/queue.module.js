@@ -10,12 +10,14 @@ exports.QueueModule = void 0;
 const common_1 = require("@nestjs/common");
 const bullmq_1 = require("@nestjs/bullmq");
 const queue_service_1 = require("./queue.service");
+const supabase_module_1 = require("../supabase/supabase.module");
 let QueueModule = class QueueModule {
 };
 exports.QueueModule = QueueModule;
 exports.QueueModule = QueueModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            supabase_module_1.SupabaseModule,
             bullmq_1.BullModule.forRoot({
                 connection: {
                     url: process.env.REDIS_URL || 'redis://localhost:6379',

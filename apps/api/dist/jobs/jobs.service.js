@@ -80,10 +80,12 @@ let JobsService = class JobsService {
     }
     async createJobWithUrls(name, urls) {
         const client = this.supabase.getClient();
-        const { data, error } = await client.rpc('create_job_with_urls', {
+        const { data, error } = await client
+            .rpc('create_job_with_urls', {
             p_name: name || 'Untitled Job',
             p_urls: urls,
-        }).single();
+        })
+            .single();
         if (error) {
             throw new Error(`Failed to create job with URLs: ${error.message}`);
         }

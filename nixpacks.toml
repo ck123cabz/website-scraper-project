@@ -5,7 +5,10 @@ nixPkgs = ["nodejs_18", "npm-9_x"]
 cmds = ["npm install"]
 
 [phases.build]
-cmds = ["cd apps/api && npm run build"]
+cmds = [
+  "npm run build --workspace=@website-scraper/api",
+  "npm run build --workspace=web"
+]
 
 [start]
-cmd = "cd apps/api && npm run start:prod"
+cmd = "npm run start:prod"

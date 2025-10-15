@@ -32,11 +32,15 @@ let UrlValidationService = class UrlValidationService {
         return { validUrls, invalidCount };
     }
     isValidUrl(url) {
-        if (!this.URL_PATTERN.test(url)) {
+        let urlToValidate = url;
+        if (!url.match(/^https?:\/\//i)) {
+            urlToValidate = `https://${url}`;
+        }
+        if (!this.URL_PATTERN.test(urlToValidate)) {
             return false;
         }
         try {
-            const urlObj = new URL(url);
+            const urlObj = new URL(urlToValidate);
             if (!this.ALLOWED_PROTOCOLS.includes(urlObj.protocol)) {
                 return false;
             }
@@ -48,6 +52,9 @@ let UrlValidationService = class UrlValidationService {
     }
     normalizeUrl(url) {
         let normalized = url.trim();
+        if (!normalized.match(/^https?:\/\//i)) {
+            normalized = `https://${normalized}`;
+        }
         try {
             const urlObj = new URL(normalized);
             urlObj.protocol = urlObj.protocol.toLowerCase();

@@ -18,9 +18,11 @@ describe('UrlWorkerProcessor', () => {
     from: jest.fn().mockReturnThis(),
     select: jest.fn().mockReturnThis(),
     insert: jest.fn().mockReturnThis(),
+    upsert: jest.fn().mockReturnThis(), // Added for Bug #3 fix (Story 3.1 - prevent duplicates on resume)
     update: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
     single: jest.fn(),
+    rpc: jest.fn().mockReturnThis(), // Added for atomic counter updates (Story 3.0 fix)
   };
 
   beforeEach(async () => {
@@ -80,12 +82,6 @@ describe('UrlWorkerProcessor', () => {
         error: null,
       });
 
-      // Mock status check for pending → processing transition
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: { status: 'processing' },
-        error: null,
-      });
-
       // Mock scraper success
       scraperService.fetchUrl.mockResolvedValue({
         url: 'https://example.com',
@@ -114,16 +110,23 @@ describe('UrlWorkerProcessor', () => {
         retryCount: 0,
       });
 
-      // Mock job data fetch for counter updates
-      mockSupabaseClient.single.mockResolvedValue({
+      // Mock job data fetch for counter updates (total_urls)
+      mockSupabaseClient.single.mockResolvedValueOnce({
+        data: { total_urls: 10 },
+        error: null,
+      });
+
+      // Mock RPC response for atomic counter increment
+      mockSupabaseClient.single.mockResolvedValueOnce({
         data: {
-          processed_urls: 0,
-          total_urls: 10,
-          successful_urls: 0,
-          total_cost: 0,
-          gemini_cost: 0,
+          processed_urls: 1,
+          successful_urls: 1,
+          failed_urls: 0,
+          prefilter_rejected_count: 0,
+          prefilter_passed_count: 1,
+          total_cost: 0.00045,
+          gemini_cost: 0.00045,
           gpt_cost: 0,
-          prefilter_passed_count: 0,
         },
         error: null,
       });
@@ -183,11 +186,6 @@ describe('UrlWorkerProcessor', () => {
         error: null,
       });
 
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: { status: 'processing' },
-        error: null,
-      });
-
       // Mock scraper failure
       scraperService.fetchUrl.mockResolvedValue({
         url: 'https://example.com',
@@ -199,12 +197,20 @@ describe('UrlWorkerProcessor', () => {
         processingTimeMs: 1000,
       });
 
-      // Mock job data for failure handling
-      mockSupabaseClient.single.mockResolvedValue({
+      // Mock job data for failure handling (total_urls)
+      mockSupabaseClient.single.mockResolvedValueOnce({
+        data: { total_urls: 10 },
+        error: null,
+      });
+
+      // Mock RPC response for atomic counter increment
+      mockSupabaseClient.single.mockResolvedValueOnce({
         data: {
-          processed_urls: 0,
-          total_urls: 10,
-          failed_urls: 0,
+          processed_urls: 1,
+          successful_urls: 0,
+          failed_urls: 1,
+          prefilter_rejected_count: 0,
+          prefilter_passed_count: 0,
         },
         error: null,
       });
@@ -239,11 +245,6 @@ describe('UrlWorkerProcessor', () => {
         error: null,
       });
 
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: { status: 'processing' },
-        error: null,
-      });
-
       // Mock scraper success
       scraperService.fetchUrl.mockResolvedValue({
         url: 'https://twitter.com',
@@ -262,12 +263,20 @@ describe('UrlWorkerProcessor', () => {
         matched_rule: 'social_media',
       });
 
-      // Mock job data for pre-filter rejection
-      mockSupabaseClient.single.mockResolvedValue({
+      // Mock job data for pre-filter rejection (total_urls)
+      mockSupabaseClient.single.mockResolvedValueOnce({
+        data: { total_urls: 10 },
+        error: null,
+      });
+
+      // Mock RPC response for atomic counter increment
+      mockSupabaseClient.single.mockResolvedValueOnce({
         data: {
-          processed_urls: 0,
-          total_urls: 10,
-          prefilter_rejected_count: 0,
+          processed_urls: 1,
+          successful_urls: 0,
+          failed_urls: 0,
+          prefilter_rejected_count: 1,
+          prefilter_passed_count: 0,
         },
         error: null,
       });
@@ -286,11 +295,6 @@ describe('UrlWorkerProcessor', () => {
 
     it('should complete job when all URLs processed', async () => {
       // Mock job status check
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: { status: 'processing' },
-        error: null,
-      });
-
       mockSupabaseClient.single.mockResolvedValueOnce({
         data: { status: 'processing' },
         error: null,
@@ -322,16 +326,23 @@ describe('UrlWorkerProcessor', () => {
         retryCount: 0,
       });
 
-      // Mock job data - this is the last URL
+      // Mock job data - this is the last URL (total_urls)
+      mockSupabaseClient.single.mockResolvedValueOnce({
+        data: { total_urls: 10 },
+        error: null,
+      });
+
+      // Mock RPC response for atomic counter increment (last URL, processedUrls = 10)
       mockSupabaseClient.single.mockResolvedValueOnce({
         data: {
-          processed_urls: 9,
-          total_urls: 10,
-          successful_urls: 9,
-          total_cost: 0.0045,
-          gemini_cost: 0.0045,
+          processed_urls: 10,
+          successful_urls: 10,
+          failed_urls: 0,
+          prefilter_rejected_count: 0,
+          prefilter_passed_count: 10,
+          total_cost: 0.005,
+          gemini_cost: 0.005,
           gpt_cost: 0,
-          prefilter_passed_count: 9,
         },
         error: null,
       });

@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Delete,
   Body,
   Param,
   HttpException,
@@ -10,12 +12,16 @@ import {
   UploadedFile,
   Headers,
   Req,
+  Query,
+  Res,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { JobsService } from './jobs.service';
 import { FileParserService } from './services/file-parser.service';
 import { UrlValidationService } from './services/url-validation.service';
+import { QueueService } from '../queue/queue.service';
+import { SupabaseService } from '../supabase/supabase.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { extname } from 'path';
 
@@ -25,6 +31,8 @@ export class JobsController {
     private readonly jobsService: JobsService,
     private readonly fileParserService: FileParserService,
     private readonly urlValidationService: UrlValidationService,
+    private readonly queueService: QueueService,
+    private readonly supabase: SupabaseService,
   ) {}
 
   @Post('create')
@@ -95,6 +103,20 @@ export class JobsController {
       // Database insertion (Task 5)
       const job = await this.jobsService.createJobWithUrls(jobName, uniqueUrls);
 
+      // Queue URLs for processing (Story 3.1 fix: auto-start job)
+      // Update job status to 'processing' and set started_at timestamp
+      await this.jobsService.updateJob(job.id, {
+        status: 'processing',
+        started_at: new Date().toISOString(),
+      });
+
+      // Add URLs to BullMQ queue for worker processing
+      const queueJobs = uniqueUrls.map((url) => ({
+        jobId: job.id,
+        url,
+      }));
+      await this.queueService.addUrlsToQueue(queueJobs);
+
       // Return response (Task 6)
       return {
         success: true,
@@ -104,6 +126,7 @@ export class JobsController {
           duplicates_removed_count: duplicatesRemovedCount,
           invalid_urls_count: invalidCount,
           created_at: job.created_at,
+          status: 'processing',
         },
       };
     } catch (error) {
@@ -195,6 +218,266 @@ export class JobsController {
         {
           success: false,
           error: 'Failed to retrieve jobs. Please try again.',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get(':id/results')
+  async getJobResults(
+    @Param('id') jobId: string,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '50',
+    @Query('status') status?: string,
+    @Query('classification') classification?: string,
+    @Query('search') search?: string,
+  ) {
+    try {
+      const pageNum = parseInt(page, 10) || 1;
+      const limitNum = Math.min(parseInt(limit, 10) || 50, 1000); // Max 1000
+      const offset = (pageNum - 1) * limitNum;
+
+      // Build query
+      let query = this.supabase.getClient()
+        .from('results')
+        .select('*', { count: 'exact' })
+        .eq('job_id', jobId)
+        .order('processed_at', { ascending: false });
+
+      // Apply filters
+      if (status && status !== '') {
+        query = query.eq('status', status);
+      }
+      if (classification && classification !== '') {
+        query = query.eq('classification_result', classification);
+      }
+      if (search && search !== '') {
+        query = query.ilike('url', `%${search}%`);
+      }
+
+      // Apply pagination
+      query = query.range(offset, offset + limitNum - 1);
+
+      const { data: results, error, count } = await query;
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      const totalPages = Math.ceil((count || 0) / limitNum);
+
+      return {
+        success: true,
+        data: results || [],
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: count || 0,
+          totalPages,
+        },
+      };
+    } catch (error) {
+      console.error('[JobsController] Error fetching job results:', error);
+      throw new HttpException(
+        {
+          success: false,
+          error: 'Failed to retrieve results. Please try again.',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get(':id/export')
+  async exportJobResults(
+    @Param('id') jobId: string,
+    @Query('format') format: string = 'csv',
+    @Query('status') status: string = '',
+    @Query('classification') classification: string = '',
+    @Query('search') search: string = '',
+    @Res() res: Response,
+  ) {
+    try {
+      // Build query
+      let query = this.supabase.getClient()
+        .from('results')
+        .select('*')
+        .eq('job_id', jobId)
+        .order('processed_at', { ascending: false });
+
+      // Apply filters
+      if (status && status !== '') {
+        query = query.eq('status', status);
+      }
+      if (classification && classification !== '') {
+        query = query.eq('classification_result', classification);
+      }
+      if (search && search !== '') {
+        query = query.ilike('url', `%${search}%`);
+      }
+
+      const { data: results, error } = await query;
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (!results || results.length === 0) {
+        throw new HttpException(
+          {
+            success: false,
+            error: 'No results found to export',
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      // Get job name for filename
+      const { data: job } = await this.supabase.getClient()
+        .from('jobs')
+        .select('name')
+        .eq('id', jobId)
+        .single();
+
+      const jobName = job?.name || 'job';
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filename = `${jobName.replace(/[^a-z0-9]/gi, '_')}_${timestamp}`;
+
+      if (format === 'json') {
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}.json"`);
+        res.send(JSON.stringify(results, null, 2));
+      } else {
+        // CSV format
+        const headers = [
+          'URL',
+          'Status',
+          'Classification',
+          'Score',
+          'Reasoning',
+          'LLM Provider',
+          'Cost',
+          'Processing Time (ms)',
+          'Retry Count',
+          'Error Message',
+          'Prefilter Passed',
+          'Prefilter Reasoning',
+          'Processed At',
+        ];
+
+        const csvRows = [headers.join(',')];
+
+        for (const result of results) {
+          const row = [
+            `"${(result.url || '').replace(/"/g, '""')}"`,
+            result.status || '',
+            result.classification_result || '',
+            result.classification_score || '',
+            `"${(result.classification_reasoning || '').replace(/"/g, '""')}"`,
+            result.llm_provider || '',
+            result.llm_cost || '0',
+            result.processing_time_ms || '',
+            result.retry_count || '0',
+            `"${(result.error_message || '').replace(/"/g, '""')}"`,
+            result.prefilter_passed !== null ? result.prefilter_passed : '',
+            `"${(result.prefilter_reasoning || '').replace(/"/g, '""')}"`,
+            result.processed_at || '',
+          ];
+          csvRows.push(row.join(','));
+        }
+
+        const csvContent = csvRows.join('\n');
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}.csv"`);
+        res.send(csvContent);
+      }
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      console.error('[JobsController] Error exporting results:', error);
+      throw new HttpException(
+        {
+          success: false,
+          error: 'Failed to export results. Please try again.',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Patch(':id/pause')
+  async pauseJob(@Param('id') jobId: string) {
+    try {
+      await this.queueService.pauseJob(jobId);
+
+      // Fetch updated job to return
+      const job = await this.jobsService.getJobById(jobId);
+
+      return {
+        success: true,
+        data: job,
+        message: 'Job paused successfully',
+      };
+    } catch (error) {
+      console.error('[JobsController] Error pausing job:', error);
+      throw new HttpException(
+        {
+          success: false,
+          error: 'Failed to pause job. Please try again.',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Patch(':id/resume')
+  async resumeJob(@Param('id') jobId: string) {
+    try {
+      await this.queueService.resumeJob(jobId);
+
+      // Fetch updated job to return
+      const job = await this.jobsService.getJobById(jobId);
+
+      return {
+        success: true,
+        data: job,
+        message: 'Job resumed successfully',
+      };
+    } catch (error) {
+      console.error('[JobsController] Error resuming job:', error);
+      throw new HttpException(
+        {
+          success: false,
+          error: 'Failed to resume job. Please try again.',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Delete(':id/cancel')
+  async cancelJob(@Param('id') jobId: string) {
+    try {
+      await this.queueService.cancelJob(jobId);
+
+      // Fetch updated job to return
+      const job = await this.jobsService.getJobById(jobId);
+
+      return {
+        success: true,
+        data: job,
+        message: 'Job cancelled successfully',
+      };
+    } catch (error) {
+      console.error('[JobsController] Error cancelling job:', error);
+      throw new HttpException(
+        {
+          success: false,
+          error: 'Failed to cancel job. Please try again.',
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
