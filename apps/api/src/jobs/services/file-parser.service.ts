@@ -50,7 +50,11 @@ export class FileParserService {
 
             // L1 Fix: Specific error if no URLs found after parsing
             if (urls.length === 0) {
-              reject(new Error('Empty CSV file or no valid data found. Please ensure your CSV contains URLs.'));
+              reject(
+                new Error(
+                  'Empty CSV file or no valid data found. Please ensure your CSV contains URLs.',
+                ),
+              );
             }
 
             resolve(urls);
@@ -114,13 +118,18 @@ export class FileParserService {
    */
   private extractUrlsFromSimpleCsv(fileContent: string): string[] {
     // Parse without headers
-    const lines = fileContent.split('\n').map((line) => line.trim()).filter((line) => line.length > 0);
+    const lines = fileContent
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
 
     // For single-column CSV, just take the first value from each line
-    return lines.map((line) => {
-      const parts = line.split(',');
-      return parts[0].trim();
-    }).filter((url) => url.length > 0);
+    return lines
+      .map((line) => {
+        const parts = line.split(',');
+        return parts[0].trim();
+      })
+      .filter((url) => url.length > 0);
   }
 
   /**

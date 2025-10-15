@@ -531,5 +531,33 @@ Extracted from Epic 2 stories (5 stories, ~37 acceptance criteria):
 
 ---
 
+## Post-Review Follow-ups
+
+### Story 2.5 Review Action Items (2025-10-15)
+
+**Critical Production Readiness Issues:**
+
+1. **[HIGH] Complete Graceful Shutdown Implementation** - Story 2.5 worker doesn't actually wait for jobs to finish on shutdown. Must call `await this.worker.close()` in `onModuleDestroy()` to prevent Railway deployments from interrupting mid-processing URLs. See ISSUE-1 in Story 2.5 review.
+
+2. **[HIGH] Add Environment Variable Validation at Startup** - Application starts successfully but fails at runtime when processing jobs if environment variables are missing. Must validate SCRAPINGBEE_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY, REDIS_URL, SUPABASE_URL before `app.listen()`. See ISSUE-2 in Story 2.5 review.
+
+3. **[HIGH] Enable NestJS Shutdown Hooks** - Must call `app.enableShutdownHooks()` in main.ts for Railway SIGTERM handling. Without this, graceful shutdown won't work. See ISSUE-4 in Story 2.5 review.
+
+**High Priority for Production:**
+
+4. **[MED] Implement Pause/Resume Database Updates** - QueueService pause/resume methods are stubbed with console.log. Dashboard pause/resume buttons won't work without Supabase client updates to jobs table. See ISSUE-3 in Story 2.5 review.
+
+5. **[MED] Add Supabase Realtime Integration Test** - AC2.5.4 requires verification that Realtime events fire on database updates, but no integration test exists. Need test with test Supabase project. See ISSUE-5 in Story 2.5 review.
+
+**Technical Debt:**
+
+6. Make worker concurrency configurable via environment variable (CODE-1)
+7. Consolidate retry logic to shared utility to eliminate duplication (CODE-3)
+8. Replace console.log with Logger service in QueueService (CODE-2)
+
+_All action items tracked in docs/backlog.md and Story 2.5 tasks section._
+
+---
+
 **Status**: Draft
-**Next Steps**: Begin Story 2.1 implementation after frontend mockup demonstrates API contract needs
+**Next Steps**: **BLOCKED** - Story 2.5 requires critical fixes (items 1-3 above) before production deployment. Begin Story 2.1 implementation after frontend mockup demonstrates API contract needs

@@ -1,0 +1,229 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.4</storyId>
+    <title>LLM Classification with Gemini Primary &amp; GPT Fallback</title>
+    <status>Draft</status>
+    <generatedAt>2025-10-15</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/stories/story-2.4.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a system</asA>
+    <iWant>to classify URLs using Gemini primary and GPT fallback</iWant>
+    <soThat>we get reliable classifications at lowest cost</soThat>
+    <tasks>
+      - Task 1: Set Up LLM Provider Configuration (5 subtasks)
+      - Task 2: Design Classification Prompt (5 subtasks)
+      - Task 3: Implement Primary Gemini Classification (5 subtasks)
+      - Task 4: Implement GPT Fallback Logic (5 subtasks)
+      - Task 5: Result Storage and Cost Tracking (7 subtasks)
+      - Task 6: Retry Logic with Exponential Backoff (5 subtasks)
+      - Task 7: Error Handling and Failure States (5 subtasks)
+      - Task 8: Unit Testing (8 subtasks)
+      - Task 9: Integration with Story 2.3 Pre-Filter (3 subtasks)
+      - Task 10: Integration Testing (6 subtasks)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. LLM service configured with Gemini 2.0 Flash API (primary) and OpenAI GPT-4o-mini API (fallback)
+    2. Classification prompt: "Analyze this website content and determine if it accepts guest posts. Consider: author bylines, guest post guidelines, contributor sections, writing opportunities pages. Respond with JSON: {suitable: boolean, confidence: 0-1, reasoning: string}"
+    3. Gemini API called first for each URL
+    4. GPT fallback triggered on: Gemini API error, timeout (&gt;30s), rate limit
+    5. Fallback logged: "GPT fallback used - Gemini timeout"
+    6. Classification result stored: classification (SUITABLE/NOT_SUITABLE), confidence score, reasoning, provider used
+    7. Cost calculated and stored per URL (based on token usage)
+    8. Retry logic: 3 attempts with exponential backoff (1s, 2s, 4s) for transient errors
+    9. Permanent failures marked: status "failed", error message stored
+    10. Processing time tracked per URL
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/PRD.md" section="FR009: AI-Powered Classification">
+        System shall classify each URL for guest posting suitability using Gemini 2.0 Flash as primary LLM with automatic fallback to GPT-4o-mini on failures, with classification reasoning logged.
+      </doc>
+      <doc path="docs/PRD.md" section="Goal 2: Cost-Optimized Classification Pipeline">
+        Implement intelligent pre-filtering and Gemini 2.0 Flash primary usage to achieve 40-60% reduction in LLM API costs while maintaining classification quality. Include real-time cost tracking visible in the dashboard.
+      </doc>
+      <doc path="docs/PRD.md" section="NFR003: Cost Efficiency">
+        - Total monthly operational cost shall not exceed $150 (infrastructure + APIs)
+        - LLM API costs shall be reduced by minimum 40% compared to current system through pre-filtering
+        - System shall track and display real-time cost metrics per job
+        - Gemini 2.0 Flash shall be primary provider (33% cheaper than GPT-4o-mini)
+      </doc>
+      <doc path="docs/tech-spec-epic-2.md" section="LLM Service (lines 86)">
+        LLM Service: Gemini + GPT classification with fallback logic. Location: apps/api/src/llm/. Exports: LLMService, GeminiProvider, GPTProvider. Interface: ClassificationResult { suitable: boolean; confidence: number; reasoning: string; provider: 'gemini' | 'gpt'; cost: number; tokensUsed: number; }
+      </doc>
+      <doc path="docs/tech-spec-epic-2.md" section="Processing Flow (lines 227-232)">
+        Worker Processing flow: Pre-Filter PASS → LLM Classification: LLMService.classify() → Try Gemini API first → If Gemini fails (timeout, error, rate limit): Fall back to GPT → Calculate cost: CostService.calculateCost(tokensUsed, provider) → Store Result
+      </doc>
+      <doc path="docs/tech-spec-epic-2.md" section="API Provider Configuration (lines 351-357)">
+        - Google Gemini API: Primary LLM classification, API key auth, 15 RPM (free tier), $0.0003/1K input tokens, $0.0015/1K output tokens, Model: gemini-2.0-flash-exp
+        - OpenAI GPT API: Fallback LLM classification, API key auth, 500 RPM (tier 1), $0.0005/1K input tokens, $0.002/1K output tokens, Model: gpt-4o-mini
+      </doc>
+      <doc path="docs/tech-spec-epic-2.md" section="Acceptance Criteria Story 2.4 (lines 399-410)">
+        AC2.4.1-2.4.10: LLM service configured with Gemini 2.0 Flash (primary) and GPT-4o-mini (fallback), classification prompt defined, Gemini called first, GPT fallback on error/timeout/rate limit, fallback logged, result stored with classification/confidence/reasoning/provider, cost calculated per URL, retry logic with exponential backoff, permanent failures marked, processing time tracked.
+      </doc>
+      <doc path="docs/epic-stories.md" section="Story 2.4 (lines 293-316)">
+        Story 2.4: LLM Classification with Gemini Primary &amp; GPT Fallback. Dependencies: Story 2.1 (backend), Story 2.3 (pre-filter). Enables: Story 2.5 (worker integration). 10 acceptance criteria including dual LLM provider setup, prompt design, fallback logic, cost tracking, retry strategy, error handling.
+      </doc>
+    </docs>
+    <code>
+      <file path="apps/api/src/jobs/jobs.module.ts" reason="LlmService must be added to JobsModule providers for dependency injection">
+        Current providers: JobsService, FileParserService, UrlValidationService, PreFilterService. MulterModule configured. Will need to add LlmService to providers array and export it for use by worker module.
+      </file>
+      <file path="apps/api/src/jobs/services/prefilter.service.ts" reason="PreFilterService is the predecessor in the processing pipeline - LlmService only called if PreFilterService passes URL">
+        Injectable NestJS service with similar architecture pattern to follow. Uses constructor initialization, @Injectable decorator, Logger for logging. Pattern: load config at initialization, validate inputs, handle errors gracefully, return structured results. LlmService should follow same patterns.
+      </file>
+      <file path="packages/shared/src/types/database.types.ts" reason="Database schema types for results table - LLM classification fields already defined">
+        Results table has: classification_reasoning (string | null), classification_result (enum: suitable | not_suitable | rejected_prefilter), classification_score (number | null), llm_cost (number | null), llm_provider (enum: gemini | gpt | none), processing_time_ms (number | null), retry_count (number | null), error_message (string | null). These fields match Story 2.4 requirements exactly.
+      </file>
+      <file path="packages/shared/src/types/result.ts" reason="Result type exports and enums for LLM classification">
+        Exports: Result (typed as Tables&lt;'results'&gt;), ResultStatus ('success' | 'rejected' | 'failed'), ClassificationResult ('suitable' | 'not_suitable' | 'rejected_prefilter'), LlmProvider ('gemini' | 'gpt' | 'none'). These types will be used by LlmService.
+      </file>
+      <file path="packages/shared/src/types/prefilter.ts" reason="Reference for creating new shared LLM types">
+        Defines PreFilterRule, PreFilterResult, PreFilterConfig interfaces. Pattern to follow for creating LlmClassificationRequest, LlmClassificationResponse, LlmConfig types in new packages/shared/src/types/llm.ts file.
+      </file>
+      <file path="apps/api/src/jobs/__tests__/prefilter.service.spec.ts" reason="Testing pattern reference for LlmService unit tests">
+        Comprehensive unit test suite for PreFilterService with 330 lines. Uses Jest + @nestjs/testing. Tests: service initialization, all filter categories, edge cases, performance requirements (&lt;100ms per URL, 100 URLs in &lt;10s), error handling (null/undefined), rule management. Achieved 90%+ coverage. LlmService tests should follow similar structure.
+      </file>
+    </code>
+    <dependencies>
+      <ecosystem name="node">
+        <package name="@google/generative-ai" version="^0.21.0" note="NEW - Gemini SDK for primary LLM classification" />
+        <package name="openai" version="^4.75.0" note="NEW - OpenAI SDK for GPT fallback classification" />
+        <package name="zod" version="^3.23.0" note="EXISTING - Already installed, used for LLM response schema validation" />
+        <package name="@nestjs/common" version="^10.3.0" note="EXISTING - NestJS core for @Injectable decorator" />
+        <package name="@nestjs/core" version="^10.3.0" note="EXISTING - NestJS runtime" />
+        <package name="@supabase/supabase-js" version="^2.39.0" note="EXISTING - Database client for result storage" />
+        <note>Two new NPM dependencies required: @google/generative-ai for Gemini API and openai for GPT API. All other dependencies already installed.</note>
+      </ecosystem>
+      <ecosystem name="environment">
+        <variable name="GEMINI_API_KEY" note="NEW - API key for Google Gemini 2.0 Flash" />
+        <variable name="OPENAI_API_KEY" note="NEW - API key for OpenAI GPT-4o-mini" />
+        <note>Two new environment variables required. Must be added to: apps/api/.env, apps/api/.env.example, Railway dashboard environment variables.</note>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Injectable NestJS service pattern: Use @Injectable() decorator, constructor-based dependency injection
+    - Service must be stateless: All LLM clients initialized once, no per-request state
+    - Primary-fallback pattern: Always try Gemini first, fall back to GPT only on failure
+    - Timeout requirement: Gemini API calls timeout after 30 seconds, then trigger GPT fallback
+    - Retry strategy: 3 attempts with exponential backoff (1s, 2s, 4s) for transient errors only
+    - Transient errors (retry): Network timeouts (ETIMEDOUT, ECONNRESET), rate limits (429), service unavailable (503)
+    - Permanent errors (no retry): Authentication failures (401), bad requests (400), invalid JSON response, quota exceeded (403)
+    - Cost calculation formulas:
+      - Gemini: (inputTokens × 0.0003 + outputTokens × 0.0015) / 1000
+      - GPT: (inputTokens × 0.0005 + outputTokens × 0.002) / 1000
+    - Response validation: Use Zod schema to validate LLM JSON responses before using
+    - Error logging: Log detailed errors server-side with stack traces, return sanitized messages to caller
+    - Integration point: LlmService only called if PreFilterService.filterUrl() returns passed=true
+    - Database schema: All required fields already exist in results table (classification_reasoning, classification_result, classification_score, llm_provider, llm_cost, processing_time_ms, retry_count, error_message)
+    - File organization: Create apps/api/src/jobs/services/llm.service.ts (follows existing pattern: prefilter.service.ts, file-parser.service.ts, url-validation.service.ts)
+    - Testing: Unit tests required with mocked API clients, &gt;85% coverage target, test all error paths and fallback scenarios
+    - Prompt storage: Store classification prompt as constant in apps/api/src/config/llm-prompts.ts for easy updates
+  </constraints>
+
+  <interfaces>
+    <interface name="LlmService.classifyUrl" kind="method" signature="async classifyUrl(url: string, content: string): Promise&lt;ClassificationResult&gt;">
+      Main LLM classification method. Tries Gemini API first, falls back to GPT on failure. Returns ClassificationResult with suitable/confidence/reasoning/provider/cost fields. Throws on permanent failures after retries exhausted.
+    </interface>
+    <interface name="ClassificationResult" kind="type" path="packages/shared/src/types/llm.ts">
+      interface ClassificationResult { suitable: boolean; confidence: number; reasoning: string; provider: 'gemini' | 'gpt'; cost: number; tokensUsed: number; processingTimeMs: number; retryCount: number; }
+    </interface>
+    <interface name="LlmClassificationResponse" kind="type" path="packages/shared/src/types/llm.ts">
+      interface LlmClassificationResponse { suitable: boolean; confidence: number; reasoning: string; } - This is the JSON structure expected from both Gemini and GPT APIs.
+    </interface>
+    <interface name="PreFilterService.filterUrl" kind="method" path="apps/api/src/jobs/services/prefilter.service.ts" signature="filterUrl(url: string): PreFilterResult">
+      Predecessor in pipeline. Returns PreFilterResult with passed=true/false. LlmService only called if passed=true.
+    </interface>
+    <interface name="Gemini GenerativeModel.generateContent" kind="external-api" signature="generateContent(prompt: string): Promise&lt;GenerateContentResult&gt;">
+      Google Gemini API method. Returns GenerateContentResult with response.text() containing JSON. May throw on API errors, timeouts, rate limits.
+    </interface>
+    <interface name="OpenAI chat.completions.create" kind="external-api" signature="chat.completions.create(params: ChatCompletionCreateParams): Promise&lt;ChatCompletion&gt;">
+      OpenAI GPT API method. Returns ChatCompletion with choices[0].message.content containing JSON. May throw on API errors, rate limits.
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      - Unit tests with Jest + @nestjs/testing for isolated service logic
+      - Mock external API clients: @google/generative-ai and openai using Jest mocks
+      - Test all success paths: Gemini success, GPT success (when Gemini unavailable)
+      - Test all fallback triggers: Gemini timeout (&gt;30s), Gemini rate limit (429), Gemini API error
+      - Test retry logic: Transient error (ETIMEDOUT) → retry 3 times with exponential backoff → success on retry 2
+      - Test permanent failures: 401 auth error → no retries → throw error immediately
+      - Test cost calculation: Verify Gemini cost formula, verify GPT cost formula with different token counts
+      - Test response parsing: Valid JSON from LLM, invalid JSON (malformed), missing fields
+      - Test processing time tracking: Measure start to finish, include retry delays
+      - Integration tests: Call LlmService.classifyUrl() with real-like HTML content, verify result stored in database
+      - Performance benchmarks: Gemini latency 2-5s, GPT latency 3-7s, total processing &lt;10s per URL
+      - Coverage target: &gt;85% line coverage for LlmService
+    </standards>
+    <locations>
+      - apps/api/src/jobs/__tests__/llm.service.spec.ts (unit tests for LlmService)
+      - apps/api/src/jobs/__tests__/ (integration tests if needed)
+      - Test files should follow .spec.ts naming convention
+      - Use Jest + @nestjs/testing for NestJS service testing
+      - Mock pattern from prefilter.service.spec.ts: Use Test.createTestingModule().compile()
+    </locations>
+    <ideas>
+      <test ac="AC1" description="Test LLM provider configuration">
+        - Test Gemini client initialization with API key from env var
+        - Test OpenAI client initialization with API key from env var
+        - Test error handling when API keys missing or invalid
+        - Test model selection: gemini-2.0-flash-exp for Gemini, gpt-4o-mini for OpenAI
+      </test>
+      <test ac="AC2" description="Test classification prompt design">
+        - Test prompt template includes: URL, content, guest post indicators
+        - Test prompt instructs LLM to respond with JSON: {suitable, confidence, reasoning}
+        - Test prompt stored in llm-prompts.ts and correctly loaded by LlmService
+      </test>
+      <test ac="AC3" description="Test Gemini primary classification">
+        - Mock Gemini API: Return valid JSON response {suitable: true, confidence: 0.87, reasoning: "..."}
+        - Verify classifyUrl() returns ClassificationResult with provider='gemini'
+        - Verify cost calculated using Gemini pricing formula
+        - Verify processing time tracked
+      </test>
+      <test ac="AC4,AC5" description="Test GPT fallback logic">
+        - Mock Gemini API to throw timeout error (30s exceeded)
+        - Verify classifyUrl() falls back to GPT API
+        - Verify fallback logged: "GPT fallback used - Gemini timeout"
+        - Verify result has provider='gpt' and cost calculated with GPT pricing
+        - Test other fallback triggers: Gemini rate limit (429), Gemini API error (500)
+      </test>
+      <test ac="AC6" description="Test result storage">
+        - Verify ClassificationResult includes: suitable (boolean), confidence (0-1), reasoning (string), provider ('gemini' | 'gpt')
+        - Verify mapping to database: classification_result ('suitable' | 'not_suitable'), classification_score (confidence), classification_reasoning, llm_provider
+      </test>
+      <test ac="AC7" description="Test cost calculation">
+        - Test Gemini cost: inputTokens=1000, outputTokens=200 → cost = (1000×0.0003 + 200×0.0015)/1000 = $0.00054
+        - Test GPT cost: inputTokens=1000, outputTokens=200 → cost = (1000×0.0005 + 200×0.002)/1000 = $0.00090
+        - Verify cost stored in result.llm_cost
+      </test>
+      <test ac="AC8" description="Test retry logic with exponential backoff">
+        - Mock Gemini API to throw ETIMEDOUT error on attempts 1 and 2, succeed on attempt 3
+        - Verify 3 retry attempts with delays: 1s, 2s, 4s
+        - Verify result.retry_count = 2 (2 retries before success)
+        - Verify total processing time includes retry delays
+      </test>
+      <test ac="AC9" description="Test permanent failure handling">
+        - Mock Gemini API to throw 401 auth error
+        - Mock GPT API to also throw 401 auth error
+        - Verify no retries attempted (permanent error)
+        - Verify result.status = 'failed', result.error_message = sanitized error message
+        - Verify detailed error logged server-side with stack trace
+      </test>
+      <test ac="AC10" description="Test processing time tracking">
+        - Mock Gemini API with 2s delay
+        - Verify result.processing_time_ms ≈ 2000ms
+        - Test with retries: 3 attempts with 1s, 2s delays → total time ≈ 3s + 2s API latency
+      </test>
+    </ideas>
+  </tests>
+</story-context>

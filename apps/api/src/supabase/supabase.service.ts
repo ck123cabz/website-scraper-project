@@ -33,15 +33,15 @@ export class SupabaseService implements OnModuleInit {
   }
 
   // Helper methods for common database operations
-  async query<T>(table: string) {
+  async query(table: string) {
     return this.supabase.from(table);
   }
 
-  async insert<T>(table: string, data: Partial<T> | Partial<T>[]) {
+  async insert(table: string, data: unknown) {
     return this.supabase.from(table).insert(data).select();
   }
 
-  async update<T>(table: string, id: string, data: Partial<T>) {
+  async update(table: string, id: string, data: unknown) {
     return this.supabase.from(table).update(data).eq('id', id).select();
   }
 
@@ -49,11 +49,11 @@ export class SupabaseService implements OnModuleInit {
     return this.supabase.from(table).delete().eq('id', id);
   }
 
-  async findById<T>(table: string, id: string) {
+  async findById(table: string, id: string) {
     return this.supabase.from(table).select('*').eq('id', id).single();
   }
 
-  async findAll<T>(table: string) {
+  async findAll(table: string) {
     return this.supabase.from(table).select('*');
   }
 }

@@ -58,7 +58,8 @@ export class JobsController {
         throw new HttpException(
           {
             success: false,
-            error: 'Invalid request format. Expected file upload, JSON body with urls array, or text/plain body.',
+            error:
+              'Invalid request format. Expected file upload, JSON body with urls array, or text/plain body.',
           },
           HttpStatus.BAD_REQUEST,
         );

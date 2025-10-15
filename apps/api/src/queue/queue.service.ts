@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { SupabaseService } from '../supabase/supabase.service';
 
 export interface UrlProcessingJob {
   jobId: string;
@@ -10,13 +11,16 @@ export interface UrlProcessingJob {
 
 @Injectable()
 export class QueueService {
+  private readonly logger = new Logger(QueueService.name);
+
   constructor(
     @InjectQueue('url-processing-queue')
     private readonly urlProcessingQueue: Queue<UrlProcessingJob>,
+    private readonly supabase: SupabaseService,
   ) {
     // Add error event listener (Story 2.1 follow-up)
     this.urlProcessingQueue.on('error', (err) => {
-      console.error('[QueueService] Queue error:', err);
+      this.logger.error(`Queue error: ${err.message}`);
     });
   }
 
@@ -67,5 +71,44 @@ export class QueueService {
 
   async clearQueue(): Promise<void> {
     await this.urlProcessingQueue.drain();
+  }
+
+  /**
+   * Pause a specific job by updating its status in database
+   * The worker will check status before processing each URL
+   * Story 2.5: Task 9 - Pause/Resume Job Controls
+   */
+  async pauseJob(jobId: string): Promise<void> {
+    const { error } = await this.supabase
+      .getClient()
+      .from('jobs')
+      .update({ status: 'paused' })
+      .eq('id', jobId);
+
+    if (error) {
+      this.logger.error(`Failed to pause job ${jobId}: ${error.message}`);
+      throw new Error(`Failed to pause job: ${error.message}`);
+    }
+
+    this.logger.log(`Job ${jobId} paused - worker will skip remaining URLs`);
+  }
+
+  /**
+   * Resume a paused job by updating its status in database
+   * Story 2.5: Task 9 - Pause/Resume Job Controls
+   */
+  async resumeJob(jobId: string): Promise<void> {
+    const { error } = await this.supabase
+      .getClient()
+      .from('jobs')
+      .update({ status: 'processing' })
+      .eq('id', jobId);
+
+    if (error) {
+      this.logger.error(`Failed to resume job ${jobId}: ${error.message}`);
+      throw new Error(`Failed to resume job: ${error.message}`);
+    }
+
+    this.logger.log(`Job ${jobId} resumed - worker will continue processing URLs`);
   }
 }

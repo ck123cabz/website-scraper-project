@@ -4,6 +4,8 @@ import { JobsController } from './jobs.controller';
 import { JobsService } from './jobs.service';
 import { FileParserService } from './services/file-parser.service';
 import { UrlValidationService } from './services/url-validation.service';
+import { PreFilterService } from './services/prefilter.service';
+import { LlmService } from './services/llm.service';
 import { memoryStorage } from 'multer';
 import { extname } from 'path';
 
@@ -26,7 +28,7 @@ import { extname } from 'path';
     }),
   ],
   controllers: [JobsController],
-  providers: [JobsService, FileParserService, UrlValidationService],
-  exports: [JobsService],
+  providers: [JobsService, FileParserService, UrlValidationService, PreFilterService, LlmService],
+  exports: [JobsService, PreFilterService, LlmService],
 })
 export class JobsModule {}

@@ -1,0 +1,171 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.3</storyId>
+    <title>Intelligent Pre-Filtering Engine</title>
+    <status>Draft</status>
+    <generatedAt>2025-10-15</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/stories/story-2.3.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a system</asA>
+    <iWant>to filter URLs before sending to LLM using regex patterns</iWant>
+    <soThat>we reduce LLM API costs by 40-60%</soThat>
+    <tasks>
+      - Task 1: Design Pre-Filter Service Architecture (5 subtasks)
+      - Task 2: Implement Default Filter Rules (7 subtasks)
+      - Task 3: Build Pre-Filter Logic (5 subtasks)
+      - Task 4: Performance Optimization (5 subtasks)
+      - Task 5: Database Logging Integration (5 subtasks)
+      - Task 6: Configuration Management (5 subtasks)
+      - Task 7: Metrics and Cost Tracking (6 subtasks)
+      - Task 8: Integration with Worker Pipeline (5 subtasks)
+      - Task 9: Unit Testing (8 subtasks)
+      - Task 10: Integration Testing (6 subtasks)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Pre-filter service with configurable regex rules
+    2. Default rules filter out: blog platforms (wordpress.com, blogspot.com, medium.com/@, substack.com), social media (facebook.com, twitter.com, linkedin.com/in/), e-commerce (amazon.com, ebay.com, shopify.com), forums (reddit.com, quora.com), aggregators (wikipedia.org, youtube.com)
+    3. Each rule has reasoning logged: "REJECT - Blog platform domain"
+    4. URLs passing pre-filter marked: "PASS - Sending to LLM"
+    5. Pre-filtering executes in <100ms per URL
+    6. Filter decisions logged to database
+    7. Configuration endpoint to update rules (admin only - can be file-based for MVP)
+    8. Metrics tracked: pre-filter pass rate, estimated cost savings
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/PRD.md" section="FR008: Intelligent Pre-Filtering">
+        System shall apply regex-based pre-filtering rules to URLs before LLM classification to eliminate obvious non-targets (reducing LLM calls by 40-60%), with filter decisions visible in logs.
+      </doc>
+      <doc path="docs/PRD.md" section="Goal 2: Cost-Optimized Classification Pipeline">
+        Implement intelligent pre-filtering and Gemini 2.0 Flash primary usage to achieve 40-60% reduction in LLM API costs while maintaining classification quality. Include real-time cost tracking visible in the dashboard.
+      </doc>
+      <doc path="docs/PRD.md" section="NFR003: Cost Efficiency">
+        - LLM API costs shall be reduced by minimum 40% compared to current system through pre-filtering
+        - System shall track and display real-time cost metrics per job
+        - Pre-filtering shall execute in &lt;100ms per URL
+      </doc>
+      <doc path="docs/tech-spec-epic-2.md" section="Filter Service (lines 84)">
+        Filter Service: Intelligent pre-filtering with regex rules. Location: apps/api/src/filter/. Exports: FilterService, FilterRules. Interface: FilterResult { passed: boolean; reasoning: string; rule?: string; }
+      </doc>
+      <doc path="docs/tech-spec-epic-2.md" section="Processing Flow (lines 219-226)">
+        Worker Processing flow: Fetch Content → Pre-Filter: FilterService.checkUrl() → If REJECT: Log decision, skip LLM, mark as 'rejected_prefilter'. If PASS: Continue to classification.
+      </doc>
+      <doc path="docs/epic-stories.md" section="Story 2.3 (lines 268-291)">
+        Story 2.3: Intelligent Pre-Filtering Engine. Dependencies: Story 2.1, 2.2. Enables: Story 2.4, 2.5. 8 acceptance criteria including configurable regex rules, default filter rules for blog platforms/social media/ecommerce/forums/aggregators, &lt;100ms per URL, database logging, metrics tracking.
+      </doc>
+    </docs>
+    <code>
+      <file path="apps/api/src/jobs/jobs.service.ts" reason="JobsService will be extended to store pre-filter results and update metrics">
+        Existing methods: createJob(), getJobById(), getAllJobs(), updateJob(), deleteJob(), createJobWithUrls(). createJobWithUrls() uses RPC function 'create_job_with_urls' for atomic transactions. Will need to integrate PreFilterService and store prefilter_passed/prefilter_reasoning in results.
+      </file>
+      <file path="apps/api/src/jobs/jobs.module.ts" reason="PreFilterService must be added to JobsModule providers">
+        Current providers: JobsService, FileParserService, UrlValidationService. MulterModule configured with memory storage. Exports JobsService. Will need to add PreFilterService to providers array.
+      </file>
+      <file path="apps/api/src/jobs/services/url-validation.service.ts" reason="Reference for service architecture pattern">
+        Injectable NestJS service for URL validation and normalization. Pattern to follow for PreFilterService implementation.
+      </file>
+      <file path="apps/api/src/jobs/services/file-parser.service.ts" reason="Reference for service architecture pattern">
+        Injectable NestJS service for file parsing. Pattern to follow for PreFilterService implementation.
+      </file>
+    </code>
+    <dependencies>
+      <ecosystem name="node">
+        <package name="@nestjs/common" version="^10.3.0" />
+        <package name="@nestjs/core" version="^10.3.0" />
+        <package name="@supabase/supabase-js" version="^2.39.0" />
+        <package name="class-validator" version="^0.14.2" />
+        <package name="class-transformer" version="^0.5.1" />
+        <note>No new dependencies required for Story 2.3. Uses built-in JavaScript RegExp and fs.readFileSync for config loading.</note>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Injectable NestJS service pattern: Use @Injectable() decorator, constructor-based dependency injection
+    - Service must be stateless: All rules loaded at initialization, no per-request state
+    - Performance requirement: &lt;100ms per URL (achieved by pre-compiling RegExp at service init)
+    - Early exit optimization: Stop on first matching rule, no unnecessary pattern testing
+    - No database queries in hot path: All rules in-memory
+    - Configuration: JSON file in apps/api/src/config/ directory (follows NestJS conventions)
+    - Database schema: Must add prefilter_passed (boolean), prefilter_reasoning (text) to results table
+    - Database schema: Must add prefilter_rejected_count, prefilter_passed_count (integer) to jobs table
+    - Supabase migrations: Create migration SQL file in supabase/migrations/
+    - Integration point: Worker (Story 2.5) will call PreFilterService before LLM classification
+    - Testing: Unit tests required for all rule categories, performance test for 100 URLs in &lt;10 seconds
+  </constraints>
+
+  <interfaces>
+    <interface name="PreFilterRule" kind="type" path="apps/api/src/types/prefilter.types.ts">
+      interface PreFilterRule { category: string; pattern: RegExp; reasoning: string; }
+    </interface>
+    <interface name="PreFilterResult" kind="type" path="apps/api/src/types/prefilter.types.ts">
+      interface PreFilterResult { passed: boolean; reasoning: string; matched_rule?: string; }
+    </interface>
+    <interface name="PreFilterService.filterUrl" kind="method" signature="filterUrl(url: string): PreFilterResult">
+      Main pre-filter method. Iterates through compiled RegExp rules, returns PreFilterResult with passed=false + reasoning if any rule matches, or passed=true if no rules match.
+    </interface>
+    <interface name="JobsService.createJobWithUrls" kind="method" path="apps/api/src/jobs/jobs.service.ts" signature="createJobWithUrls(name: string, urls: string[]): Promise&lt;JobRow&gt;">
+      Creates job with URLs using atomic RPC transaction. Will be extended to accept pre-filter results and store in database.
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      - Unit tests with Jest + @nestjs/testing for isolated service logic
+      - Test all rule categories: blog platforms, social media, ecommerce, forums, aggregators
+      - Test edge cases: URLs with query params, trailing slashes, mixed case
+      - Performance test: 100 URLs processed in &lt;10 seconds (100ms per URL avg)
+      - Invalid rule handling: Malformed regex patterns in config should log warning and skip
+      - Integration tests: Upload job with mix of filterable and non-filterable URLs
+      - Database verification: Pre-filter results stored in results.prefilter_passed, results.prefilter_reasoning
+      - Activity log verification: Pre-filter decisions logged with severity 'info'
+      - Metrics verification: job.prefilter_rejected_count and job.prefilter_passed_count updated correctly
+    </standards>
+    <locations>
+      - apps/api/src/jobs/__tests__/prefilter.service.spec.ts (unit tests for PreFilterService)
+      - apps/api/src/jobs/__tests__/ (integration tests if needed)
+      - Test files should follow .spec.ts naming convention
+      - Use Jest + @nestjs/testing for NestJS service testing
+    </locations>
+    <ideas>
+      <test ac="AC1" description="Test configurable regex rules loading">
+        - Test loading rules from default-filter-rules.json
+        - Test invalid JSON format handling
+        - Test malformed RegExp pattern handling (should skip with warning)
+      </test>
+      <test ac="AC2" description="Test default filter rules">
+        - Test blog platform rules: wordpress.com/author/post, blogspot.com/post, medium.com/@author/story, substack.com/newsletter
+        - Test social media rules: facebook.com/profile, twitter.com/user, linkedin.com/in/user
+        - Test e-commerce rules: amazon.com/product, ebay.com/item, shopify.com/store
+        - Test forum rules: reddit.com/r/subreddit, quora.com/question
+        - Test aggregator rules: wikipedia.org/wiki/Article, youtube.com/watch?v=123
+      </test>
+      <test ac="AC3,AC4" description="Test reasoning and pass/reject logic">
+        - Test URLs matching rules return passed=false with rule reasoning
+        - Test URLs passing all rules return passed=true with "PASS - Sending to LLM"
+        - Test first matching rule stops iteration (early exit)
+      </test>
+      <test ac="AC5" description="Test performance requirement">
+        - Process 100 URLs with mix of matching/non-matching patterns
+        - Verify total time &lt;10 seconds (avg 100ms per URL)
+        - Profile filterUrl() execution time for single URL (&lt;100ms)
+      </test>
+      <test ac="AC6" description="Test database logging integration">
+        - Verify pre-filter results stored in results table with prefilter_passed and prefilter_reasoning columns
+        - Verify activity_logs table contains entries for pre-filter decisions
+      </test>
+      <test ac="AC8" description="Test metrics tracking">
+        - Verify job.prefilter_rejected_count increments for rejected URLs
+        - Verify job.prefilter_passed_count increments for passed URLs
+        - Verify cost savings calculation: rejected_count × $0.00045
+      </test>
+    </ideas>
+  </tests>
+</story-context>

@@ -1,0 +1,241 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.5</storyId>
+    <title>Worker Processing & Real-Time Updates</title>
+    <status>Draft</status>
+    <generatedAt>2025-10-15</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/stories/story-2.5.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a system</asA>
+    <iWant>to process URLs via BullMQ workers with real-time database updates</iWant>
+    <soThat>dashboard shows live progress and logs</soThat>
+    <tasks>- Task 1: Set Up ScrapingBee Integration Service (AC: 3)
+- Task 2: Content Extraction Logic (AC: 3)
+- Task 3: Create BullMQ Worker Processor (AC: 1, 2, 3)
+- Task 4: Implement Processing Pipeline (AC: 3, 8)
+- Task 5: Store Result and Update Job (AC: 3, 4, 5)
+- Task 6: Retry Logic with Exponential Backoff (AC: 8, 9)
+- Task 7: Activity Logging (AC: 3, 8)
+- Task 8: Job Status Lifecycle Management (AC: 5, 6, 10)
+- Task 9: Pause/Resume Job Controls (AC: 6)
+- Task 10: Graceful Shutdown Handling (AC: 7)
+- Task 11: Unit Testing (AC: ALL)
+- Task 12: Integration Testing (AC: ALL)</tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC2.5.1">BullMQ worker configured to process jobs from queue</criterion>
+    <criterion id="AC2.5.2">Worker concurrency: 5 concurrent URLs (respects ScrapingBee rate limits)</criterion>
+    <criterion id="AC2.5.3">Processing flow per URL: Fetch → Extract → Pre-filter → Classify (if PASS) → Store → Update → Log</criterion>
+    <criterion id="AC2.5.4">Database updates trigger Supabase Realtime events (dashboard listens)</criterion>
+    <criterion id="AC2.5.5">Job status auto-updates: "pending" → "processing" → "completed"</criterion>
+    <criterion id="AC2.5.6">Pause/resume support: check job status before processing next URL</criterion>
+    <criterion id="AC2.5.7">Graceful shutdown: finish current URLs before stopping</criterion>
+    <criterion id="AC2.5.8">Error handling: failed URLs don't stop job, logged with details</criterion>
+    <criterion id="AC2.5.9">ScrapingBee rate limit handling: 429 error → pause 30s, retry</criterion>
+    <criterion id="AC2.5.10">Job completion: status "completed", completion timestamp, summary stats</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/tech-spec-epic-2.md</path>
+        <title>Technical Specification: Production-Grade Processing Pipeline</title>
+        <section>Workflows and Sequencing - Worker Processing</section>
+        <snippet>Worker Processing workflow (lines 207-243): Detailed processing flow from job creation through URL processing to completion. Includes ScrapingBee fetching, pre-filtering, LLM classification, result storage, job counter updates, activity logging, and Realtime broadcasting.</snippet>
+      </doc>
+      <doc>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/tech-spec-epic-2.md</path>
+        <title>Technical Specification: Production-Grade Processing Pipeline</title>
+        <section>Services and Modules</section>
+        <snippet>Module architecture (lines 76-90): Worker Module orchestrates scraping → filtering → classification. Scraper Service handles ScrapingBee integration. Queue Module manages BullMQ queue with job dispatching.</snippet>
+      </doc>
+      <doc>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/tech-spec-epic-2.md</path>
+        <title>Technical Specification: Production-Grade Processing Pipeline</title>
+        <section>Non-Functional Requirements - Performance</section>
+        <snippet>NFR002-P1 to NFR002-P8 (lines 265-273): Performance targets including 20 URLs/min processing rate, 10K URLs in &lt;8 hours, worker concurrency of 5, pre-filtering &lt;100ms, database writes &lt;200ms, LLM timeout 30s.</snippet>
+      </doc>
+      <doc>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/tech-spec-epic-2.md</path>
+        <title>Technical Specification: Production-Grade Processing Pipeline</title>
+        <section>Non-Functional Requirements - Reliability</section>
+        <snippet>NFR002-R1 to NFR002-R7 (lines 286-293): Reliability requirements including automatic retries (3 attempts with exponential backoff), job state persistence, isolated error handling, graceful shutdown with SIGTERM handling, health checks.</snippet>
+      </doc>
+      <doc>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>Real-Time Dashboard &amp; Transparency</section>
+        <snippet>FR001-FR006 (lines 76-93): Real-time dashboard requirements showing live job status, current URL display, activity logs, historical results, progress indicators, and cost tracking - all updated via Supabase Realtime.</snippet>
+      </doc>
+      <doc>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>Non-Functional Requirements</section>
+        <snippet>NFR001 (lines 120-124): Real-time UI responsiveness - dashboard updates within 500ms via Supabase Realtime, live logs &lt;1s latency, progress updates at 1Hz minimum.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/queue/queue.service.ts</path>
+        <kind>service</kind>
+        <symbol>QueueService</symbol>
+        <lines>1-72</lines>
+        <reason>Existing BullMQ queue service with addUrlToQueue, addUrlsToQueue, pauseQueue, resumeQueue methods. Story 2.5 needs to add pauseJob/resumeJob methods for per-job control (not queue-wide).</reason>
+      </artifact>
+      <artifact>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/services/prefilter.service.ts</path>
+        <kind>service</kind>
+        <symbol>PreFilterService.filterUrl()</symbol>
+        <lines>89-149</lines>
+        <reason>Pre-filtering service from Story 2.3. Worker calls filterUrl() to determine if URL should proceed to LLM classification or be rejected early. Returns PreFilterResult with passed status and reasoning.</reason>
+      </artifact>
+      <artifact>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/services/llm.service.ts</path>
+        <kind>service</kind>
+        <symbol>LlmService.classifyUrl()</symbol>
+        <lines>170-236</lines>
+        <reason>LLM classification service from Story 2.4. Worker calls classifyUrl() after pre-filter passes. Returns classification result with provider (gemini/gpt), cost, confidence, and reasoning. Includes retry logic and timeout handling.</reason>
+      </artifact>
+      <artifact>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/jobs.module.ts</path>
+        <kind>module</kind>
+        <symbol>JobsModule</symbol>
+        <lines>1-34</lines>
+        <reason>Jobs module exports JobsService, PreFilterService, and LlmService. Worker module will inject these services for processing pipeline.</reason>
+      </artifact>
+      <artifact>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/queue/queue.module.ts</path>
+        <kind>module</kind>
+        <symbol>QueueModule</symbol>
+        <lines>1-33</lines>
+        <reason>Queue module configuration with BullMQ setup. Already configured with url-processing-queue, retry attempts (3), and exponential backoff (2s delay). Worker processor will register with this queue.</reason>
+      </artifact>
+      <artifact>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/packages/shared/src/types/database.types.ts</path>
+        <kind>types</kind>
+        <symbol>Database schema types</symbol>
+        <lines>1-371</lines>
+        <reason>Supabase database schema with jobs, results, activity_logs tables. Worker updates jobs table fields (current_url, current_stage, processed_urls, costs, progress), inserts to results and activity_logs tables. Includes processing_stage enum (fetching, filtering, classifying) and job_status enum (pending, processing, paused, completed).</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package name="@nestjs/bullmq" version="^10.1.0">NestJS BullMQ integration for worker processor decorators</package>
+        <package name="bullmq" version="^5.0.0">Redis-based queue system for job processing</package>
+        <package name="@supabase/supabase-js" version="^2.39.0">Supabase client for database operations and Realtime</package>
+        <package name="@google/generative-ai" version="^0.24.1">Gemini API client (used by LlmService)</package>
+        <package name="openai" version="^6.3.0">OpenAI GPT API client (used by LlmService)</package>
+        <package name="class-validator" version="^0.14.2">Input validation decorators</package>
+        <package name="class-transformer" version="^0.5.1">DTO transformation</package>
+        <package name="zod" version="^3.25.76">Schema validation for external API responses</package>
+      </node>
+      <node_new>
+        <package name="cheerio" version="^1.0.0">Lightweight HTML parsing for content extraction</package>
+        <package name="@types/cheerio" version="^0.22.0">TypeScript types for cheerio</package>
+        <package name="axios" version="^1.7.0">HTTP client for ScrapingBee API (already installed)</package>
+      </node_new>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint category="Architecture">Worker must use @Processor('url-processing-queue') decorator from @nestjs/bullmq</constraint>
+    <constraint category="Architecture">Worker concurrency limited to 5 concurrent URLs (respects ScrapingBee 10 req/sec rate limit)</constraint>
+    <constraint category="Processing Flow">Strict pipeline order: Fetch → Extract → Pre-filter → Classify (if PASS) → Store → Update → Log</constraint>
+    <constraint category="Error Handling">Failed URLs must not crash entire job - isolated error handling per URL</constraint>
+    <constraint category="Error Handling">Retry logic: 3 attempts with exponential backoff (1s, 2s, 4s) for transient errors only</constraint>
+    <constraint category="Error Handling">Transient errors: Network timeout, 429 rate limit, 503. Permanent errors: 401, 403, 400, invalid JSON</constraint>
+    <constraint category="Rate Limiting">ScrapingBee 429 handling: Pause 30 seconds before retry (special case)</constraint>
+    <constraint category="Job Control">Check job status from database before processing each URL (support pause/resume/cancel)</constraint>
+    <constraint category="Graceful Shutdown">Implement NestJS lifecycle hook onModuleDestroy() to handle SIGTERM gracefully</constraint>
+    <constraint category="Graceful Shutdown">On SIGTERM: Pause accepting new jobs, wait for active jobs to complete (max 30s), then close worker</constraint>
+    <constraint category="Database">All database writes must use Supabase client (triggers Realtime events automatically)</constraint>
+    <constraint category="Database">Update jobs table fields: current_url, current_stage, current_url_started_at, processed_urls, successful_urls, failed_urls, progress_percentage, processing_rate, estimated_time_remaining, total_cost, gemini_cost, gpt_cost</constraint>
+    <constraint category="Security">API keys must be stored in environment variables (SCRAPINGBEE_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY)</constraint>
+    <constraint category="Security">Sanitize all inputs before logging (URL length limits, strip control characters)</constraint>
+    <constraint category="Security">Validate external API responses with Zod schemas before using</constraint>
+    <constraint category="Logging">Use Pino logger for structured logging (all processing steps, errors, retries)</constraint>
+    <constraint category="Testing">Mock all external API clients (ScrapingBee, Gemini, OpenAI, Supabase) in unit tests</constraint>
+    <constraint category="Testing">Unit test coverage &gt;85% for worker processor and scraper service</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>QueueService.pauseJob(jobId: string)</name>
+      <kind>method</kind>
+      <signature>async pauseJob(jobId: string): Promise&lt;void&gt;</signature>
+      <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/queue/queue.service.ts</path>
+      <usage>Worker must call to pause BullMQ queue for specific job. NEW - needs to be implemented in Story 2.5</usage>
+    </interface>
+    <interface>
+      <name>QueueService.resumeJob(jobId: string)</name>
+      <kind>method</kind>
+      <signature>async resumeJob(jobId: string): Promise&lt;void&gt;</signature>
+      <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/queue/queue.service.ts</path>
+      <usage>Worker must call to resume BullMQ queue for specific job. NEW - needs to be implemented in Story 2.5</usage>
+    </interface>
+    <interface>
+      <name>PreFilterService.filterUrl(url: string)</name>
+      <kind>method</kind>
+      <signature>filterUrl(url: string): PreFilterResult</signature>
+      <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/services/prefilter.service.ts</path>
+      <usage>Worker calls to determine if URL should proceed to LLM (PASS) or be rejected early (REJECT). Returns { passed: boolean, reasoning: string, matched_rule?: string }</usage>
+    </interface>
+    <interface>
+      <name>LlmService.classifyUrl(url: string, content: string)</name>
+      <kind>method</kind>
+      <signature>async classifyUrl(url: string, content: string): Promise&lt;{ classification: 'suitable' | 'not_suitable', confidence: number, reasoning: string, provider: LlmProvider, cost: number, processingTimeMs: number, retryCount: number }&gt;</signature>
+      <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/services/llm.service.ts</path>
+      <usage>Worker calls after pre-filter passes. Includes retry logic internally. Tries Gemini first, falls back to GPT on failure. Returns classification with cost tracking.</usage>
+    </interface>
+    <interface>
+      <name>Supabase client.from('jobs').update()</name>
+      <kind>database</kind>
+      <signature>supabase.from('jobs').update({ ... }).eq('id', jobId)</signature>
+      <path>Supabase database operations</path>
+      <usage>Worker updates job fields: current_url, current_stage, current_url_started_at, processed_urls, successful_urls, failed_urls, progress_percentage, processing_rate, estimated_time_remaining, total_cost, gemini_cost, gpt_cost, status, completed_at</usage>
+    </interface>
+    <interface>
+      <name>Supabase client.from('results').insert()</name>
+      <kind>database</kind>
+      <signature>supabase.from('results').insert({ job_id, url, status, classification_result, classification_score, classification_reasoning, llm_provider, llm_cost, processing_time_ms, prefilter_passed, prefilter_reasoning, scraped_title, scraped_meta, error_message, retry_count })</signature>
+      <path>Supabase database operations</path>
+      <usage>Worker inserts result record after processing each URL (whether successful, rejected, or failed)</usage>
+    </interface>
+    <interface>
+      <name>Supabase client.from('activity_logs').insert()</name>
+      <kind>database</kind>
+      <signature>supabase.from('activity_logs').insert({ job_id, message, severity, context })</signature>
+      <path>Supabase database operations</path>
+      <usage>Worker inserts activity logs for all operations: URL fetch started, pre-filter decision, LLM classification, errors, retries, job completion. Severity levels: 'info', 'success', 'warning', 'error'</usage>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>NestJS testing with Jest framework. Unit tests for services with mocked dependencies (ScrapingBee, Gemini, OpenAI, Supabase). Integration tests with test database for full processing pipeline. E2E tests with mocked external APIs. Mock strategy: Use nock for HTTP interception (ScrapingBee), test doubles for LLM services, real Supabase test project for Realtime verification. Coverage target: &gt;85% for worker processor and scraper service.</standards>
+    <locations>
+      <location>apps/api/src/workers/__tests__/url-worker.processor.spec.ts</location>
+      <location>apps/api/src/scraper/__tests__/scraper.service.spec.ts</location>
+      <location>apps/api/src/queue/__tests__/queue.service.spec.ts</location>
+    </locations>
+    <ideas>
+      <idea ac="AC2.5.1, AC2.5.2, AC2.5.3">Unit test: UrlWorkerProcessor.processUrl() with all pipeline steps mocked. Verify calls to ScraperService, PreFilterService, LlmService, database updates in correct order.</idea>
+      <idea ac="AC2.5.3">Unit test: ScraperService.fetchUrl() with mock axios responses (success 200, 404 error, 429 rate limit, timeout). Verify error handling and retry logic.</idea>
+      <idea ac="AC2.5.3">Unit test: ScraperService.extractContent() with various HTML structures (valid title/meta, missing tags, malformed HTML). Verify 10K character truncation.</idea>
+      <idea ac="AC2.5.4">Integration test: Process single URL end-to-end with test Supabase project. Subscribe to Realtime events. Verify job update event fired with correct fields.</idea>
+      <idea ac="AC2.5.5">Unit test: Job status lifecycle - verify status transitions from 'pending' to 'processing' on first URL, to 'completed' when all URLs processed.</idea>
+      <idea ac="AC2.5.6">Unit test: Pause/resume - mock job status as 'paused' in database. Verify worker skips processing and acks job without calling ScraperService.</idea>
+      <idea ac="AC2.5.7">Integration test: Graceful shutdown - start worker processing, send SIGTERM signal, verify current URL completes, next URL not started, worker closes cleanly.</idea>
+      <idea ac="AC2.5.8">Unit test: Error isolation - mock ScraperService to throw permanent error on URL 3 of 10. Verify worker continues with URLs 4-10, marks URL 3 as failed, job completes successfully.</idea>
+      <idea ac="AC2.5.9">Unit test: ScrapingBee 429 handling - mock 429 error, verify 30s pause (not 1s/2s/4s exponential backoff), then retry succeeds.</idea>
+      <idea ac="AC2.5.10">Integration test: Job completion - process 10 URLs, verify final job record has status='completed', completed_at timestamp, final stats (success_rate, avg_cost_per_url).</idea>
+      <idea ac="AC2.5.3">Integration test: Pre-filter integration - process 10 URLs (5 should be rejected by pre-filter). Verify 5 results with classification_result='rejected_prefilter', 5 with LLM classification.</idea>
+      <idea ac="AC2.5.3">Integration test: LLM fallback - mock Gemini timeout in LlmService. Verify GPT called, result stored with provider='gpt', activity log shows fallback reason.</idea>
+      <idea ac="ALL">Performance test: Process 100 URLs with real ScrapingBee API (test account). Verify avg processing rate ≥20 URLs/min, memory usage stable &lt;512MB, no leaks.</idea>
+    </ideas>
+  </tests>
+</story-context>

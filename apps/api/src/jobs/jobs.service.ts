@@ -4,7 +4,6 @@ import { Database } from '@website-scraper/shared';
 
 type JobInsert = Database['public']['Tables']['jobs']['Insert'];
 type JobRow = Database['public']['Tables']['jobs']['Row'];
-type ResultInsert = Database['public']['Tables']['results']['Insert'];
 
 @Injectable()
 export class JobsService {
@@ -96,10 +95,12 @@ export class JobsService {
     const client = this.supabase.getClient();
 
     // Use RPC function with proper Postgres transaction for atomicity
-    const { data, error } = await client.rpc('create_job_with_urls', {
-      p_name: name || 'Untitled Job',
-      p_urls: urls,
-    }).single();
+    const { data, error } = await client
+      .rpc('create_job_with_urls', {
+        p_name: name || 'Untitled Job',
+        p_urls: urls,
+      })
+      .single();
 
     if (error) {
       throw new Error(`Failed to create job with URLs: ${error.message}`);
@@ -125,7 +126,9 @@ export class JobsService {
 
     // Log success for large uploads
     if (urls.length > 1000) {
-      console.log(`[JobsService] Created job ${job.id} with ${urls.length} URLs using atomic transaction`);
+      console.log(
+        `[JobsService] Created job ${job.id} with ${urls.length} URLs using atomic transaction`,
+      );
     }
 
     return job;

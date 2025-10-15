@@ -1,0 +1,84 @@
+{
+  "rules": [
+    {
+      "category": "blog_platform",
+      "pattern": "wordpress\\.com/.*",
+      "reasoning": "REJECT - Blog platform domain (WordPress.com)"
+    },
+    {
+      "category": "blog_platform",
+      "pattern": "blogspot\\.com",
+      "reasoning": "REJECT - Blog platform domain (Blogspot)"
+    },
+    {
+      "category": "blog_platform",
+      "pattern": "medium\\.com/@",
+      "reasoning": "REJECT - Blog platform domain (Medium personal blog)"
+    },
+    {
+      "category": "blog_platform",
+      "pattern": "substack\\.com",
+      "reasoning": "REJECT - Blog platform domain (Substack)"
+    },
+    {
+      "category": "social_media",
+      "pattern": "facebook\\.com",
+      "reasoning": "REJECT - Social media platform (Facebook)"
+    },
+    {
+      "category": "social_media",
+      "pattern": "twitter\\.com",
+      "reasoning": "REJECT - Social media platform (Twitter/X)"
+    },
+    {
+      "category": "social_media",
+      "pattern": "x\\.com",
+      "reasoning": "REJECT - Social media platform (X/Twitter)"
+    },
+    {
+      "category": "social_media",
+      "pattern": "linkedin\\.com/in/",
+      "reasoning": "REJECT - Social media profile (LinkedIn)"
+    },
+    {
+      "category": "social_media",
+      "pattern": "instagram\\.com",
+      "reasoning": "REJECT - Social media platform (Instagram)"
+    },
+    {
+      "category": "ecommerce",
+      "pattern": "amazon\\.com",
+      "reasoning": "REJECT - E-commerce platform (Amazon)"
+    },
+    {
+      "category": "ecommerce",
+      "pattern": "ebay\\.com",
+      "reasoning": "REJECT - E-commerce platform (eBay)"
+    },
+    {
+      "category": "ecommerce",
+      "pattern": "shopify\\.com",
+      "reasoning": "REJECT - E-commerce platform (Shopify)"
+    },
+    {
+      "category": "forum",
+      "pattern": "reddit\\.com",
+      "reasoning": "REJECT - Forum/discussion platform (Reddit)"
+    },
+    {
+      "category": "forum",
+      "pattern": "quora\\.com",
+      "reasoning": "REJECT - Q&A platform (Quora)"
+    },
+    {
+      "category": "aggregator",
+      "pattern": "wikipedia\\.org",
+      "reasoning": "REJECT - Large knowledge aggregator (Wikipedia)"
+    },
+    {
+      "category": "aggregator",
+      "pattern": "youtube\\.com",
+      "reasoning": "REJECT - Video aggregator (YouTube)"
+    }
+  ]
+}

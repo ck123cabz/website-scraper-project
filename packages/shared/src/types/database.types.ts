@@ -62,6 +62,8 @@ export type Database = {
           gpt_cost: number
           id: string
           name: string | null
+          prefilter_passed_count: number | null
+          prefilter_rejected_count: number | null
           processed_urls: number
           processing_rate: number | null
           progress_percentage: number
@@ -85,6 +87,8 @@ export type Database = {
           gpt_cost?: number
           id?: string
           name?: string | null
+          prefilter_passed_count?: number | null
+          prefilter_rejected_count?: number | null
           processed_urls?: number
           processing_rate?: number | null
           progress_percentage?: number
@@ -108,6 +112,8 @@ export type Database = {
           gpt_cost?: number
           id?: string
           name?: string | null
+          prefilter_passed_count?: number | null
+          prefilter_rejected_count?: number | null
           processed_urls?: number
           processing_rate?: number | null
           progress_percentage?: number
@@ -134,6 +140,8 @@ export type Database = {
           job_id: string
           llm_cost: number | null
           llm_provider: Database["public"]["Enums"]["llm_provider"] | null
+          prefilter_passed: boolean | null
+          prefilter_reasoning: string | null
           processed_at: string
           processing_time_ms: number | null
           retry_count: number | null
@@ -152,6 +160,8 @@ export type Database = {
           job_id: string
           llm_cost?: number | null
           llm_provider?: Database["public"]["Enums"]["llm_provider"] | null
+          prefilter_passed?: boolean | null
+          prefilter_reasoning?: string | null
           processed_at?: string
           processing_time_ms?: number | null
           retry_count?: number | null
@@ -170,6 +180,8 @@ export type Database = {
           job_id?: string
           llm_cost?: number | null
           llm_provider?: Database["public"]["Enums"]["llm_provider"] | null
+          prefilter_passed?: boolean | null
+          prefilter_reasoning?: string | null
           processed_at?: string
           processing_time_ms?: number | null
           retry_count?: number | null
@@ -191,7 +203,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_job_with_urls: {
+        Args: { p_name: string; p_urls: string[] }
+        Returns: {
+          created_at: string
+          job_id: string
+          job_name: string
+          status: string
+          total_urls: number
+        }[]
+      }
     }
     Enums: {
       classification_result: "suitable" | "not_suitable" | "rejected_prefilter"

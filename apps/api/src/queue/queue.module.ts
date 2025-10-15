@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { QueueService } from './queue.service';
+import { SupabaseModule } from '../supabase/supabase.module';
 
 @Module({
   imports: [
+    SupabaseModule, // Import SupabaseModule for database operations (pause/resume)
     BullModule.forRoot({
       connection: {
         url: process.env.REDIS_URL || 'redis://localhost:6379',

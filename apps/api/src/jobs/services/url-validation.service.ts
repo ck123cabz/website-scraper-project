@@ -68,7 +68,7 @@ export class UrlValidationService {
    * L2 Fix: Log warnings when normalization fails instead of silently returning original
    */
   normalizeUrl(url: string): string {
-    let normalized = url.trim();
+    const normalized = url.trim();
 
     try {
       const urlObj = new URL(normalized);
