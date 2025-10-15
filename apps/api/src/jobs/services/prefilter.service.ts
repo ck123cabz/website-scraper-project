@@ -1,8 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import safeRegex from 'safe-regex';
 import type { PreFilterRule, PreFilterResult, PreFilterConfig } from '@website-scraper/shared';
+import { SettingsService } from '../../settings/settings.service';
 
 /**
  * Compiled filter rule with RegExp pattern
@@ -16,21 +17,87 @@ interface CompiledRule {
 /**
  * Pre-filter service to reject URLs based on regex patterns before LLM classification
  * Reduces LLM API costs by 40-60% by filtering out known unsuitable URL patterns
+ * Story 3.0: Now loads rules from database via SettingsService, falls back to JSON file
  */
 @Injectable()
-export class PreFilterService {
+export class PreFilterService implements OnModuleInit {
   private readonly logger = new Logger(PreFilterService.name);
-  private readonly compiledRules: CompiledRule[] = [];
+  private compiledRules: CompiledRule[] = [];
 
-  constructor() {
-    this.loadRules();
+  constructor(private readonly settingsService: SettingsService) {}
+
+  /**
+   * Initialize service by loading rules from database
+   */
+  async onModuleInit() {
+    await this.loadRulesFromDatabase();
   }
 
   /**
-   * Load and compile filter rules from configuration file
-   * Rules are compiled at service initialization for optimal performance
+   * Load rules from database via SettingsService
+   * Falls back to JSON file if database unavailable
+   * Story 3.0 AC6: Load rules from database
    */
-  private loadRules(): void {
+  private async loadRulesFromDatabase(): Promise<void> {
+    try {
+      const settings = await this.settingsService.getSettings();
+
+      // Check if settings came from database or defaults
+      const isFromDatabase = settings.id !== 'default';
+      const rules = settings.prefilter_rules;
+
+      // Filter only enabled rules (Story 3.0 AC6)
+      const enabledRules = rules.filter((rule) => rule.enabled);
+
+      // Reset compiled rules
+      this.compiledRules = [];
+
+      for (const rule of enabledRules) {
+        try {
+          // Validate regex for ReDoS vulnerability before compilation
+          if (!safeRegex(rule.pattern)) {
+            this.logger.warn(
+              `Potentially unsafe regex pattern (ReDoS risk) in rule "${rule.category}": ${rule.pattern}. Skipping rule.`,
+            );
+            continue;
+          }
+
+          // Compile regex pattern for performance
+          const compiledPattern = new RegExp(rule.pattern, 'i'); // Case-insensitive
+          this.compiledRules.push({
+            category: rule.category,
+            pattern: compiledPattern,
+            reasoning: rule.reasoning,
+          });
+        } catch (error) {
+          this.logger.warn(
+            `Invalid regex pattern in rule "${rule.category}": ${rule.pattern}. Skipping rule.`,
+          );
+        }
+      }
+
+      if (isFromDatabase) {
+        this.logger.log(
+          `Loaded ${this.compiledRules.length} pre-filter rules from database (${enabledRules.length} enabled out of ${rules.length} total)`,
+        );
+      } else {
+        this.logger.warn(
+          `Loaded ${this.compiledRules.length} pre-filter rules from defaults (database unavailable)`,
+        );
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to load rules from database: ${errorMessage}. Falling back to file.`);
+      this.loadRulesFromFile();
+    }
+  }
+
+  /**
+   * Fallback: Load and compile filter rules from configuration file
+   * Used when database is unavailable
+   * Story 3.0 AC6: Fallback to hardcoded defaults
+   */
+  private loadRulesFromFile(): void {
     try {
       // Use absolute path resolution from project root to avoid path traversal issues
       // Priority: 1) CONFIG_PATH env var (production), 2) Relative to __dirname (development/test)
@@ -48,6 +115,8 @@ export class PreFilterService {
 
       const configJson = readFileSync(configPath, 'utf-8');
       const config: PreFilterConfig = JSON.parse(configJson);
+
+      this.compiledRules = [];
 
       for (const rule of config.rules) {
         try {
@@ -73,10 +142,20 @@ export class PreFilterService {
         }
       }
 
-      this.logger.log(`Loaded ${this.compiledRules.length} pre-filter rules`);
+      this.logger.log(`Loaded ${this.compiledRules.length} pre-filter rules from file (fallback)`);
     } catch (error) {
-      this.logger.error('Failed to load pre-filter rules. Pre-filtering will be disabled.', error);
+      this.logger.error('Failed to load pre-filter rules from file. Pre-filtering will be disabled.', error);
     }
+  }
+
+  /**
+   * Refresh rules from database
+   * Called when settings are updated
+   * Story 3.0 AC6: Refresh rules when settings change
+   */
+  async refreshRules(): Promise<void> {
+    this.logger.log('Refreshing pre-filter rules from database');
+    await this.loadRulesFromDatabase();
   }
 
   /**

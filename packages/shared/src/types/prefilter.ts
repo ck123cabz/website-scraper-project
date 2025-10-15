@@ -8,6 +8,8 @@ export interface PreFilterRule {
   pattern: string;
   /** Human-readable reasoning for why this rule rejects URLs */
   reasoning: string;
+  /** Whether this rule is currently enabled (optional, defaults to true) */
+  enabled?: boolean;
 }
 
 /**

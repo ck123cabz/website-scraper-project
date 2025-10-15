@@ -96,8 +96,33 @@ Users shall see real-time cost tracking showing total LLM API costs for current 
 **FR007: Bulk URL Upload**
 Users shall upload URL lists via file upload (CSV, TXT) or paste directly into textarea, with support for 5K-10K URLs per batch and automatic deduplication.
 
-**FR008: Intelligent Pre-Filtering**
-System shall apply regex-based pre-filtering rules to URLs before LLM classification to eliminate obvious non-targets (reducing LLM calls by 40-60%), with filter decisions visible in logs.
+**FR008: Intelligent Progressive Filtering**
+System shall apply 3-tier progressive filtering: (1) Domain/URL pattern analysis without HTTP requests to eliminate 40-60% of candidates, (2) Homepage scraping and company validation to eliminate additional 20-30%, (3) LLM classification with confidence-based routing to manual review queue. All filtering decisions visible in logs with per-layer elimination reasoning.
+
+**Database Schema Requirements:**
+
+The system shall persist layer-specific data in the following database fields:
+
+**Layer 1 Tracking Fields:**
+- `elimination_layer` (VARCHAR) - Tracks which layer eliminated the URL (none/layer1/layer2/layer3)
+- `layer1_reasoning` (TEXT) - Stores Layer 1 decision reasoning
+- `layer1_eliminated_count` (INTEGER) - Job-level counter for Layer 1 eliminations
+
+**Layer 2 Tracking Fields:**
+- `layer2_signals` (JSONB) - Stores detected signals: company pages, blog freshness, tech stack
+- `layer2_eliminated_count` (INTEGER) - Job-level counter for Layer 2 eliminations
+
+**Layer 3 Tracking Fields:**
+- `confidence_band` (VARCHAR) - Stores confidence classification (high/medium/low/auto_reject)
+- `manual_review_required` (BOOLEAN) - Flags medium/low confidence for manual review
+- `current_layer` (INTEGER) - Tracks current processing layer (1/2/3) for real-time dashboard
+
+**Cost Tracking Fields:**
+- `scraping_cost` (DECIMAL) - Tracks ScrapingBee API costs per job
+- `estimated_savings` (DECIMAL) - Calculates cost savings from Layer 1 elimination
+
+**Implementation Reference:**
+See `/docs/solution-architecture.md` Section 5.1 for complete database schema specification including indexes, constraints, and migration scripts.
 
 **FR009: AI-Powered Classification**
 System shall classify each URL for guest posting suitability using Gemini 2.0 Flash as primary LLM with automatic fallback to GPT-4o-mini on failures, with classification reasoning logged.
@@ -127,16 +152,25 @@ Users shall configure classification parameters through a settings interface inc
 - UI shall remain responsive during processing of 10K+ URL batches
 
 **NFR002: Processing Performance**
-- System shall process minimum 20 URLs per minute (average)
+- System shall process URLs with progressive throughput: Layer 1 domain analysis at 100+ URLs/min, Layer 2 homepage scraping at 20-30 URLs/min, Layer 3 LLM classification at 10-15 URLs/min
+- Overall pipeline throughput: minimum 20 URLs per minute through complete processing
 - Target: Complete 10K URL batch in <8 hours (includes 2-second delays between requests)
 - Queue system shall handle concurrent processing of multiple URLs (limited by ScrapingBee rate limits)
-- Pre-filtering shall execute in <100ms per URL
+- Layer 1 filtering shall execute in <50ms per URL (no HTTP requests)
 
 **NFR003: Cost Efficiency**
 - Total monthly operational cost shall not exceed $150 (infrastructure + APIs)
-- LLM API costs shall be reduced by minimum 40% compared to current system through pre-filtering
-- System shall track and display real-time cost metrics per job
+- LLM API costs shall be reduced by minimum 60-70% through multi-tier progressive filtering (domain analysis → scraping → LLM), with additional 40-60% reduction in scraping costs via Layer 1 domain elimination
+- System shall track and display real-time cost metrics per job, including per-layer costs and estimated savings
 - Gemini 2.0 Flash shall be primary provider (33% cheaper than GPT-4o-mini)
+
+**Cost Tracking Implementation:**
+The system shall track costs per layer:
+- Layer 1: $0 (rule-based, no API calls)
+- Layer 2: ScrapingBee cost per homepage request (~$0.0001/URL)
+- Layer 3: LLM API cost per classification (~$0.002/URL for Gemini, ~$0.004/URL for GPT)
+
+Cost savings shall be calculated as: (URLs eliminated at Layer 1 × Layer 2 cost) + (URLs eliminated at Layer 1+2 × Layer 3 cost)
 
 **NFR004: Reliability & Error Handling**
 - System shall maintain 95%+ uptime during business hours

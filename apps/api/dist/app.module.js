@@ -15,6 +15,7 @@ const health_controller_1 = require("./health/health.controller");
 const jobs_module_1 = require("./jobs/jobs.module");
 const scraper_module_1 = require("./scraper/scraper.module");
 const workers_module_1 = require("./workers/workers.module");
+const settings_module_1 = require("./settings/settings.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -27,6 +28,7 @@ exports.AppModule = AppModule = __decorate([
             }),
             supabase_module_1.SupabaseModule,
             queue_module_1.QueueModule,
+            settings_module_1.SettingsModule,
             jobs_module_1.JobsModule,
             scraper_module_1.ScraperModule,
             workers_module_1.WorkersModule,

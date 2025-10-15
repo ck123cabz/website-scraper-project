@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LlmService } from '../services/llm.service';
+import { SettingsService } from '../../settings/settings.service';
 
 // Mock the external LLM clients
 jest.mock('@google/generative-ai');
@@ -12,6 +13,7 @@ describe('LlmService', () => {
   let service: LlmService;
   let mockGeminiClient: any;
   let mockOpenAIClient: any;
+  let mockSettingsService: any;
 
   const mockUrl = 'https://example.com/blog';
   const mockContent = 'This is a test website content with guest post guidelines...';
@@ -50,8 +52,33 @@ describe('LlmService', () => {
 
     (OpenAI as jest.MockedClass<typeof OpenAI>).mockImplementation(() => mockOpenAIClient as any);
 
+    // Mock SettingsService
+    mockSettingsService = {
+      getSettings: jest.fn().mockResolvedValue({
+        id: 'test',
+        prefilter_rules: [],
+        classification_indicators: [
+          'Explicit "Write for Us" or "Guest Post Guidelines" pages',
+          'Author bylines with external contributors',
+          'Contributor sections or editorial team listings',
+          'Writing opportunities or submission guidelines',
+          'Clear evidence of accepting external content',
+        ],
+        llm_temperature: 0.3,
+        confidence_threshold: 0.0,
+        content_truncation_limit: 10000,
+        updated_at: new Date().toISOString(),
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [LlmService],
+      providers: [
+        LlmService,
+        {
+          provide: SettingsService,
+          useValue: mockSettingsService,
+        },
+      ],
     }).compile();
 
     service = module.get<LlmService>(LlmService);
@@ -74,7 +101,13 @@ describe('LlmService', () => {
     it('should be available with only Gemini configured', async () => {
       delete process.env.OPENAI_API_KEY;
       const module = await Test.createTestingModule({
-        providers: [LlmService],
+        providers: [
+          LlmService,
+          {
+            provide: SettingsService,
+            useValue: mockSettingsService,
+          },
+        ],
       }).compile();
       const serviceGeminiOnly = module.get<LlmService>(LlmService);
       expect(serviceGeminiOnly.isAvailable()).toBe(true);
@@ -83,7 +116,13 @@ describe('LlmService', () => {
     it('should be available with only OpenAI configured', async () => {
       delete process.env.GEMINI_API_KEY;
       const module = await Test.createTestingModule({
-        providers: [LlmService],
+        providers: [
+          LlmService,
+          {
+            provide: SettingsService,
+            useValue: mockSettingsService,
+          },
+        ],
       }).compile();
       const serviceOpenAIOnly = module.get<LlmService>(LlmService);
       expect(serviceOpenAIOnly.isAvailable()).toBe(true);
@@ -168,6 +207,49 @@ describe('LlmService', () => {
       // Gemini pricing: $0.0003/1K input, $0.0015/1K output
       const expectedCost = (2000 * 0.0003 + 200 * 0.0015) / 1000;
       expect(result.cost).toBeCloseTo(expectedCost, 6);
+    });
+  });
+
+  describe('Confidence Threshold Handling', () => {
+    it('marks classification as not_suitable when threshold is provided as string', async () => {
+      mockSettingsService.getSettings.mockResolvedValue({
+        id: 'test',
+        prefilter_rules: [],
+        classification_indicators: [
+          'Explicit "Write for Us" or "Guest Post Guidelines" pages',
+          'Author bylines with external contributors',
+          'Contributor sections or editorial team listings',
+          'Writing opportunities or submission guidelines',
+          'Clear evidence of accepting external content',
+        ],
+        llm_temperature: '0.3',
+        confidence_threshold: '0.6',
+        content_truncation_limit: '10000',
+        updated_at: new Date().toISOString(),
+      });
+
+      const mockResponse = {
+        response: {
+          text: () =>
+            JSON.stringify({
+              suitable: true,
+              confidence: 0.4,
+              reasoning: 'Initial classification marked as suitable by provider',
+            }),
+          usageMetadata: {
+            promptTokenCount: 800,
+            candidatesTokenCount: 80,
+          },
+        },
+      };
+
+      mockGeminiClient.generateContent.mockResolvedValue(mockResponse);
+
+      const result = await service.classifyUrl(mockUrl, mockContent);
+
+      expect(result.classification).toBe('not_suitable');
+      expect(result.confidence).toBeCloseTo(0.4);
+      expect(result.reasoning).toContain('below threshold 0.60');
     });
   });
 

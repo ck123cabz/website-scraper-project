@@ -306,6 +306,36 @@ Replaces basic Python threading with production-grade queue system. Enables scal
 
 ---
 
+### Story 2.6: Layer 2 - Operational Validation Filter (NEW)
+
+**As a** system
+**I want to** scrape homepage only and validate company operational readiness
+**So that** we eliminate non-operational sites before expensive LLM classification
+
+**Acceptance Criteria:**
+- [ ] Layer 2 operational validation service
+- [ ] Homepage-only scraping (1 page per domain via ScrapingBee)
+- [ ] Company infrastructure signals detection:
+  - Active blog detection (recent posts in last 6 months)
+  - Technology stack signals (WordPress, modern CMS presence)
+  - Required pages existence (/blog, /resources, /about, /contact)
+  - Content freshness indicators (copyright year, recent dates)
+- [ ] Validation logic:
+  - PASS: Company site + active blog + recent content
+  - ELIMINATE: Personal blogs, abandoned sites, no blog section
+- [ ] Each elimination logged: "ELIMINATE - Layer 2: No active blog detected"
+- [ ] Survivors logged: "PASS - Layer 2: Operational site, proceeding to Layer 3"
+- [ ] Layer 2 executes in <5 seconds per URL (1 HTTP request)
+- [ ] Results stored with `elimination_layer = 'layer2'` and `layer2_signals` JSONB
+- [ ] Configurable via classification_settings.layer2_rules
+- [ ] Metrics tracked: Layer 2 pass rate, scraping costs saved
+- [ ] Target: 70% pass rate (30% elimination)
+
+**Story Points:** 4
+**Dependencies:** Story 2.3 (Layer 1 must complete first)
+
+---
+
 ### Story 2.4: Layer 3 - LLM Classification with Confidence Scoring (REFACTORED)
 
 **As a** system
@@ -403,74 +433,6 @@ Layer 3 of the 3-tier progressive filtering architecture. Performs deep content 
 
 ---
 
-### Story 2.6: Layer 2 Operational Filter (Homepage Scraping & Company Validation)
-
-**As a** system
-**I want to** validate company infrastructure and active blog through homepage scraping
-**So that** we eliminate non-viable candidates before expensive LLM classification
-
-**Acceptance Criteria:**
-
-**AC1: Homepage-Only Scraping**
-- [ ] Scrape homepage only (not full site) to optimize ScrapingBee usage
-- [ ] Extract company infrastructure signals: About page, Team page, Contact page presence
-- [ ] Process only Layer 1 survivors (URLs that passed domain analysis)
-
-**AC2: Company Infrastructure Detection**
-- [ ] Detect presence of: About page, Team page, Contact page (minimum 2 of 3 required)
-- [ ] Store detection results in `layer2_signals` JSONB field
-- [ ] Log detected pages: "Found: About, Team (2/3 required pages)"
-
-**AC3: Active Blog Validation**
-- [ ] Detect blog section existence on homepage
-- [ ] Check recent post publish dates (within configurable threshold, default 90 days)
-- [ ] Minimum requirement: 1 post within threshold to pass
-- [ ] Store blog freshness in `layer2_signals.blog_last_post_date`
-
-**AC4: Tech Stack Detection**
-- [ ] Identify analytics tools (Google Analytics, Mixpanel, etc.)
-- [ ] Identify marketing platforms (HubSpot, Marketo, ActiveCampaign, etc.)
-- [ ] Score based on professional tool presence (2+ tools = PASS)
-- [ ] Store detected tools in `layer2_signals.tech_stack` array
-
-**AC5: Professional Design Indicators**
-- [ ] Modern CSS framework detection (Tailwind, Bootstrap, Material UI)
-- [ ] Responsive design check (viewport meta tag, media queries)
-- [ ] Professional imagery assessment (stock photos, custom graphics)
-- [ ] Store design score in `layer2_signals.design_quality` (1-10)
-
-**AC6: Configuration Integration**
-- [ ] Load Layer 2 rules from Story 3.0 settings (`classification_settings.layer2_rules`)
-- [ ] Configurable thresholds: blog_freshness_days, required_pages_count, min_tech_stack_tools
-- [ ] Configurable pass/fail criteria per signal type
-
-**AC7: Performance Target**
-- [ ] 70% pass rate of Layer 1 survivors (target: eliminate 30%)
-- [ ] Processing time: <5 seconds per URL (including ScrapingBee request)
-- [ ] Parallel processing: 5 concurrent URLs (respects ScrapingBee rate limits)
-
-**AC8: Results Tracking**
-- [ ] Store `layer2_signals` (JSONB) with all detected signals
-- [ ] Mark elimination: `elimination_layer = 'layer2'` if rejected
-- [ ] Update job counters: `jobs.layer2_eliminated_count`
-- [ ] Log Layer 2 decision reasoning: "REJECT Layer 2 - Missing required pages (1/3 found)"
-
-**Story Points:** 4
-**Dependencies:** Story 2.3 (Layer 1) complete
-**Effort Estimate:** 3-4 days
-
-**Dev Notes:**
-- Create new service: `apps/api/src/jobs/services/layer2-operational-filter.service.ts`
-- Reuse ScrapingBee integration from existing worker
-- Cache homepage HTML (TTL: 24 hours) to avoid re-fetching
-- Configuration-driven rules loaded from Story 3.0 Layer 2 section
-- Integration point: Called by `ProcessingWorker` after Layer 1 PASS
-
-**Status:** [ ] Pending (Week 15 implementation)
-**Priority:** HIGH - Enables 30% URL elimination before expensive Layer 3
-
----
-
 ## Epic 3: Local Testing & Production Deployment
 
 **Epic Goal:** Enable user configuration of layer-specific classification parameters, validate complete 3-tier system functionality through comprehensive local end-to-end testing with real external APIs, then deploy to Railway production environment with proper configuration, monitoring, and production validation.
@@ -495,9 +457,6 @@ MVP implementation (Epic 1 & 2) requires refactoring for 3-tier architecture and
 ---
 
 ### Story 3.0: Classification Settings Management
-
-**Status:** Requires Refactoring (3-Tier Architecture)
-
 
 **As a** team member
 **I want to** configure classification parameters through a settings UI
@@ -537,272 +496,6 @@ MVP implementation (Epic 1 & 2) requires refactoring for 3-tier architecture and
 - [ ] "Reset to Defaults" button with confirmation dialog
 - [ ] Form validation: Invalid regex shows error, temperature/confidence range validated
 - [ ] Success/error toast notifications on save
-
----
-
-## UI Wireframes & Design Specification
-
-### Layout Overview
-
-**Page Route:** `/settings`
-**Page Title:** Classification Settings
-**Layout:** Full-width container with tabbed sections
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ Classification Settings                          [Save] [Reset] │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌─────────┬─────────┬─────────┬──────────┬──────────┐     │
-│  │ Layer 1 │ Layer 2 │ Layer 3 │ Confidence│  Manual  │     │ ← Tab Navigation
-│  │ Domain  │  Page   │  LLM    │   Bands  │  Review  │     │
-│  └─────────┴─────────┴─────────┴──────────┴──────────┘     │
-│                                                              │
-│  [Currently Selected Tab Content]                           │
-│                                                              │
-│  ┌────────────────────────────────────────────────┐         │
-│  │  Configuration form for selected layer         │         │
-│  │  with inputs, toggles, sliders, etc.          │         │
-│  │                                                │         │
-│  └────────────────────────────────────────────────┘         │
-│                                                              │
-│  [Status Message Area]                                      │
-│  Last updated: 2 hours ago • Auto-save enabled              │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Tab 1: Layer 1 - Domain Analysis Rules
-
-```
-┌─────────────────────────────────────────────────┐
-│ Domain Classification Rules                     │
-├─────────────────────────────────────────────────┤
-│                                                 │
-│ TLD Filtering:                                  │
-│ ┌───────────────────────────────────┐          │
-│ │ Commercial (.com, .io, .co, .ai)  │ [✓]     │
-│ │ Non-commercial (.org, .gov, .edu) │ [ ]     │
-│ │ Personal (.me, .blog, .xyz)       │ [ ]     │
-│ └───────────────────────────────────┘          │
-│                                                 │
-│ Industry Keywords (one per line):               │
-│ ┌───────────────────────────────────┐          │
-│ │ SaaS                               │          │
-│ │ consulting                         │          │
-│ │ software                           │          │
-│ │ platform                           │          │
-│ └───────────────────────────────────┘          │
-│ [Add keyword]                                   │
-│                                                 │
-│ URL Pattern Exclusions:                         │
-│ ┌─────────────────────────────────┐            │
-│ │ Pattern              | Enabled  │            │
-│ ├─────────────────────────────────┤            │
-│ │ /tag/*              │ [✓]      │            │
-│ │ /author/*           │ [✓]      │            │
-│ │ blog.*.com          │ [✓]      │            │
-│ │ [+ Add pattern]                 │            │
-│ └─────────────────────────────────┘            │
-│                                                 │
-│ Target Elimination Rate: 40-60%                 │
-│ ┌─────────────────────────────────┐            │
-│ │ ███████░░░ 50%                  │ ← Slider  │
-│ └─────────────────────────────────┘            │
-└─────────────────────────────────────────────────┘
-```
-
-### Tab 2: Layer 2 - Operational Validation Rules
-
-```
-┌─────────────────────────────────────────────────┐
-│ Homepage Scraping Configuration                 │
-├─────────────────────────────────────────────────┤
-│                                                 │
-│ Blog Freshness Threshold:                       │
-│ ┌─────────────────────────────────┐            │
-│ │ ░░░░░███░░░ 90 days             │ ← Slider  │
-│ └─────────────────────────────────┘            │
-│ Range: 30-180 days                              │
-│                                                 │
-│ Required Company Pages (minimum 2 of 3):        │
-│ ┌───────────────────────────────────┐          │
-│ │ [✓] About page                    │          │
-│ │ [✓] Team page                     │          │
-│ │ [✓] Contact page                  │          │
-│ └───────────────────────────────────┘          │
-│                                                 │
-│ Tech Stack Signals (detect these tools):        │
-│ ┌───────────────────────────────────┐          │
-│ │ Analytics:                        │          │
-│ │ • Google Analytics                │ [✓]     │
-│ │ • Mixpanel                        │ [✓]     │
-│ │                                   │          │
-│ │ Marketing:                        │          │
-│ │ • HubSpot                         │ [✓]     │
-│ │ • Marketo                         │ [✓]     │
-│ │ • ActiveCampaign                  │ [✓]     │
-│ └───────────────────────────────────┘          │
-│ [+ Add custom tool]                             │
-│                                                 │
-│ Target Pass Rate: 70%                           │
-│ Professional Design Score Minimum: 6/10         │
-└─────────────────────────────────────────────────┘
-```
-
-### Tab 3: Layer 3 - LLM Classification Settings
-
-```
-┌─────────────────────────────────────────────────┐
-│ LLM Configuration                               │
-├─────────────────────────────────────────────────┤
-│                                                 │
-│ Content Marketing Indicators (one per line):    │
-│ ┌───────────────────────────────────┐          │
-│ │ Write for us                       │          │
-│ │ Guest post guidelines              │          │
-│ │ Contributor program                │          │
-│ │ Author bylines                     │          │
-│ └───────────────────────────────────┘          │
-│                                                 │
-│ SEO Investment Signals:                         │
-│ ┌───────────────────────────────────┐          │
-│ │ • Schema markup                    │ [✓]     │
-│ │ • Open Graph tags                  │ [✓]     │
-│ │ • Structured data                  │ [✓]     │
-│ └───────────────────────────────────┘          │
-│                                                 │
-│ LLM Temperature:                                │
-│ ┌─────────────────────────────────┐            │
-│ │ ░░░███░░░░░ 0.3                 │ ← Slider  │
-│ └─────────────────────────────────┘            │
-│ Range: 0 (focused) - 1 (creative)              │
-│                                                 │
-│ Content Truncation Limit:                      │
-│ ┌─────────────────────────────────┐            │
-│ │ [10000] characters              │ ← Input   │
-│ └─────────────────────────────────┘            │
-│ Range: 1,000 - 50,000                          │
-└─────────────────────────────────────────────────┘
-```
-
-### Tab 4: Confidence Band Configuration
-
-```
-┌─────────────────────────────────────────────────┐
-│ Confidence-Based Routing                        │
-├─────────────────────────────────────────────────┤
-│                                                 │
-│ Confidence Bands (must total 100%):             │
-│                                                 │
-│ High Confidence (Auto-approve):                 │
-│ ┌─────────────────────────────────┐            │
-│ │ ░░░░░░░░███ 0.80 - 1.00         │ ← Slider  │
-│ └─────────────────────────────────┘            │
-│ → Auto-approve as "SUITABLE"                    │
-│                                                 │
-│ Medium Confidence (Manual review):              │
-│ ┌─────────────────────────────────┐            │
-│ │ ░░░░███░░░░ 0.50 - 0.79         │ ← Slider  │
-│ └─────────────────────────────────┘            │
-│ → Route to manual review queue                  │
-│                                                 │
-│ Low Confidence (Manual review):                 │
-│ ┌─────────────────────────────────┐            │
-│ │ ░░███░░░░░░ 0.30 - 0.49         │ ← Slider  │
-│ └─────────────────────────────────┘            │
-│ → Route to manual review queue                  │
-│                                                 │
-│ Auto-reject Threshold:                          │
-│ ┌─────────────────────────────────┐            │
-│ │ ███░░░░░░░░ < 0.30              │ ← Slider  │
-│ └─────────────────────────────────┘            │
-│ → Mark as "NOT_SUITABLE"                        │
-│                                                 │
-│ Expected Distribution Preview:                  │
-│ ┌─────────────────────────────────┐            │
-│ │ High: 60% ███████████████░░░░░  │            │
-│ │ Medium: 20% █████░░░░░░░░░░░░░  │            │
-│ │ Low: 15% ████░░░░░░░░░░░░░░░░░  │            │
-│ │ Reject: 5% ██░░░░░░░░░░░░░░░░░  │            │
-│ └─────────────────────────────────┘            │
-└─────────────────────────────────────────────────┘
-```
-
-### Tab 5: Manual Review Queue Settings
-
-```
-┌─────────────────────────────────────────────────┐
-│ Manual Review Configuration                     │
-├─────────────────────────────────────────────────┤
-│                                                 │
-│ Queue Size Limit:                               │
-│ ┌─────────────────────────────────┐            │
-│ │ [ Unlimited ]  [✓]              │            │
-│ │ [ Maximum: 1000 URLs ]  [ ]     │            │
-│ └─────────────────────────────────┘            │
-│                                                 │
-│ Auto-Review Timeout:                            │
-│ ┌─────────────────────────────────┐            │
-│ │ [ Disabled ]  [✓]               │            │
-│ │ [ Auto-approve after: 7 days ]  │ [ ]        │
-│ └─────────────────────────────────┘            │
-│                                                 │
-│ Queue Notification Preferences:                 │
-│ ┌───────────────────────────────────┐          │
-│ │ [✓] Email when queue > 100 URLs   │          │
-│ │ [✓] Dashboard badge notification  │          │
-│ │ [ ] Slack integration (coming soon)│          │
-│ └───────────────────────────────────┘          │
-│                                                 │
-│ Current Queue Status:                           │
-│ ┌─────────────────────────────────┐            │
-│ │ 47 URLs pending manual review   │            │
-│ │ Oldest: 3 days ago              │            │
-│ │ [View Queue →]                  │            │
-│ └─────────────────────────────────┘            │
-└─────────────────────────────────────────────────┘
-```
-
-### Actions Bar (Bottom of Page)
-
-```
-┌─────────────────────────────────────────────────┐
-│ [Save Settings]  [Reset to Defaults]  [Cancel] │
-│                                                 │
-│ ⓘ Changes will apply to new jobs immediately.  │
-│   Existing jobs will continue with their        │
-│   original settings.                            │
-└─────────────────────────────────────────────────┘
-```
-
-### Component Library (shadcn/ui)
-
-**Components to Use:**
-- **Tabs:** `<Tabs>` for layer navigation
-- **Card:** `<Card>` for section containers
-- **Switch:** `<Switch>` for enable/disable toggles
-- **Slider:** `<Slider>` for threshold controls
-- **Textarea:** `<Textarea>` for multi-line inputs (keywords, indicators)
-- **Input:** `<Input>` for single-line text fields
-- **Button:** `<Button>` for Save/Reset actions
-- **Label:** `<Label>` for form field labels
-- **Alert:** `<Alert>` for status messages
-
-### Responsive Design
-
-**Desktop (≥1024px):**
-- Full-width tabs with all content visible
-- 2-column layout for related fields
-
-**Tablet (768-1023px):**
-- Stacked single-column layout
-- Tabs remain horizontal
-
-**Mobile (≤767px):**
-- Vertical tab navigation (accordion-style)
-- Single-column forms with full-width inputs
-
----
 
 **Testing:**
 - [ ] Unit tests: Settings service CRUD operations
@@ -903,6 +596,12 @@ MVP implementation (Epic 1 & 2) requires refactoring for 3-tier architecture and
 
 ---
 
+- [ ] All acceptance criteria from Epic 1 & 2 validated end-to-end in local environment
+
+**Story Points:** 5
+**Dependencies:** Story 2.5 complete
+
+---
 
 ### Story 3.2: Railway Production Deployment & Configuration
 

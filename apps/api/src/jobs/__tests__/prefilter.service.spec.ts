@@ -1,15 +1,135 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PreFilterService } from '../services/prefilter.service';
+import { SettingsService } from '../../settings/settings.service';
 
 describe('PreFilterService', () => {
   let service: PreFilterService;
+  let mockSettingsService: any;
 
   beforeEach(async () => {
+    // Create mock SettingsService that returns default settings
+    mockSettingsService = {
+      getSettings: jest.fn().mockResolvedValue({
+        id: 'test',
+        prefilter_rules: [
+          {
+            category: 'blog_platform',
+            pattern: 'wordpress\\.com/.*',
+            reasoning: 'REJECT - Blog platform domain (WordPress.com)',
+            enabled: true,
+          },
+          {
+            category: 'blog_platform',
+            pattern: 'blogspot\\.com',
+            reasoning: 'REJECT - Blog platform domain (Blogspot)',
+            enabled: true,
+          },
+          {
+            category: 'blog_platform',
+            pattern: 'medium\\.com/@',
+            reasoning: 'REJECT - Blog platform domain (Medium personal blog)',
+            enabled: true,
+          },
+          {
+            category: 'blog_platform',
+            pattern: 'substack\\.com',
+            reasoning: 'REJECT - Blog platform domain (Substack)',
+            enabled: true,
+          },
+          {
+            category: 'social_media',
+            pattern: 'facebook\\.com',
+            reasoning: 'REJECT - Social media platform (Facebook)',
+            enabled: true,
+          },
+          {
+            category: 'social_media',
+            pattern: 'twitter\\.com',
+            reasoning: 'REJECT - Social media platform (Twitter/X)',
+            enabled: true,
+          },
+          {
+            category: 'social_media',
+            pattern: 'x\\.com',
+            reasoning: 'REJECT - Social media platform (X/Twitter)',
+            enabled: true,
+          },
+          {
+            category: 'social_media',
+            pattern: 'linkedin\\.com/in/',
+            reasoning: 'REJECT - Social media profile (LinkedIn)',
+            enabled: true,
+          },
+          {
+            category: 'social_media',
+            pattern: 'instagram\\.com',
+            reasoning: 'REJECT - Social media platform (Instagram)',
+            enabled: true,
+          },
+          {
+            category: 'ecommerce',
+            pattern: 'amazon\\.com',
+            reasoning: 'REJECT - E-commerce platform (Amazon)',
+            enabled: true,
+          },
+          {
+            category: 'ecommerce',
+            pattern: 'ebay\\.com',
+            reasoning: 'REJECT - E-commerce platform (eBay)',
+            enabled: true,
+          },
+          {
+            category: 'ecommerce',
+            pattern: 'shopify\\.com',
+            reasoning: 'REJECT - E-commerce platform (Shopify)',
+            enabled: true,
+          },
+          {
+            category: 'forum',
+            pattern: 'reddit\\.com',
+            reasoning: 'REJECT - Forum/discussion platform (Reddit)',
+            enabled: true,
+          },
+          {
+            category: 'forum',
+            pattern: 'quora\\.com',
+            reasoning: 'REJECT - Q&A platform (Quora)',
+            enabled: true,
+          },
+          {
+            category: 'aggregator',
+            pattern: 'wikipedia\\.org',
+            reasoning: 'REJECT - Large knowledge aggregator (Wikipedia)',
+            enabled: true,
+          },
+          {
+            category: 'aggregator',
+            pattern: 'youtube\\.com',
+            reasoning: 'REJECT - Video aggregator (YouTube)',
+            enabled: true,
+          },
+        ],
+        classification_indicators: [],
+        llm_temperature: 0.3,
+        confidence_threshold: 0.0,
+        content_truncation_limit: 10000,
+        updated_at: new Date().toISOString(),
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [PreFilterService],
+      providers: [
+        PreFilterService,
+        {
+          provide: SettingsService,
+          useValue: mockSettingsService,
+        },
+      ],
     }).compile();
 
     service = module.get<PreFilterService>(PreFilterService);
+    // Wait for service to initialize and load rules from mock
+    await service.onModuleInit();
   });
 
   it('should be defined', () => {

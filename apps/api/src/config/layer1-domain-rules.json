@@ -1,0 +1,111 @@
+{
+  "tld_filtering": {
+    "commercial": [
+      ".com",
+      ".io",
+      ".co",
+      ".ai",
+      ".net",
+      ".tech",
+      ".app",
+      ".dev"
+    ],
+    "non_commercial": [
+      ".gov",
+      ".edu",
+      ".org",
+      ".mil"
+    ],
+    "personal_blog": [
+      ".me",
+      ".blog",
+      ".xyz",
+      ".wordpress.com",
+      ".blogspot.com",
+      ".tumblr.com",
+      ".wixsite.com"
+    ]
+  },
+  "domain_classification": {
+    "digital_native_keywords": [
+      "software",
+      "saas",
+      "tech",
+      "platform",
+      "app",
+      "cloud",
+      "consulting",
+      "marketing",
+      "agency",
+      "digital",
+      "analytics",
+      "automation",
+      "data",
+      "ai",
+      "solution"
+    ],
+    "traditional_keywords": [
+      "restaurant",
+      "hotel",
+      "shop",
+      "store",
+      "retail",
+      "manufacturing",
+      "construction",
+      "plumbing",
+      "cafe",
+      "bar",
+      "grill",
+      "diner",
+      "motel",
+      "inn"
+    ]
+  },
+  "url_patterns": {
+    "subdomain_blogs": [
+      "^blog\\.",
+      "^news\\.",
+      "^insights\\.",
+      "^articles\\.",
+      "^posts\\."
+    ],
+    "tag_pages": [
+      "/tag/",
+      "/tags/",
+      "/category/",
+      "/categories/",
+      "/author/",
+      "/authors/"
+    ],
+    "user_content": [
+      "/user/",
+      "/users/",
+      "/profile/",
+      "/profiles/",
+      "/member/",
+      "/members/"
+    ]
+  },
+  "target_profile": {
+    "positive_indicators": [
+      "insights",
+      "resources",
+      "learn",
+      "platform",
+      "app",
+      "blog",
+      "content",
+      "knowledge"
+    ],
+    "negative_indicators": [
+      "shop",
+      "store",
+      "buy",
+      "cart",
+      "checkout",
+      "ecommerce",
+      "products",
+      "catalog"
+    ]
+  }
+}

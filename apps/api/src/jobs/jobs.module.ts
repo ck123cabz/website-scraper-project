@@ -8,12 +8,13 @@ import { PreFilterService } from './services/prefilter.service';
 import { LlmService } from './services/llm.service';
 import { MockLlmService } from './services/llm.service.mock';
 import { QueueModule } from '../queue/queue.module';
+import { SettingsModule } from '../settings/settings.module';
 import { memoryStorage } from 'multer';
 import { extname } from 'path';
 
 /**
  * Jobs Module
- * Story 3.0 Task 7: Mock LLM service support for local testing
+ * Story 3.0: Settings integration for database-driven classification parameters
  *
  * Environment Variables:
  * - USE_MOCK_SERVICES=true → Use MockLlmService (no external LLM API calls)
@@ -22,6 +23,7 @@ import { extname } from 'path';
 @Module({
   imports: [
     QueueModule, // Import QueueModule to access QueueService
+    SettingsModule, // Import SettingsModule for database-driven settings (Story 3.0)
     MulterModule.register({
       storage: memoryStorage(), // Use memory storage to avoid file cleanup issues (H2 fix)
       limits: {

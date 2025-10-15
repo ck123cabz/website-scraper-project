@@ -17,6 +17,7 @@ const prefilter_service_1 = require("./services/prefilter.service");
 const llm_service_1 = require("./services/llm.service");
 const llm_service_mock_1 = require("./services/llm.service.mock");
 const queue_module_1 = require("../queue/queue.module");
+const settings_module_1 = require("../settings/settings.module");
 const multer_1 = require("multer");
 const path_1 = require("path");
 let JobsModule = class JobsModule {
@@ -26,6 +27,7 @@ exports.JobsModule = JobsModule = __decorate([
     (0, common_1.Module)({
         imports: [
             queue_module_1.QueueModule,
+            settings_module_1.SettingsModule,
             platform_express_1.MulterModule.register({
                 storage: (0, multer_1.memoryStorage)(),
                 limits: {
