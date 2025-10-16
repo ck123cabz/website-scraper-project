@@ -94,14 +94,15 @@ describe('Layer2OperationalFilterService', () => {
       const result = await service.filterUrl('https://example.com');
 
       expect(result.passed).toBe(true);
-      expect(result.reasoning).toBe('PASS Layer 2 - All operational signals validated');
+      expect(result.reasoning).toContain('PASS Layer 2');
+      expect(result.reasoning).toContain('4/4 criteria met'); // All 4 criteria passed
       expect(result.signals.company_pages.count).toBeGreaterThanOrEqual(2);
       expect(result.signals.blog_data.passes_freshness).toBe(true);
       expect(result.signals.tech_stack.count).toBeGreaterThanOrEqual(2);
       expect(result.signals.design_quality.score).toBeGreaterThanOrEqual(6);
     });
 
-    it('should reject URL with missing company pages', async () => {
+    it('should pass URL with 2/4 criteria (blog freshness + tech stack)', async () => {
       const mockHtml = `
         <!DOCTYPE html>
         <html>
@@ -135,12 +136,15 @@ describe('Layer2OperationalFilterService', () => {
 
       const result = await service.filterUrl('https://example.com');
 
-      expect(result.passed).toBe(false);
-      expect(result.reasoning).toContain('Missing required pages');
+      // NEW SCORING: Passes with 3/4 criteria (fresh blog + tech stack + design quality from viewport)
+      expect(result.passed).toBe(true);
+      expect(result.reasoning).toContain('3/4 criteria met');
       expect(result.signals.company_pages.count).toBeLessThan(2);
+      expect(result.signals.blog_data.passes_freshness).toBe(true);
+      expect(result.signals.tech_stack.count).toBeGreaterThanOrEqual(2);
     });
 
-    it('should reject URL with stale blog', async () => {
+    it('should pass URL with stale blog but strong company pages + tech stack', async () => {
       const mockHtml = `
         <!DOCTYPE html>
         <html>
@@ -177,12 +181,15 @@ describe('Layer2OperationalFilterService', () => {
 
       const result = await service.filterUrl('https://example.com');
 
-      expect(result.passed).toBe(false);
-      expect(result.reasoning).toContain('Blog not fresh');
+      // NEW SCORING: Passes with 3/4 criteria (company pages + tech stack + design quality), blog freshness optional
+      expect(result.passed).toBe(true);
+      expect(result.reasoning).toContain('3/4 criteria met');
       expect(result.signals.blog_data.passes_freshness).toBe(false);
+      expect(result.signals.company_pages.count).toBeGreaterThanOrEqual(2);
+      expect(result.signals.tech_stack.count).toBeGreaterThanOrEqual(2);
     });
 
-    it('should reject URL with insufficient tech stack', async () => {
+    it('should pass URL with insufficient tech stack but strong company pages + blog', async () => {
       const mockHtml = `
         <!DOCTYPE html>
         <html>
@@ -217,12 +224,15 @@ describe('Layer2OperationalFilterService', () => {
 
       const result = await service.filterUrl('https://example.com');
 
-      expect(result.passed).toBe(false);
-      expect(result.reasoning).toContain('Insufficient tech stack');
+      // NEW SCORING: Passes with 3/4 criteria (company pages + fresh blog + design quality), tech stack optional
+      expect(result.passed).toBe(true);
+      expect(result.reasoning).toContain('3/4 criteria met');
       expect(result.signals.tech_stack.count).toBeLessThan(2);
+      expect(result.signals.company_pages.count).toBeGreaterThanOrEqual(2);
+      expect(result.signals.blog_data.passes_freshness).toBe(true);
     });
 
-    it('should reject URL with low design quality', async () => {
+    it('should pass URL with low design quality but strong company pages + tech stack + blog', async () => {
       const mockHtml = `
         <!DOCTYPE html>
         <html>
@@ -258,9 +268,50 @@ describe('Layer2OperationalFilterService', () => {
 
       const result = await service.filterUrl('https://example.com');
 
-      expect(result.passed).toBe(false);
-      expect(result.reasoning).toContain('Low design quality');
+      // NEW SCORING: Passes with 3/4 criteria (company pages + tech stack + fresh blog), design quality optional
+      expect(result.passed).toBe(true);
+      expect(result.reasoning).toContain('3/4 criteria met');
       expect(result.signals.design_quality.score).toBeLessThan(6);
+      expect(result.signals.company_pages.count).toBeGreaterThanOrEqual(2);
+      expect(result.signals.tech_stack.count).toBeGreaterThanOrEqual(2);
+      expect(result.signals.blog_data.passes_freshness).toBe(true);
+    });
+
+    it('should reject URL with only 1/4 criteria (insufficient for pass)', async () => {
+      const mockHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta name="viewport" content="width=device-width">
+          </head>
+          <body>
+            <nav>
+              <a href="/about">About Us</a>
+            </nav>
+            <p>Company information</p>
+          </body>
+        </html>
+      `;
+
+      mockScraperService.fetchUrl.mockResolvedValue({
+        url: 'https://example.com',
+        content: mockHtml,
+        title: 'Example',
+        metaDescription: null,
+        success: true,
+        statusCode: 200,
+        processingTimeMs: 1000,
+      });
+
+      const result = await service.filterUrl('https://example.com');
+
+      // Only design quality passes (responsive viewport), but need 2/4 minimum
+      expect(result.passed).toBe(false);
+      expect(result.reasoning).toContain('Only 1/2 required criteria met');
+      expect(result.signals.company_pages.count).toBeLessThan(2);
+      expect(result.signals.blog_data.passes_freshness).toBe(false);
+      expect(result.signals.tech_stack.count).toBeLessThan(2);
+      expect(result.signals.design_quality.score).toBeGreaterThanOrEqual(6); // Has viewport meta
     });
 
     it('should handle scraping failure gracefully (fail-open)', async () => {

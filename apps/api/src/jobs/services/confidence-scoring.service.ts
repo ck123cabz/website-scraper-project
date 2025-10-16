@@ -137,6 +137,7 @@ export class ConfidenceScoringService {
   /**
    * Load confidence thresholds from database settings
    * Falls back to defaults if database unavailable
+   * Story 2.4-refactored Task 7.3: Load from classification_settings table
    * @private
    */
   private async loadThresholds(): Promise<{
@@ -155,17 +156,48 @@ export class ConfidenceScoringService {
         return this.DEFAULT_THRESHOLDS;
       }
 
-      // Extract thresholds from settings (Story 3.0 layer3_rules configuration)
-      // The settings service may store these in a nested structure
-      // For now, we'll use the defaults until Story 3.0 provides layer3_rules
+      // Extract thresholds from settings (Story 2.4-refactored Task 7)
+      // Settings now include confidence_threshold_high/medium/low fields
+      const thresholds = {
+        high: this.asNumber(settings.confidence_threshold_high, this.DEFAULT_THRESHOLDS.high),
+        medium: this.asNumber(settings.confidence_threshold_medium, this.DEFAULT_THRESHOLDS.medium),
+        low: this.asNumber(settings.confidence_threshold_low, this.DEFAULT_THRESHOLDS.low),
+      };
 
-      this.logger.debug('Loaded confidence thresholds from database settings');
-      return this.DEFAULT_THRESHOLDS;
+      this.logger.debug(
+        `Loaded confidence thresholds from database: high=${thresholds.high}, medium=${thresholds.medium}, low=${thresholds.low}`,
+      );
+
+      return thresholds;
 
     } catch (error) {
       this.logger.warn('Failed to load thresholds from database. Using defaults.');
       return this.DEFAULT_THRESHOLDS;
     }
+  }
+
+  /**
+   * Safely coerce numeric settings returned as strings into finite numbers
+   * Matches pattern from LlmService and SettingsService
+   * @private
+   */
+  private asNumber(value: unknown, fallback: number): number {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+
+    if (typeof value === 'string') {
+      const parsed = parseFloat(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+
+    if (typeof value === 'bigint') {
+      return Number(value);
+    }
+
+    return fallback;
   }
 
   /**

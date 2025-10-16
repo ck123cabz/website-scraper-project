@@ -1,0 +1,123 @@
+# E2E 3-Tier Test Dataset - 100 URLs
+# Category Distribution: Digital-native B2B (20), Traditional companies (20), Blog platforms (20), Non-commercial TLDs (15), Subdomain blogs (10), Missing signals (10), Strong candidates (5)
+
+# === Digital-native B2B (20 URLs) ===
+# Expected: PASS Layer 1 → Proceed to Layer 2
+https://slack.com
+https://asana.com
+https://trello.com
+https://notion.so
+https://airtable.com
+https://zapier.com
+https://hubspot.com
+https://mailchimp.com
+https://intercom.com
+https://segment.com
+https://mixpanel.com
+https://amplitude.com
+https://calendly.com
+https://grammarly.com
+https://canva.com
+https://figma.com
+https://miro.com
+https://loom.com
+https://typeform.com
+https://surveymonkey.com
+
+# === Traditional Companies (20 URLs) ===
+# Expected: REJECT Layer 1 (non-commercial business type)
+https://mcdonalds.com
+https://starbucks.com
+https://pizzahut.com
+https://dominos.com
+https://subway.com
+https://marriott.com
+https://hilton.com
+https://hyatt.com
+https://walmart.com
+https://target.com
+https://bestbuy.com
+https://homedepot.com
+https://lowes.com
+https://cvs.com
+https://walgreens.com
+https://costco.com
+https://samsclub.com
+https://kroger.com
+https://wholefoods.com
+https://traderjoes.com
+
+# === Blog Platforms (20 URLs) ===
+# Expected: REJECT Layer 1 (blog platform domain patterns)
+https://wordpress.com
+https://medium.com
+https://blogger.com
+https://substack.com
+https://ghost.org
+https://wix.com
+https://squarespace.com
+https://tumblr.com
+https://weebly.com
+https://jimdo.com
+https://site123.com
+https://webnode.com
+https://hubpages.com
+https://livejournal.com
+https://typepad.com
+https://penzu.com
+https://write.as
+https://posthaven.com
+https://svbtle.com
+https://telegra.ph
+
+# === Non-commercial TLDs (15 URLs) ===
+# Expected: REJECT Layer 1 (non-commercial TLD)
+https://wikipedia.org
+https://mozilla.org
+https://w3.org
+https://apache.org
+https://linux.org
+https://gnu.org
+https://opensource.org
+https://creativecommons.org
+https://khanacademy.org
+https://archive.org
+https://stanford.edu
+https://mit.edu
+https://harvard.edu
+https://nih.gov
+https://usa.gov
+
+# === Subdomain Blogs (10 URLs) ===
+# Expected: REJECT Layer 1 (subdomain blog pattern)
+https://blog.hubspot.com
+https://blog.mailchimp.com
+https://blog.shopify.com
+https://blog.stripe.com
+https://blog.atlassian.com
+https://news.ycombinator.com
+https://blog.github.com
+https://blog.docker.com
+https://blog.google.com
+https://blog.microsoft.com
+
+# === Viable B2B with Missing Signals (10 URLs) ===
+# Expected: PASS Layer 1 → REJECT Layer 2 (missing infrastructure or stale blog)
+https://convertkit.com
+https://drip.com
+https://activecampaign.com
+https://getresponse.com
+https://aweber.com
+https://constantcontact.com
+https://sendinblue.com
+https://sendgrid.com
+https://postmark app.com
+https://mailgun.com
+
+# === Strong Candidates (5 URLs) ===
+# Expected: PASS Layer 1 → PASS Layer 2 → Layer 3 classification
+https://buffer.com
+https://hootsuite.com
+https://sproutsocial.com
+https://later.com
+https://agorapulse.com

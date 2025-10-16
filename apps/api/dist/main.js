@@ -62,11 +62,31 @@ function validateEnvironment() {
     logger.log('✅ Environment validation passed - all required variables present');
 }
 async function bootstrap() {
+    const logger = new common_1.Logger('Bootstrap');
     validateEnvironment();
     const app = await core_1.NestFactory.create(app_module_1.AppModule, { rawBody: true });
     app.enableShutdownHooks();
+    process.on('SIGTERM', async () => {
+        logger.log('SIGTERM received, closing server gracefully...');
+        await app.close();
+        logger.log('Server closed gracefully');
+        process.exit(0);
+    });
+    const allowedOrigins = [
+        process.env.FRONTEND_URL || 'http://localhost:3000',
+        'http://localhost:3000',
+    ];
     app.enableCors({
-        origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+        origin: (origin, callback) => {
+            if (!origin)
+                return callback(null, true);
+            if (allowedOrigins.some(allowed => origin.startsWith(allowed))) {
+                callback(null, true);
+            }
+            else {
+                callback(new Error('Not allowed by CORS'));
+            }
+        },
         credentials: true,
     });
     const serverAdapter = new express_1.ExpressAdapter();

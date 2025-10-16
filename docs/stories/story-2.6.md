@@ -1,6 +1,6 @@
 # Story 2.6: Layer 2 Operational Filter (Homepage Scraping & Company Validation)
 
-Status: Ready for Integration Testing
+Status: Ready for Review
 
 ## Story
 

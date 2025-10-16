@@ -28,6 +28,8 @@ export interface TLDFiltering {
   non_commercial: string[];
   /** Personal blog platform TLDs that REJECT in Layer 1 */
   personal_blog: string[];
+  /** Blog platform domains (e.g., medium.com, substack.com) that REJECT in Layer 1 */
+  blog_platform_domains: string[];
 }
 
 /**

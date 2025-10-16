@@ -1,0 +1,34 @@
+# Curated 20-URL Test Dataset for E2E Pipeline Flow Validation (Task 6)
+# Expected outcomes documented for each URL
+
+# Layer 1 PASS → Layer 2 PASS → Layer 3 Classification (Expected: 5 URLs)
+https://buffer.com
+https://hootsuite.com
+https://sproutsocial.com
+https://agorapulse.com
+https://later.com
+
+# Layer 1 PASS → Layer 2 REJECT (Expected: 3 URLs)
+https://convertkit.com
+https://drip.com
+https://activecampaign.com
+
+# Layer 1 REJECT - Non-commercial TLD (.org) (Expected: 3 URLs)
+https://wikipedia.org
+https://mozilla.org
+https://apache.org
+
+# Layer 1 REJECT - Blog Platforms (Expected: 4 URLs)
+https://wordpress.com
+https://medium.com
+https://blogger.com
+https://substack.com
+
+# Layer 1 REJECT - Subdomain Blogs (Expected: 3 URLs)
+https://blog.hubspot.com
+https://blog.mailchimp.com
+https://news.ycombinator.com
+
+# Layer 1 REJECT - Traditional Business (Expected: 2 URLs)
+https://mcdonalds.com
+https://starbucks.com

@@ -32,6 +32,10 @@ export class Layer2OperationalFilterService {
     blog_freshness_days: 90,
     required_pages_count: 2,
     min_tech_stack_tools: 2,
+    tech_stack_tools: {
+      analytics: ['google-analytics', 'mixpanel', 'amplitude'],
+      marketing: ['hubspot', 'marketo', 'activecampaign', 'mailchimp'],
+    },
     min_design_quality_score: 6,
   };
 
@@ -130,6 +134,7 @@ export class Layer2OperationalFilterService {
           blog_freshness_days: layer2Rules.blog_freshness_days ?? this.DEFAULT_RULES.blog_freshness_days,
           required_pages_count: layer2Rules.required_pages_count ?? this.DEFAULT_RULES.required_pages_count,
           min_tech_stack_tools: layer2Rules.min_tech_stack_tools ?? this.DEFAULT_RULES.min_tech_stack_tools,
+          tech_stack_tools: layer2Rules.tech_stack_tools ?? this.DEFAULT_RULES.tech_stack_tools,
           min_design_quality_score: layer2Rules.min_design_quality_score ?? this.DEFAULT_RULES.min_design_quality_score,
         };
       }
@@ -450,27 +455,39 @@ export class Layer2OperationalFilterService {
 
   /**
    * Evaluate all signals against Layer 2 pass/fail criteria
-   * ALL criteria must pass for overall PASS
+   * Scoring system: Must pass at least 2 of 4 criteria
+   *
+   * REFACTORED: Changed from strict ALL-must-pass to flexible scoring
+   * Rationale: Homepage scraping cannot reliably detect blog post dates
+   * (blog dates typically appear on /blog page, not homepage)
    */
   private evaluateSignals(
     signals: Layer2Signals,
     rules: Layer2Rules,
   ): { passed: boolean; reasoning: string } {
     const failures: string[] = [];
+    const passes: string[] = [];
+    let passCount = 0;
 
     // Check company pages (minimum 2 of 3)
-    if (signals.company_pages.count < rules.required_pages_count) {
+    if (signals.company_pages.count >= rules.required_pages_count) {
+      passes.push(`Company pages (${signals.company_pages.count}/3)`);
+      passCount++;
+    } else {
       failures.push(
         `Missing required pages (${signals.company_pages.count}/${rules.required_pages_count} found)`,
       );
     }
 
-    // Check blog freshness
-    if (!signals.blog_data.passes_freshness) {
+    // Check blog freshness (optional - difficult to detect from homepage)
+    if (signals.blog_data.passes_freshness) {
+      passes.push('Fresh blog detected');
+      passCount++;
+    } else {
       if (!signals.blog_data.has_blog) {
         failures.push('No blog section detected');
       } else if (signals.blog_data.days_since_last_post === null) {
-        failures.push('No recent blog posts found');
+        failures.push('Blog dates not found on homepage');
       } else {
         failures.push(
           `Blog not fresh (${signals.blog_data.days_since_last_post} days since last post)`,
@@ -479,30 +496,38 @@ export class Layer2OperationalFilterService {
     }
 
     // Check tech stack
-    if (signals.tech_stack.count < rules.min_tech_stack_tools) {
+    if (signals.tech_stack.count >= rules.min_tech_stack_tools) {
+      passes.push(`Professional tech stack (${signals.tech_stack.count} tools)`);
+      passCount++;
+    } else {
       failures.push(
         `Insufficient tech stack (${signals.tech_stack.count}/${rules.min_tech_stack_tools} tools detected)`,
       );
     }
 
     // Check design quality
-    if (signals.design_quality.score < rules.min_design_quality_score) {
+    if (signals.design_quality.score >= rules.min_design_quality_score) {
+      passes.push(`Design quality (${signals.design_quality.score}/10)`);
+      passCount++;
+    } else {
       failures.push(
         `Low design quality (score: ${signals.design_quality.score}/${rules.min_design_quality_score})`,
       );
     }
 
-    // Final decision
-    if (failures.length > 0) {
+    // Final decision: Must pass at least 2 of 4 criteria
+    const REQUIRED_PASS_COUNT = 2;
+
+    if (passCount >= REQUIRED_PASS_COUNT) {
       return {
-        passed: false,
-        reasoning: `REJECT Layer 2 - ${failures.join('; ')}`,
+        passed: true,
+        reasoning: `PASS Layer 2 - ${passes.join(', ')} (${passCount}/4 criteria met)`,
       };
     }
 
     return {
-      passed: true,
-      reasoning: 'PASS Layer 2 - All operational signals validated',
+      passed: false,
+      reasoning: `REJECT Layer 2 - Only ${passCount}/${REQUIRED_PASS_COUNT} required criteria met. Failures: ${failures.join('; ')}`,
     };
   }
 

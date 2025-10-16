@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { SettingsController } from './settings.controller';
-import { SettingsService, ClassificationSettings } from './settings.service';
+import { SettingsService } from './settings.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
+import type { ClassificationSettings } from '@website-scraper/shared';
 
 describe('SettingsController', () => {
   let controller: SettingsController;
@@ -10,6 +11,7 @@ describe('SettingsController', () => {
 
   const mockSettings: ClassificationSettings = {
     id: 'test-id',
+    // V1 fields (backward compatibility)
     prefilter_rules: [
       {
         category: 'test',
@@ -22,6 +24,51 @@ describe('SettingsController', () => {
     llm_temperature: 0.5,
     confidence_threshold: 0.3,
     content_truncation_limit: 5000,
+    confidence_threshold_high: 0.8,
+    confidence_threshold_medium: 0.5,
+    confidence_threshold_low: 0.3,
+    // 3-Tier Architecture fields (Story 3.0)
+    layer1_rules: {
+      tld_filters: {
+        commercial: ['.com', '.io'],
+        non_commercial: ['.org'],
+        personal: ['.me'],
+      },
+      industry_keywords: ['SaaS'],
+      url_pattern_exclusions: [],
+      target_elimination_rate: 0.5,
+    },
+    layer2_rules: {
+      blog_freshness_days: 90,
+      required_pages_count: 2,
+      min_tech_stack_tools: 2,
+      tech_stack_tools: {
+        analytics: ['google-analytics', 'mixpanel'],
+        marketing: ['hubspot', 'marketo'],
+      },
+      min_design_quality_score: 6,
+    },
+    layer3_rules: {
+      content_marketing_indicators: ['Test indicator'],
+      seo_investment_signals: ['schema_markup'],
+      llm_temperature: 0.3,
+      content_truncation_limit: 10000,
+    },
+    confidence_bands: {
+      high: { min: 0.8, max: 1.0, action: 'auto_approve' },
+      medium: { min: 0.5, max: 0.79, action: 'manual_review' },
+      low: { min: 0.3, max: 0.49, action: 'manual_review' },
+      auto_reject: { min: 0.0, max: 0.29, action: 'reject' },
+    },
+    manual_review_settings: {
+      queue_size_limit: null,
+      auto_review_timeout_days: null,
+      notifications: {
+        email_threshold: 100,
+        dashboard_badge: true,
+        slack_integration: false,
+      },
+    },
     updated_at: new Date().toISOString(),
   };
 

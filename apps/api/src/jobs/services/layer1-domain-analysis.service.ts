@@ -182,7 +182,7 @@ export class Layer1DomainAnalysisService {
 
   /**
    * Filter URLs by TLD classification
-   * REJECT: non-commercial (.gov, .edu, .org), personal blogs (.me, .blog, .xyz)
+   * REJECT: non-commercial (.gov, .edu, .org), personal blogs (.me, .blog, .xyz), blog platforms (medium.com, substack.com)
    * PASS: commercial (.com, .io, .co, .ai)
    */
   private filterByTLD(hostname: string): Omit<Layer1AnalysisResult, 'layer' | 'processingTimeMs'> {
@@ -191,6 +191,15 @@ export class Layer1DomainAnalysisService {
     }
 
     const tld = this.extractTLD(hostname).toLowerCase();
+    const lowerHostname = hostname.toLowerCase();
+
+    // Check blog platform domains (exact hostname match)
+    if (this.rules.tld_filtering.blog_platform_domains.some((domain) => lowerHostname === domain || lowerHostname.endsWith('.' + domain))) {
+      return {
+        passed: false,
+        reasoning: `REJECT Layer 1 - Blog platform domain (${hostname})`,
+      };
+    }
 
     // Check non-commercial TLDs
     if (this.rules.tld_filtering.non_commercial.some((t) => tld.endsWith(t))) {

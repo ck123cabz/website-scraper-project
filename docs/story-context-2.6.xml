@@ -1,0 +1,325 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.6</storyId>
+    <title>Layer 2 Operational Filter (Homepage Scraping &amp; Company Validation)</title>
+    <status>Ready for Implementation</status>
+    <generatedAt>2025-10-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/stories/story-2.6.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>system</asA>
+    <iWant>to validate company infrastructure and active blog through homepage scraping</iWant>
+    <soThat>we eliminate non-viable candidates before expensive LLM classification</soThat>
+    <tasks>
+      <task id="1" title="Design Layer 2 Filter Service Architecture">
+        <subtask id="1.1">Create Layer2OperationalFilterService in apps/api/src/jobs/services/</subtask>
+        <subtask id="1.2">Define Layer2Signals interface (company_pages, blog_data, tech_stack, design_quality)</subtask>
+        <subtask id="1.3">Define Layer2FilterResult type (passed: boolean, signals: Layer2Signals, reasoning: string)</subtask>
+        <subtask id="1.4">Design configuration structure for Layer 2 rules (linked to Story 3.0 settings)</subtask>
+        <subtask id="1.5">Add Layer2OperationalFilterService to JobsModule providers</subtask>
+      </task>
+      <task id="2" title="Implement Homepage Scraping Logic">
+        <subtask id="2.1">Create scrapeHomepage(url: string) method using existing ScraperService</subtask>
+        <subtask id="2.2">Extract HTML from homepage only (optimize for single-page scraping)</subtask>
+        <subtask id="2.3">Parse homepage HTML for analysis (use Cheerio or similar)</subtask>
+        <subtask id="2.4">Implement caching for homepage HTML (TTL: 24 hours) to avoid re-fetching</subtask>
+        <subtask id="2.5">Handle ScrapingBee errors gracefully (timeouts, 404s, rate limits)</subtask>
+      </task>
+      <task id="3" title="Company Infrastructure Detection">
+        <subtask id="3.1">Detect About page link/section in navigation or footer</subtask>
+        <subtask id="3.2">Detect Team page link (keywords: "team", "about us", "our team")</subtask>
+        <subtask id="3.3">Detect Contact page link (keywords: "contact", "get in touch")</subtask>
+        <subtask id="3.4">Count detected pages and validate minimum 2 of 3 requirement</subtask>
+        <subtask id="3.5">Store results in Layer2Signals.company_pages object</subtask>
+      </task>
+      <task id="4" title="Active Blog Validation">
+        <subtask id="4.1">Detect blog section on homepage (keywords: "blog", "news", "articles", "insights")</subtask>
+        <subtask id="4.2">Extract blog post dates from homepage (common date formats)</subtask>
+        <subtask id="4.3">Parse dates and calculate days since last post</subtask>
+        <subtask id="4.4">Compare against configurable threshold (default: 90 days)</subtask>
+        <subtask id="4.5">Store blog_last_post_date and blog_freshness_days in Layer2Signals</subtask>
+      </task>
+      <task id="5" title="Tech Stack Detection">
+        <subtask id="5.1">Scan HTML for Google Analytics tracking code (ga(), gtag())</subtask>
+        <subtask id="5.2">Scan for Mixpanel tracking code (mixpanel.init())</subtask>
+        <subtask id="5.3">Detect HubSpot forms or tracking scripts</subtask>
+        <subtask id="5.4">Detect Marketo forms or Munchkin tracking</subtask>
+        <subtask id="5.5">Detect ActiveCampaign tracking or forms</subtask>
+        <subtask id="5.6">Count detected tools and validate minimum 2 tools requirement</subtask>
+        <subtask id="5.7">Store detected tools in Layer2Signals.tech_stack array</subtask>
+      </task>
+      <task id="6" title="Professional Design Indicators">
+        <subtask id="6.1">Detect modern CSS frameworks (Tailwind classes, Bootstrap grid)</subtask>
+        <subtask id="6.2">Check for viewport meta tag (responsive design indicator)</subtask>
+        <subtask id="6.3">Count media query usage in inline styles or linked stylesheets</subtask>
+        <subtask id="6.4">Assess imagery quality (detect stock photo patterns, high-res images)</subtask>
+        <subtask id="6.5">Calculate design quality score (1-10) based on detected indicators</subtask>
+        <subtask id="6.6">Store design_quality in Layer2Signals</subtask>
+      </task>
+      <task id="7" title="Configuration Integration">
+        <subtask id="7.1">Load Layer 2 configuration from Story 3.0 classification_settings table</subtask>
+        <subtask id="7.2">Apply blog_freshness_days threshold from config (default: 90)</subtask>
+        <subtask id="7.3">Apply required_pages_count threshold from config (default: 2)</subtask>
+        <subtask id="7.4">Apply min_tech_stack_tools threshold from config (default: 2)</subtask>
+        <subtask id="7.5">Handle missing configuration gracefully (use hardcoded defaults)</subtask>
+      </task>
+      <task id="8" title="Database Schema Updates">
+        <subtask id="8.1">Update Result entity to include layer2_signals: JSONB</subtask>
+        <subtask id="8.2">Create Supabase migration to add layer2_signals column</subtask>
+        <subtask id="8.3">Update jobs.layer2_eliminated_count counter field</subtask>
+        <subtask id="8.4">Test database writes with Layer 2 signals data</subtask>
+        <subtask id="8.5">Validate JSONB query performance for Layer 2 data</subtask>
+      </task>
+      <task id="9" title="Decision Logic and Result Storage">
+        <subtask id="9.1">Implement filterUrl(url: string) method</subtask>
+        <subtask id="9.2">Combine all signal checks (company pages, blog, tech stack, design)</subtask>
+        <subtask id="9.3">Apply pass/fail logic: ALL criteria must pass</subtask>
+        <subtask id="9.4">Generate reasoning string if rejected</subtask>
+        <subtask id="9.5">Return Layer2FilterResult with passed flag, signals, and reasoning</subtask>
+        <subtask id="9.6">Update elimination_layer = 'layer2' if rejected</subtask>
+        <subtask id="9.7">Log Layer 2 decision with detailed reasoning</subtask>
+      </task>
+      <task id="10" title="Performance Optimization">
+        <subtask id="10.1">Optimize HTML parsing (minimize DOM traversal)</subtask>
+        <subtask id="10.2">Implement concurrent processing (5 URLs in parallel)</subtask>
+        <subtask id="10.3">Profile filterUrl() execution time with 100 URLs</subtask>
+        <subtask id="10.4">Verify &lt;5 seconds per URL requirement met</subtask>
+        <subtask id="10.5">Add performance logging for slow operations (&gt;3s)</subtask>
+      </task>
+      <task id="11" title="Unit Testing">
+        <subtask id="11.1">Test company page detection (various navigation structures)</subtask>
+        <subtask id="11.2">Test blog freshness validation (recent vs stale posts)</subtask>
+        <subtask id="11.3">Test tech stack detection (GA, Mixpanel, HubSpot, Marketo)</subtask>
+        <subtask id="11.4">Test design quality scoring (modern vs dated design)</subtask>
+        <subtask id="11.5">Test pass/fail logic (all criteria combinations)</subtask>
+        <subtask id="11.6">Test configuration loading and defaults</subtask>
+        <subtask id="11.7">Test error handling (scraping failures, parsing errors)</subtask>
+        <subtask id="11.8">Test performance: 100 URLs processed in &lt;500 seconds</subtask>
+      </task>
+      <task id="12" title="Integration with Worker Pipeline">
+        <subtask id="12.1">Inject Layer2OperationalFilterService into worker</subtask>
+        <subtask id="12.2">Call filterUrl() after Layer 1 PASS (before Layer 3)</subtask>
+        <subtask id="12.3">If Layer 2 rejects: skip Layer 3 LLM, mark as eliminated, log decision</subtask>
+        <subtask id="12.4">If Layer 2 passes: proceed with Layer 3 LLM classification</subtask>
+        <subtask id="12.5">Update job metrics with Layer 2 elimination count</subtask>
+      </task>
+      <task id="13" title="Integration Testing">
+        <subtask id="13.1">Test full flow: Layer 1 PASS → Layer 2 scraping → validation → pass/reject</subtask>
+        <subtask id="13.2">Test with real URLs: digital-native B2B sites (should pass)</subtask>
+        <subtask id="13.3">Test with traditional companies: restaurants, retail (should reject)</subtask>
+        <subtask id="13.4">Verify layer2_signals JSONB data stored correctly</subtask>
+        <subtask id="13.5">Verify layer2_eliminated_count increments correctly</subtask>
+        <subtask id="13.6">Test performance with 50 Layer 1 survivors</subtask>
+        <subtask id="13.7">Validate 70% pass rate target (30% elimination)</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1" title="Homepage-Only Scraping">
+      <requirement>Scrape homepage only (not full site) to optimize ScrapingBee usage</requirement>
+      <requirement>Extract company infrastructure signals: About page, Team page, Contact page presence</requirement>
+      <requirement>Process only Layer 1 survivors (URLs that passed domain analysis)</requirement>
+    </criterion>
+    <criterion id="AC2" title="Company Infrastructure Detection">
+      <requirement>Detect presence of: About page, Team page, Contact page (minimum 2 of 3 required)</requirement>
+      <requirement>Store detection results in layer2_signals JSONB field</requirement>
+      <requirement>Log detected pages: "Found: About, Team (2/3 required pages)"</requirement>
+    </criterion>
+    <criterion id="AC3" title="Active Blog Validation">
+      <requirement>Detect blog section existence on homepage</requirement>
+      <requirement>Check recent post publish dates (within configurable threshold, default 90 days)</requirement>
+      <requirement>Minimum requirement: 1 post within threshold to pass</requirement>
+      <requirement>Store blog freshness in layer2_signals.blog_last_post_date</requirement>
+    </criterion>
+    <criterion id="AC4" title="Tech Stack Detection">
+      <requirement>Identify analytics tools (Google Analytics, Mixpanel, etc.)</requirement>
+      <requirement>Identify marketing platforms (HubSpot, Marketo, ActiveCampaign, etc.)</requirement>
+      <requirement>Score based on professional tool presence (2+ tools = PASS)</requirement>
+      <requirement>Store detected tools in layer2_signals.tech_stack array</requirement>
+    </criterion>
+    <criterion id="AC5" title="Professional Design Indicators">
+      <requirement>Modern CSS framework detection (Tailwind, Bootstrap, Material UI)</requirement>
+      <requirement>Responsive design check (viewport meta tag, media queries)</requirement>
+      <requirement>Professional imagery assessment (stock photos, custom graphics)</requirement>
+      <requirement>Store design score in layer2_signals.design_quality (1-10)</requirement>
+    </criterion>
+    <criterion id="AC6" title="Configuration Integration">
+      <requirement>Load Layer 2 rules from Story 3.0 settings (classification_settings.layer2_rules)</requirement>
+      <requirement>Configurable thresholds: blog_freshness_days, required_pages_count, min_tech_stack_tools</requirement>
+      <requirement>Configurable pass/fail criteria per signal type</requirement>
+    </criterion>
+    <criterion id="AC7" title="Performance Target">
+      <requirement>70% pass rate of Layer 1 survivors (target: eliminate 30%)</requirement>
+      <requirement>Processing time: &lt;5 seconds per URL (including ScrapingBee request)</requirement>
+      <requirement>Parallel processing: 5 concurrent URLs (respects ScrapingBee rate limits)</requirement>
+    </criterion>
+    <criterion id="AC8" title="Results Tracking">
+      <requirement>Store layer2_signals (JSONB) with all detected signals</requirement>
+      <requirement>Mark elimination: elimination_layer = 'layer2' if rejected</requirement>
+      <requirement>Update job counters: jobs.layer2_eliminated_count</requirement>
+      <requirement>Log Layer 2 decision reasoning: "REJECT Layer 2 - Missing required pages (1/3 found)"</requirement>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="/Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/PRD.md" title="Product Requirements Document">
+        <section name="FR008: Intelligent Progressive Filtering" lines="99-126">
+          System shall apply 3-tier progressive filtering: (1) Domain/URL pattern analysis without HTTP requests to eliminate 40-60% of candidates, (2) Homepage scraping and company validation to eliminate additional 20-30%, (3) LLM classification with confidence-based routing to manual review queue. Database schema requirements specify layer2_signals (JSONB) and layer2_eliminated_count (INTEGER) fields for tracking Layer 2 operational filtering results.
+        </section>
+        <section name="NFR002: Processing Performance" lines="56-62">
+          System shall process URLs with progressive throughput: Layer 1 domain analysis at 100+ URLs/min, Layer 2 homepage scraping at 20-30 URLs/min, Layer 3 LLM classification at 10-15 URLs/min. Overall pipeline throughput: minimum 20 URLs per minute through complete processing. Layer 1 filtering shall execute in &lt;50ms per URL (no HTTP requests).
+        </section>
+        <section name="NFR003: Cost Efficiency" lines="63-76">
+          LLM API costs shall be reduced by minimum 60-70% through multi-tier progressive filtering, with additional 40-60% reduction in scraping costs via Layer 1 domain elimination. System shall track costs per layer: Layer 1: $0 (rule-based), Layer 2: ScrapingBee cost per homepage (~$0.0001/URL), Layer 3: LLM API cost (~$0.002/URL). Cost savings calculated as: (URLs eliminated at Layer 1 × Layer 2 cost) + (URLs eliminated at Layer 1+2 × Layer 3 cost).
+        </section>
+      </doc>
+      <doc path="/Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/tech-spec-epic-2.md" title="Technical Specification: Production-Grade Processing Pipeline">
+        <section name="Overview" lines="0-16">
+          Epic 2 focuses on building the Production-Grade Processing Pipeline - the backend infrastructure that powers the scraping operations. This epic delivers a robust NestJS + BullMQ queue architecture with intelligent pre-filtering, cost-optimized LLM classification (Gemini 2.0 Flash primary, GPT-4o-mini fallback), and reliable job processing with automatic retries and persistence.
+        </section>
+        <section name="Backend Stack" lines="52-59">
+          Framework: NestJS 10.3+ with TypeScript. Queue System: BullMQ 5.10+ with Redis 7+. Database: Supabase PostgreSQL (via @supabase/supabase-js). HTTP Client: Axios 1.7+ for external API calls. Logger: Pino 9.3+ (structured JSON logging). Validation: Zod 3.23+ for request/response validation. Type Safety: TypeScript 5.5+ with strict mode.
+        </section>
+        <section name="Services and Modules" lines="75-89">
+          Layer 2 Operational Filter Service should be created at apps/api/src/jobs/services/, following the pattern of existing services (Layer1DomainAnalysisService, ScraperService, LlmService). Service will be registered in JobsModule and exported for worker integration.
+        </section>
+      </doc>
+      <doc path="/Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/sprint-change-proposal-3tier-architecture-2025-10-16.md" title="Sprint Change Proposal: 3-Tier Progressive Filtering Architecture">
+        <section name="NEW Story 2.6 - Layer 2" lines="139-146">
+          Create layer2-operational-filter.service.ts. Implement homepage-only scraping. Detect company infrastructure signals. Validate active blog (recent posts). Target: 70% pass rate. Duration: 3-4 days. Part of Week 15 refactoring sprint.
+        </section>
+        <section name="Database Changes" lines="51-73">
+          New fields in results table: elimination_layer (enum: none/layer1/layer2/layer3), layer2_signals (JSONB). New fields in jobs table: layer2_eliminated_count (INTEGER), scraping_cost (DECIMAL), estimated_savings (DECIMAL), current_layer (INTEGER: 1/2/3). Restructured classification_settings schema includes layer2_rules (JSONB) for blog freshness, tech stack signals, required pages.
+        </section>
+        <section name="Performance Success Criteria" lines="207-212">
+          Layer 1: 40-60% elimination rate. Layer 2: 70% pass rate of Layer 1 survivors. Layer 3: 60% high confidence, 20% medium, 15% low, 5% reject. Overall throughput: 20+ URLs/min.
+        </section>
+        <section name="Cost Optimization Success" lines="213-217">
+          LLM cost savings: 60-70% reduction. Scraping cost savings: 40-60% reduction. Cost tracking shows per-layer costs and savings.
+        </section>
+      </doc>
+    </docs>
+    <code>
+      <artifact path="/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/services/layer2-operational-filter.service.ts" kind="service" symbol="Layer2OperationalFilterService" lines="1-62">
+        <reason>STUB implementation exists for Story 2.5-refactored integration. Currently passes ALL URLs through to Layer 3. Must replace stub with full Layer 2 operational filtering logic including company page detection, blog freshness analysis, tech stack validation.</reason>
+        <interface>
+          export interface Layer2Result {
+            passed: boolean;
+            reasoning: string;
+            signals?: {
+              companyPageFound?: boolean;
+              blogFreshnessScore?: number;
+              techStack?: string[];
+              lastBlogPostDate?: string;
+              contactInfoPresent?: boolean;
+            };
+            processingTimeMs?: number;
+          }
+
+          async validateOperational(url: string, content: any): Promise&lt;Layer2Result&gt;
+        </interface>
+      </artifact>
+      <artifact path="/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/scraper/scraper.service.ts" kind="service" symbol="ScraperService" lines="1-347">
+        <reason>REUSE for Layer 2 homepage scraping. Service provides fetchUrl(url: string) method that integrates ScrapingBee API with JS rendering, content extraction using Cheerio, comprehensive error handling, and retry logic for transient errors. Layer 2 will call this service to scrape homepage HTML.</reason>
+        <interface>
+          async fetchUrl(url: string): Promise&lt;ScraperResult&gt;
+          extractContent(html: string): ContentExtractionResult
+          isTransientError(error: string): boolean
+          isAvailable(): boolean
+        </interface>
+      </artifact>
+      <artifact path="/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/services/layer1-domain-analysis.service.ts" kind="service" symbol="Layer1DomainAnalysisService" lines="1-200">
+        <reason>REFERENCE for Layer 2 service patterns. Shows: configuration loading from JSON files, rule-based filtering logic, performance optimization (no HTTP requests), structured reasoning strings, cost savings calculation, elimination statistics tracking. Layer 2 should follow similar patterns but add homepage scraping step.</reason>
+        <interface>
+          analyzeUrl(url: string): Layer1AnalysisResult
+          getEliminationStats(urls: string[]): Layer1Statistics
+          calculateScrapingSavings(eliminatedCount: number): number
+          calculateLLMSavings(eliminatedCount: number): number
+        </interface>
+      </artifact>
+      <artifact path="/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/jobs.module.ts" kind="module" symbol="JobsModule" lines="1-73">
+        <reason>REGISTER Layer2OperationalFilterService here. Module already includes Layer2OperationalFilterService in providers array (line 54) and exports array (line 66) as stub for Story 2.5-refactored. No changes needed to module registration.</reason>
+      </artifact>
+      <artifact path="/Users/s0mebody/Desktop/dev/projects/website-scraper-project/packages/shared/src/types/scraper.ts" kind="types" symbol="ScraperResult, ContentExtractionResult" lines="1-55">
+        <reason>REUSE existing types for scraper integration. ScraperResult provides url, content (HTML), title, metaDescription, success, statusCode, finalUrl, error, processingTimeMs. ContentExtractionResult provides title, metaDescription, bodyText, truncated flag.</reason>
+      </artifact>
+      <artifact path="/Users/s0mebody/Desktop/dev/projects/website-scraper-project/packages/shared/src/types/layer1.ts" kind="types" symbol="Layer1AnalysisResult, Layer1DomainRules" lines="1-104">
+        <reason>REFERENCE for Layer 2 types structure. Shows pattern for analysis results (passed, reasoning, layer, processingTimeMs), configuration structures (rules with nested objects), elimination statistics, cost savings interfaces. Layer 2 should define similar Layer2Signals, Layer2FilterResult, Layer2Rules interfaces.</reason>
+      </artifact>
+      <artifact path="/Users/s0mebody/Desktop/dev/projects/website-scraper-project/packages/shared/src/types/settings.ts" kind="types" symbol="ClassificationSettings" lines="1-48">
+        <reason>EXTEND for Layer 2 configuration. ClassificationSettings includes prefilter_rules array and will need layer2_rules (JSONB) section added for blog_freshness_days, required_pages_count, min_tech_stack_tools, design_quality_threshold. Referenced in Story 3.0 database schema.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="node">
+        <package name="cheerio" version="^1.1.2">Fast, flexible HTML parsing library. ALREADY INSTALLED. Used by ScraperService for content extraction. Layer 2 will use for parsing homepage HTML to detect company pages, blog sections, tech stack scripts, CSS frameworks.</package>
+        <package name="@nestjs/common" version="^10.3.0">NestJS core framework providing Injectable decorator, Logger service. Required for Layer2OperationalFilterService injectable service.</package>
+        <package name="@nestjs/core" version="^10.3.0">NestJS core functionality for module system, dependency injection.</package>
+        <package name="@supabase/supabase-js" version="^2.39.0">Supabase client for database operations. Used to persist layer2_signals JSONB data to results table, update jobs.layer2_eliminated_count counter.</package>
+        <package name="axios" version="^1.12.2">HTTP client used by ScraperService for ScrapingBee API calls. Layer 2 reuses existing ScraperService so no direct axios usage needed.</package>
+        <package name="node-cache" version="^5.1.2">In-memory caching library. ALREADY INSTALLED. Should be used for caching homepage HTML (TTL: 24 hours) to avoid re-fetching same URL within job.</package>
+        <package name="zod" version="^3.25.76">Schema validation library. Used for validating Layer 2 configuration from database, ensuring type safety for layer2_rules JSONB data.</package>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">Layer 2 executes AFTER Layer 1 (domain analysis) and BEFORE Layer 3 (LLM classification) in progressive filtering pipeline. Only processes URLs that passed Layer 1. If Layer 2 rejects, skip Layer 3 entirely to save LLM costs.</constraint>
+    <constraint type="architecture">Homepage-only scraping to minimize ScrapingBee API costs. Do NOT scrape full site. Single ScrapingBee request per URL at ~$0.0001/request.</constraint>
+    <constraint type="architecture">Service must be stateless and injectable. All configuration loaded from database (classification_settings.layer2_rules) at initialization or per-request. No hardcoded rules except fallback defaults.</constraint>
+    <constraint type="performance">Processing time &lt;5 seconds per URL including ScrapingBee request. Target throughput: 20-30 URLs/min at Layer 2. Concurrent processing: 5 URLs in parallel respecting ScrapingBee rate limits.</constraint>
+    <constraint type="performance">70% pass rate target - Layer 2 should eliminate approximately 30% of Layer 1 survivors. If elimination rate too high (&gt;40%), review thresholds as they may be too strict.</constraint>
+    <constraint type="database">layer2_signals stored as JSONB in results table. Must include: company_pages {has_about, has_team, has_contact, count}, blog_data {has_blog, last_post_date, days_since_last_post, passes_freshness}, tech_stack {tools_detected[], count}, design_quality {score, has_modern_framework, is_responsive, has_professional_imagery}.</constraint>
+    <constraint type="database">Update jobs.layer2_eliminated_count counter for each rejection. Update results.elimination_layer = 'layer2' for rejected URLs. Update jobs.current_layer = 2 during Layer 2 processing for real-time dashboard.</constraint>
+    <constraint type="testing">Minimum 85% unit test coverage following pattern from Layer1DomainAnalysisService tests. Must test: company page detection (various HTML structures), blog freshness (recent vs stale), tech stack detection (all supported tools), design quality scoring, pass/fail logic (all criteria combinations), configuration loading, error handling, performance (&lt;5s per URL).</constraint>
+    <constraint type="testing">Integration tests required: Full flow Layer 1 PASS → Layer 2 scraping → validation → pass/reject. Test with real URLs: digital-native B2B sites (should pass), traditional businesses (should reject). Verify database persistence of layer2_signals and counters.</constraint>
+    <constraint type="security">Validate all ScrapingBee HTML responses before parsing. Sanitize inputs before logging (length limits, control character stripping). Handle timeouts gracefully. Use retry logic for transient errors (network timeouts, rate limits 429). Log detailed errors server-side, generic messages to client.</constraint>
+    <constraint type="configuration">Load configuration from classification_settings.layer2_rules: blog_freshness_days (default: 90), required_pages_count (default: 2), min_tech_stack_tools (default: 2), design_quality_threshold (default: 6). If configuration missing, use hardcoded defaults and log warning.</constraint>
+    <constraint type="patterns">Follow NestJS service patterns from existing services (Layer1DomainAnalysisService, ScraperService). Use dependency injection for ScraperService, SettingsService. Structured logging with Logger service. Return type-safe results (Layer2FilterResult interface).</constraint>
+    <constraint type="patterns">ALL criteria must pass for URL to proceed to Layer 3: company_pages.count &gt;= 2 AND blog_data.passes_freshness = true AND tech_stack.count &gt;= 2 AND design_quality.score &gt;= 6. If any criterion fails, return {passed: false, reasoning: detailed explanation, signals}.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="Layer2Signals" kind="type" signature="interface Layer2Signals { company_pages: {...}, blog_data: {...}, tech_stack: {...}, design_quality: {...} }" path="packages/shared/src/types/layer2.ts">
+      Must create this interface to define structure of signals stored in results.layer2_signals JSONB field. Includes company_pages (has_about, has_team, has_contact, count), blog_data (has_blog, last_post_date, days_since_last_post, passes_freshness), tech_stack (tools_detected[], count), design_quality (score, has_modern_framework, is_responsive, has_professional_imagery).
+    </interface>
+    <interface name="Layer2FilterResult" kind="type" signature="interface Layer2FilterResult { passed: boolean; signals: Layer2Signals; reasoning: string }" path="packages/shared/src/types/layer2.ts">
+      Return type for Layer2OperationalFilterService.filterUrl() method. Includes passed boolean (true = proceed to Layer 3, false = eliminate), signals (all detected Layer 2 signals), reasoning (detailed explanation of decision).
+    </interface>
+    <interface name="ScraperService.fetchUrl" kind="method" signature="async fetchUrl(url: string): Promise&lt;ScraperResult&gt;" path="apps/api/src/scraper/scraper.service.ts">
+      REUSE this existing method to fetch homepage HTML. Returns ScraperResult with content (HTML), title, metaDescription, success flag, statusCode, error. Layer 2 calls this method then parses content for signals.
+    </interface>
+    <interface name="ScraperService.extractContent" kind="method" signature="extractContent(html: string): ContentExtractionResult" path="apps/api/src/scraper/scraper.service.ts">
+      REUSE to extract title, metaDescription, bodyText from HTML. Already uses Cheerio for parsing. Layer 2 can use same Cheerio library to parse HTML for company pages, blog sections, tech stack.
+    </interface>
+    <interface name="SettingsService.getSettings" kind="method" signature="async getSettings(): Promise&lt;ClassificationSettings&gt;" path="apps/api/src/settings/settings.service.ts">
+      CALL to load Layer 2 configuration from classification_settings.layer2_rules. Returns ClassificationSettings with prefilter_rules, classification_indicators, layer2_rules (blog_freshness_days, required_pages_count, min_tech_stack_tools).
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Testing framework: Jest 30.2.0 with TypeScript support (ts-jest). Unit tests in apps/api/src/jobs/__tests__/ directory following pattern layer2-operational-filter.service.spec.ts. Integration tests verify full pipeline flow. Minimum 85% coverage for services and utilities. Use @nestjs/testing for dependency injection testing. Mock external dependencies (ScraperService, SettingsService) in unit tests. Integration tests use real ScraperService with mocked ScrapingBee responses (nock library). Test real-world URLs in integration tests: digital-native B2B (should pass), traditional businesses (should reject).
+    </standards>
+    <locations>
+      <location>apps/api/src/jobs/__tests__/layer2-operational-filter.service.spec.ts</location>
+      <location>apps/api/src/jobs/__tests__/integration/layer2-pipeline.spec.ts</location>
+    </locations>
+    <ideas>
+      <idea ac="AC2">Test company page detection: Various navigation structures (header nav, footer nav, sidebar), different link text ("About Us" vs "About" vs "Company"), case-insensitive matching, multiple pages found (3/3), minimum requirement (2/3), insufficient pages (1/3 = fail).</idea>
+      <idea ac="AC3">Test blog freshness validation: Recent post (30 days ago = pass), stale post (180 days ago = fail), threshold boundary (exactly 90 days), no blog section detected (fail), blog exists but no dates found (fail), multiple date formats parsing (ISO, "Jan 15 2025", "2025-01-15").</idea>
+      <idea ac="AC4">Test tech stack detection: Google Analytics (ga(), gtag() variants), Mixpanel (mixpanel.init()), HubSpot (forms, tracking), Marketo (Munchkin), ActiveCampaign, 0 tools detected (fail), 1 tool (fail), 2 tools (pass), 5+ tools (pass).</idea>
+      <idea ac="AC5">Test design quality scoring: Tailwind classes detected (+2 points), Bootstrap grid (+2 points), viewport meta tag (+1 point), media queries found (+2 points), high-res images (+1 point), no framework (low score 3 = fail), modern framework (score 8 = pass), threshold validation (score 6 = boundary).</idea>
+      <idea ac="AC1,AC7">Test performance: Single URL processing &lt;5 seconds, 100 URLs processed in &lt;500 seconds total, concurrent processing (5 URLs in parallel), ScrapingBee rate limit handling (429 error → pause → retry).</idea>
+      <idea ac="AC6">Test configuration loading: Load layer2_rules from SettingsService, apply blog_freshness_days threshold, apply required_pages_count, apply min_tech_stack_tools, fallback to defaults if config missing, log warning on fallback.</idea>
+      <idea ac="AC8">Test database persistence: layer2_signals JSONB stored correctly, elimination_layer = 'layer2' for rejections, jobs.layer2_eliminated_count incremented, jobs.current_layer = 2 during processing, query layer2_signals with JSONB operators.</idea>
+      <idea ac="AC1,AC2,AC3,AC4,AC5">Integration test full flow: Layer 1 PASS → Layer 2 scraping (real ScrapingBee call or mock) → validate all signals → pass/reject decision → database update → verify results table and jobs table. Test with hubspot.com (should pass all), restaurant.com (should fail at Layer 1 before Layer 2), personal blog (should fail at Layer 1).</idea>
+      <idea ac="AC7">Test elimination rate validation: Process 50 Layer 1 survivors → verify 70% pass rate (35 pass, 15 reject) → calculate actual elimination percentage → assert within 60-80% pass range.</idea>
+    </ideas>
+  </tests>
+</story-context>

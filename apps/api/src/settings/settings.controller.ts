@@ -10,8 +10,9 @@ import {
   ValidationPipe,
   Logger,
 } from '@nestjs/common';
-import { SettingsService, ClassificationSettings } from './settings.service';
+import { SettingsService } from './settings.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
+import type { ClassificationSettings } from '@website-scraper/shared';
 
 /**
  * Settings controller for classification parameters
@@ -55,11 +56,14 @@ export class SettingsController {
   async updateSettings(@Body() updateSettingsDto: UpdateSettingsDto): Promise<ClassificationSettings> {
     this.logger.log('PUT /api/settings - Updating classification settings');
     this.logger.debug(`Update payload: ${JSON.stringify({
-      ruleCount: updateSettingsDto.prefilter_rules.length,
-      indicatorCount: updateSettingsDto.classification_indicators.length,
+      ruleCount: updateSettingsDto.prefilter_rules?.length,
+      indicatorCount: updateSettingsDto.classification_indicators?.length,
       temperature: updateSettingsDto.llm_temperature,
       threshold: updateSettingsDto.confidence_threshold,
       limit: updateSettingsDto.content_truncation_limit,
+      hasLayer1: !!updateSettingsDto.layer1_rules,
+      hasLayer2: !!updateSettingsDto.layer2_rules,
+      hasLayer3: !!updateSettingsDto.layer3_rules,
     })}`);
 
     try {

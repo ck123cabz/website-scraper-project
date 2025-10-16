@@ -1,0 +1,354 @@
+<story-context id="story-3.1-refactored-3tier-testing" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>1</storyId>
+    <title>Local End-to-End Testing with Real APIs (3-Tier Architecture)</title>
+    <status>Draft</status>
+    <generatedAt>2025-10-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/stories/story-3.1-refactored.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>test the complete 3-tier progressive filtering system locally with real external APIs, validating Layer 1 domain analysis, Layer 2 homepage scraping, Layer 3 LLM classification with confidence routing, and manual review queue functionality</iWant>
+    <soThat>I can verify all integrations work end-to-end before deploying to Railway production</soThat>
+    <tasks>
+      - Task 1: Environment Setup & Real API Configuration (AC1-AC10 prereq)
+      - Task 2: Test Dataset Preparation (AC1, AC2, AC3)
+      - Task 3: Layer 1 Domain Analysis Validation (AC1)
+      - Task 4: Layer 2 Operational Validation Testing (AC2)
+      - Task 5: Layer 3 Confidence Distribution Validation (AC3)
+      - Task 6: End-to-End Pipeline Flow Validation (AC4)
+      - Task 7: Cost Optimization Validation (AC5)
+      - Task 8: Manual Review Queue Testing (AC6)
+      - Task 9: Settings Configuration Testing (AC7)
+      - Task 10: Chrome DevTools MCP Validation (AC8)
+      - Task 11: Supabase MCP Validation (AC9)
+      - Task 12: Production Deployment Preparation Checklist (AC10)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="AC1" priority="critical">
+      <title>Layer 1 Domain Analysis Testing</title>
+      <description>Validate Layer 1 domain analysis eliminates 40-60% of URLs WITHOUT HTTP requests based on TLD filtering, domain classification, and URL patterns</description>
+      <testableOutcome>100 URLs tested → 40-60 eliminated at Layer 1 with NO HTTP requests made, elimination_layer='layer1' stored, layer1_reasoning populated</testableOutcome>
+    </ac>
+    <ac id="AC2" priority="critical">
+      <title>Layer 2 Operational Validation Testing</title>
+      <description>Validate Layer 2 homepage scraping (not full site) eliminates ~30% of Layer 1 survivors based on company infrastructure and blog freshness</description>
+      <testableOutcome>40-60 URLs (Layer 1 PASS) → ~30% eliminated at Layer 2, layer2_signals JSONB populated with company pages/blog freshness/tech stack/design score</testableOutcome>
+    </ac>
+    <ac id="AC3" priority="critical">
+      <title>Layer 3 Confidence Distribution Testing</title>
+      <description>Validate Layer 3 LLM classification produces expected confidence distribution (60% high, 20% medium, 15% low, 5% reject) with manual review routing</description>
+      <testableOutcome>30-40 URLs (Layer 2 PASS) → Confidence distribution matches target, confidence/confidence_band/manual_review_required fields populated</testableOutcome>
+    </ac>
+    <ac id="AC4" priority="critical">
+      <title>End-to-End Pipeline Testing</title>
+      <description>Validate complete pipeline flow Layer 1 → Layer 2 → Layer 3 with progressive elimination (URLs skip subsequent layers when eliminated)</description>
+      <testableOutcome>20 URLs → Progressive elimination validated, pause/resume works at each layer, current_layer updates, per-layer logs captured</testableOutcome>
+    </ac>
+    <ac id="AC5" priority="high">
+      <title>Cost Optimization Validation</title>
+      <description>Calculate and verify 60-70% LLM cost savings + 40-60% scraping cost savings vs V1 baseline</description>
+      <testableOutcome>Cost tracking shows: scraping_cost (Layer 2+3), gemini_cost, gpt_cost, estimated_savings. Dashboard displays savings indicator</testableOutcome>
+    </ac>
+    <ac id="AC6" priority="high">
+      <title>Manual Review Queue Testing</title>
+      <description>Validate manual review queue routing for medium/low confidence results with GET/PATCH API endpoints</description>
+      <testableOutcome>GET /jobs/:id/manual-review returns queue entries, PATCH /results/:id/manual-decision updates classification, propagates to dashboard</testableOutcome>
+    </ac>
+    <ac id="AC7" priority="high">
+      <title>Settings Configuration Testing (3-Tier)</title>
+      <description>Validate Story 3.0 layer-specific settings (layer1_rules, layer2_rules, layer3_rules) load correctly and affect pipeline behavior</description>
+      <testableOutcome>Update Layer 1/2/3 settings via UI → Create job → Verify services use new rules. Configuration persists across restarts</testableOutcome>
+    </ac>
+    <ac id="AC8" priority="medium">
+      <title>Chrome DevTools MCP Validation</title>
+      <description>Use Chrome DevTools MCP to validate Settings UI layer tabs render and dashboard shows 3-tier progress metrics with live logs</description>
+      <testableOutcome>Screenshots captured showing layer tabs, dashboard during Layer 2 processing, per-layer logs, no console errors</testableOutcome>
+    </ac>
+    <ac id="AC9" priority="medium">
+      <title>Supabase MCP Validation</title>
+      <description>Use Supabase MCP to query schema changes (classification_settings, results, jobs tables) and verify Realtime events</description>
+      <testableOutcome>Queries return layer-structured schema, new fields populated, Realtime subscription fires for layer transitions</testableOutcome>
+    </ac>
+    <ac id="AC10" priority="critical">
+      <title>Production Deployment Preparation</title>
+      <description>All 9 test scenarios (AC1-AC9) passing, performance targets met, cost optimization validated, no critical errors</description>
+      <testableOutcome>Test report summary: 100 URLs processed, 40-60% Layer 1 elimination, 30% Layer 2 elimination, cost savings 60-70%+40-60%, ready for Story 3.2</testableOutcome>
+    </ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/sprint-change-proposal-3tier-architecture-2025-10-16.md</path>
+        <title>Sprint Change Proposal: 3-Tier Progressive Filtering Architecture</title>
+        <section>Phase 3: Testing & Deployment (Week 17)</section>
+        <snippet>Story 3.1 E2E Testing (2 days) - Test scenarios: 1) Layer 1 elimination rate (40-60%), 2) Layer 2 operational validation (70% pass rate), 3) Layer 3 confidence distribution, 4) End-to-end pipeline flow, 5) Cost optimization validation, 6) Manual review queue, 7) Settings configuration testing</snippet>
+        <relevance>Defines complete test strategy for 3-tier architecture with specific targets and success criteria</relevance>
+      </doc>
+      <doc>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/epic-stories.md</path>
+        <title>Epic 3: Local Testing & Production Deployment</title>
+        <section>Story 3.1: Local End-to-End Testing with Real APIs (lines 818-902)</section>
+        <snippet>Comprehensive acceptance criteria for 3-tier progressive filtering validation including Layer 1 domain analysis, Layer 2 homepage scraping, Layer 3 LLM classification with confidence routing, and manual review queue testing</snippet>
+        <relevance>Source of truth for Story 3.1 refactored acceptance criteria and test scenarios</relevance>
+      </doc>
+      <doc>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/epic-stories.md</path>
+        <title>Story 2.3: Layer 1 Domain Analysis</title>
+        <section>Lines 271-306</section>
+        <snippet>Layer 1 analyzes URLs WITHOUT HTTP requests: TLD filtering (commercial vs non-commercial), domain classification (digital-native vs traditional), URL pattern exclusions (subdomain blogs, tag pages), target profile matching. Eliminates 40-60% before scraping.</snippet>
+        <relevance>Details Layer 1 filtering logic to be tested in AC1</relevance>
+      </doc>
+      <doc>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/epic-stories.md</path>
+        <title>Story 2.6: Layer 2 Operational Filter</title>
+        <section>Lines 406-471</section>
+        <snippet>Layer 2 scrapes homepage only (not full site): Detects company infrastructure (About/Team/Contact pages, minimum 2/3), validates blog freshness (recent posts within 90 days threshold), identifies tech stack (Google Analytics, HubSpot, etc., minimum 2 tools), assesses design quality (modern frameworks, responsive design). Eliminates 30% of Layer 1 survivors.</snippet>
+        <relevance>Details Layer 2 operational validation logic to be tested in AC2</relevance>
+      </doc>
+      <doc>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/epic-stories.md</path>
+        <title>Story 2.4: Layer 3 LLM Classification with Confidence Scoring</title>
+        <section>Lines 309-364</section>
+        <snippet>Layer 3 performs deep content analysis with confidence scoring (0-1 scale). Classification results include confidence-based routing: high confidence (0.8-1.0) auto-approved, medium/low confidence (0.3-0.79) routed to manual review queue, very low (<0.3) auto-rejected. Enhanced prompt includes content marketing sophistication indicators and SEO investment signals.</snippet>
+        <relevance>Details Layer 3 confidence scoring and manual review routing logic to be tested in AC3 and AC6</relevance>
+      </doc>
+    </docs>
+
+    <code>
+      <file>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/services/layer1-domain-analysis.service.ts</path>
+        <kind>service</kind>
+        <symbol>Layer1DomainAnalysisService</symbol>
+        <lines>1-413</lines>
+        <reason>Core Layer 1 service implementing domain analysis without HTTP requests. Test AC1 validates this service's analyzeUrl() method eliminates 40-60% of URLs with layer1_reasoning populated.</reason>
+      </file>
+      <file>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/services/layer2-operational-filter.service.ts</path>
+        <kind>service</kind>
+        <symbol>Layer2OperationalFilterService</symbol>
+        <lines>1-555</lines>
+        <reason>Core Layer 2 service implementing homepage scraping and company validation. Test AC2 validates this service's filterUrl() method scrapes homepage only and populates layer2_signals JSONB.</reason>
+      </file>
+      <file>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/services/confidence-scoring.service.ts</path>
+        <kind>service</kind>
+        <symbol>ConfidenceScoringService</symbol>
+        <lines>-</lines>
+        <reason>Layer 3 confidence scoring service implementing 0-1 scale confidence calculation. Test AC3 validates confidence distribution (60% high, 20% medium, 15% low, 5% reject).</reason>
+      </file>
+      <file>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/services/manual-review-router.service.ts</path>
+        <kind>service</kind>
+        <symbol>ManualReviewRouterService</symbol>
+        <lines>-</lines>
+        <reason>Manual review queue routing service. Test AC6 validates medium/low confidence results routed correctly with manual_review_required flag.</reason>
+      </file>
+      <file>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/workers/url-worker.processor.ts</path>
+        <kind>worker</kind>
+        <symbol>UrlWorkerProcessor</symbol>
+        <lines>-</lines>
+        <reason>BullMQ worker orchestrating 3-tier progressive filtering flow. Test AC4 validates progressive elimination (Layer 1 → Layer 2 → Layer 3) with current_layer tracking.</reason>
+      </file>
+      <file>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/settings/settings.service.ts</path>
+        <kind>service</kind>
+        <symbol>SettingsService</symbol>
+        <lines>-</lines>
+        <reason>Settings service loading layer-specific configuration (layer1_rules, layer2_rules, layer3_rules). Test AC7 validates configuration changes affect pipeline behavior.</reason>
+      </file>
+      <file>
+        <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/services/llm.service.ts</path>
+        <kind>service</kind>
+        <symbol>LLMService</symbol>
+        <lines>-</lines>
+        <reason>Layer 3 LLM classification service with Gemini primary and GPT fallback. Test AC3 validates Gemini primary usage, GPT fallback, and cost tracking.</reason>
+      </file>
+    </code>
+
+    <dependencies>
+      <node>
+        <package>@nestjs/core</package>
+        <version>^10.0.0</version>
+        <purpose>NestJS framework for backend API</purpose>
+      </node>
+      <node>
+        <package>bullmq</package>
+        <version>^5.0.0</version>
+        <purpose>Redis-based job queue for 3-tier pipeline orchestration</purpose>
+      </node>
+      <node>
+        <package>@supabase/supabase-js</package>
+        <version>^2.0.0</version>
+        <purpose>Supabase client for database and Realtime subscriptions</purpose>
+      </node>
+      <node>
+        <package>cheerio</package>
+        <version>^1.0.0</version>
+        <purpose>HTML parsing for Layer 2 homepage scraping and signal extraction</purpose>
+      </node>
+      <node>
+        <package>@faker-js/faker</package>
+        <version>^10.1.0</version>
+        <purpose>Test data generation for E2E test dataset (dev dependency)</purpose>
+      </node>
+      <node>
+        <package>@playwright/test</package>
+        <version>^1.56.0</version>
+        <purpose>E2E testing framework (potential use for UI validation alongside Chrome DevTools MCP)</purpose>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">
+      <title>3-Tier Progressive Filtering Architecture</title>
+      <description>URLs must flow through Layer 1 → Layer 2 → Layer 3 in sequence. URLs eliminated at Layer 1 never reach Layer 2 (no scraping costs). URLs eliminated at Layer 2 never reach Layer 3 (no LLM costs). This progressive elimination is the core cost optimization strategy.</description>
+      <source>docs/sprint-change-proposal-3tier-architecture-2025-10-16.md</source>
+    </constraint>
+    <constraint type="testing">
+      <title>Real External APIs Required</title>
+      <description>Story 3.1 MUST test with real external APIs (ScrapingBee, Gemini, GPT, Supabase Cloud). NO mock services allowed (USE_MOCK_SERVICES=false). This validates actual API integrations, rate limits, error handling, and cost tracking before production deployment.</description>
+      <source>docs/stories/story-3.1-refactored.md#Task 1</source>
+    </constraint>
+    <constraint type="performance">
+      <title>Layer-Specific Processing Time Targets</title>
+      <description>Layer 1: <50ms per URL (no HTTP calls, pure computation). Layer 2: <5 seconds per URL (homepage scraping only). Layer 3: <10 seconds per URL (full scraping + LLM classification). Overall throughput: 20+ URLs/min.</description>
+      <source>docs/sprint-change-proposal-3tier-architecture-2025-10-16.md#Performance Success</source>
+    </constraint>
+    <constraint type="cost">
+      <title>Cost Optimization Targets</title>
+      <description>LLM cost savings: 60-70% reduction vs V1 (by eliminating 40-60% at Layer 1 + 30% at Layer 2). Scraping cost savings: 40-60% reduction (by eliminating 40-60% at Layer 1 before scraping). Cost tracking must display per-layer costs (scraping_cost, gemini_cost, gpt_cost) and estimated_savings.</description>
+      <source>docs/sprint-change-proposal-3tier-architecture-2025-10-16.md#Cost Optimization Success</source>
+    </constraint>
+    <constraint type="database">
+      <title>New Database Fields for 3-Tier Architecture</title>
+      <description>Results table: elimination_layer (enum: layer1/layer2/layer3/NULL), confidence (decimal 0-1), confidence_band (enum: high/medium/low/auto_reject), manual_review_required (boolean), layer1_reasoning (TEXT), layer2_signals (JSONB). Jobs table: current_layer (1/2/3), layer1_eliminated_count, layer2_eliminated_count, scraping_cost, estimated_savings, gemini_cost, gpt_cost.</description>
+      <source>docs/sprint-change-proposal-3tier-architecture-2025-10-16.md#Database Changes</source>
+    </constraint>
+    <constraint type="testing-tools">
+      <title>Chrome DevTools MCP and Supabase MCP Required</title>
+      <description>Story 3.1 must use Chrome DevTools MCP for UI validation (Settings page layer tabs, dashboard real-time updates, screenshots) and Supabase MCP for database validation (query schema changes, verify new fields, test Realtime subscriptions). These MCPs provide direct testing capabilities without manual browser interaction.</description>
+      <source>docs/stories/story-3.1-refactored.md#Task 10, Task 11</source>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>Layer1DomainAnalysisService.analyzeUrl</name>
+      <kind>method</kind>
+      <signature>analyzeUrl(url: string): Layer1AnalysisResult</signature>
+      <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/services/layer1-domain-analysis.service.ts:55</path>
+      <description>Main entry point for Layer 1 domain analysis. Returns passed flag and layer1_reasoning. Must execute in <50ms (no HTTP calls).</description>
+    </interface>
+    <interface>
+      <name>Layer2OperationalFilterService.filterUrl</name>
+      <kind>method</kind>
+      <signature>async filterUrl(url: string): Promise<Layer2FilterResult></signature>
+      <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/services/layer2-operational-filter.service.ts:56</path>
+      <description>Main entry point for Layer 2 operational filtering. Scrapes homepage (not full site) and returns passed flag, reasoning, and layer2_signals JSONB.</description>
+    </interface>
+    <interface>
+      <name>SettingsService.getSettings</name>
+      <kind>method</kind>
+      <signature>async getSettings(): Promise<ClassificationSettings></signature>
+      <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/settings/settings.service.ts</path>
+      <description>Load layer-specific configuration (layer1_rules, layer2_rules, layer3_rules, confidence_bands) from classification_settings table. Used by all layer services.</description>
+    </interface>
+    <interface>
+      <name>GET /api/jobs/:id/manual-review</name>
+      <kind>endpoint</kind>
+      <signature>GET /api/jobs/:jobId/manual-review</signature>
+      <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/jobs.controller.ts</path>
+      <description>Retrieve manual review queue entries for a job. Returns array of results with manual_review_required=true including URL, confidence, confidence_band, reasoning, layer2_signals.</description>
+    </interface>
+    <interface>
+      <name>PATCH /api/results/:id/manual-decision</name>
+      <kind>endpoint</kind>
+      <signature>PATCH /api/results/:resultId/manual-decision</signature>
+      <path>/Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/jobs.controller.ts</path>
+      <description>Submit manual classification decision. Body: {decision: 'suitable'|'not_suitable', reviewerNotes: string}. Updates manual_review_required=false and classification field.</description>
+    </interface>
+    <interface>
+      <name>mcp__chrome-devtools__take_screenshot</name>
+      <kind>mcp-tool</kind>
+      <signature>mcp__chrome-devtools__take_screenshot({fullPage?: boolean, filePath?: string})</signature>
+      <path>MCP Chrome DevTools</path>
+      <description>Chrome DevTools MCP tool for capturing screenshots of Settings UI layer tabs and dashboard during processing. Used in Task 10 for visual validation.</description>
+    </interface>
+    <interface>
+      <name>mcp__supabase__execute_sql</name>
+      <kind>mcp-tool</kind>
+      <signature>mcp__supabase__execute_sql({query: string})</signature>
+      <path>MCP Supabase</path>
+      <description>Supabase MCP tool for querying classification_settings, results, and jobs tables to verify schema changes and new fields. Used in Task 11 for database validation.</description>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Testing framework: Jest for unit/integration tests, Chrome DevTools MCP + Supabase MCP for E2E validation. Tests must use real external APIs (ScrapingBee, Gemini, GPT, Supabase Cloud) with USE_MOCK_SERVICES=false. Layer-specific test targets: Layer 1 (40-60% elimination, <50ms, NO HTTP), Layer 2 (30% elimination of survivors, <5s, homepage only), Layer 3 (60% high confidence, 20% medium, 15% low, 5% reject). Cost validation: 60-70% LLM + 40-60% scraping savings vs V1 baseline.
+    </standards>
+
+    <locations>
+      - /Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/__tests__/layer1-domain-analysis.service.spec.ts
+      - /Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/__tests__/layer2-operational-filter.service.spec.ts
+      - /Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/__tests__/confidence-scoring.service.spec.ts
+      - /Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/jobs/__tests__/manual-review-router.service.spec.ts
+      - /Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/workers/__tests__/url-worker.processor.spec.ts
+      - /Users/s0mebody/Desktop/dev/projects/website-scraper-project/apps/api/src/settings/__tests__/settings.service.spec.ts
+      - /Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/test-data/e2e-3tier-test-urls.txt (test dataset)
+      - /Users/s0mebody/Desktop/dev/projects/website-scraper-project/docs/test-screenshots/ (Chrome DevTools MCP screenshots)
+    </locations>
+
+    <ideas>
+      <testIdea ac="AC1">
+        <title>Layer 1 Elimination Rate Validation</title>
+        <description>Create test dataset of 100 URLs spanning all categories (digital-native B2B, traditional companies, blog platforms, non-commercial TLDs, subdomain blogs). Run through Layer1DomainAnalysisService.analyzeUrl(). Assert: 40-60 URLs eliminated, NO HTTP requests made (verify with network monitoring), elimination_layer='layer1' stored, layer1_reasoning populated with specific rejection reason (e.g., "REJECT Layer 1 - Non-commercial TLD (.org)").</description>
+      </testIdea>
+      <testIdea ac="AC2">
+        <title>Layer 2 Homepage Scraping and Signal Extraction</title>
+        <description>Use 40-60 URLs that passed Layer 1. Call Layer2OperationalFilterService.filterUrl(). Assert: Only homepage URLs scraped (not /blog/post-1, /about), ~30% eliminated, layer2_signals JSONB populated with structure: {company_pages: {has_about, has_team, has_contact, count}, blog_data: {has_blog, last_post_date, days_since_last_post, passes_freshness}, tech_stack: {tools_detected, count}, design_quality: {score, has_modern_framework, is_responsive, has_professional_imagery}}.</description>
+      </testIdea>
+      <testIdea ac="AC3">
+        <title>Layer 3 Confidence Distribution Validation</title>
+        <description>Use 30-40 URLs that passed Layer 2. Run through LLM classification pipeline. Assert: Confidence distribution approximately matches target (60% high [0.8-1.0], 20% medium [0.5-0.79], 15% low [0.3-0.49], 5% auto-reject [0-0.29]). Verify: confidence, confidence_band, manual_review_required fields populated correctly. High confidence → manual_review_required=false, medium/low → manual_review_required=true.</description>
+      </testIdea>
+      <testIdea ac="AC4">
+        <title>Progressive Elimination Flow Validation</title>
+        <description>Use 20 URLs with known expected outcomes. Run through complete pipeline. Query database after completion: SELECT COUNT(*) FILTER (WHERE elimination_layer='layer1') as layer1_eliminated, COUNT(*) FILTER (WHERE elimination_layer='layer2') as layer2_eliminated, COUNT(*) FILTER (WHERE elimination_layer IS NULL) as layer3_classified FROM results WHERE job_id='...'. Assert: URLs eliminated at Layer 1 never scraped (no scraping cost), URLs eliminated at Layer 2 never classified (no LLM cost). Test pause/resume at each layer: Pause during Layer 1 → current_layer=1, resume → continues Layer 1.</description>
+      </testIdea>
+      <testIdea ac="AC5">
+        <title>Cost Optimization Calculation</title>
+        <description>Calculate V1 baseline: url_count × $0.0004 (all URLs classified), url_count × $0.01 (all URLs scraped). Calculate 3-tier actual: (layer1_pass_count) × $0.01 (scraping), (layer3_count) × $0.0004 (LLM). Query jobs table: SELECT scraping_cost, gemini_cost, gpt_cost, total_cost, estimated_savings FROM jobs WHERE id='...'. Assert: LLM savings 60-70%, scraping savings 40-60%. Verify dashboard displays savings indicator: "65% saved vs V1 pipeline".</description>
+      </testIdea>
+      <testIdea ac="AC6">
+        <title>Manual Review Queue CRUD Operations</title>
+        <description>Query: SELECT COUNT(*) FROM results WHERE job_id='...' AND manual_review_required=true. Test GET /api/jobs/:id/manual-review endpoint → assert response structure: {jobId, queueSize, entries: [{id, url, confidence, confidenceBand, reasoning, layer2Signals}]}. Test PATCH /api/results/:id/manual-decision with {decision: 'suitable', reviewerNotes: 'Confirmed guest post opportunity'} → query database → assert manual_review_required=false, classification='suitable', reviewer_notes populated. Verify dashboard updates reflect manual decision.</description>
+      </testIdea>
+      <testIdea ac="AC7">
+        <title>Layer-Specific Settings Configuration</title>
+        <description>Navigate to Settings UI (http://localhost:3000/settings). Update Layer 1: Add .net to commercial_tlds. Save → query classification_settings → assert .net in layer1_rules.commercial_tlds. Create job with .net URLs → verify no TLD rejection. Update Layer 2: Change blog_freshness_days from 90 to 60 → create job → verify stricter threshold applied. Update confidence bands: Raise medium lower bound from 0.5 to 0.6 → create job → verify URLs with 0.5-0.59 confidence now marked "low" instead of "medium". Restart backend API → create job → verify configuration persists.</description>
+      </testIdea>
+      <testIdea ac="AC8">
+        <title>Chrome DevTools MCP UI Validation</title>
+        <description>Use mcp__chrome-devtools__take_screenshot tool. Navigate to Settings UI → verify layer tabs render (Layer 1 Domain, Layer 2 Page, Layer 3 LLM, Confidence Bands, Manual Review). Take screenshot: mcp__chrome-devtools__take_screenshot({fullPage: true, filePath: "docs/test-screenshots/settings-layer1-tab.png"}). Create test job → monitor dashboard → take screenshot during Layer 2 processing showing current_layer indicator, per-layer counters, live log entries ("Layer 1: REJECT - Non-commercial TLD (.org)", "Layer 2: PASS - Proceeding to Layer 3"). Verify no console errors.</description>
+      </testIdea>
+      <testIdea ac="AC9">
+        <title>Supabase MCP Schema and Realtime Validation</title>
+        <description>Use mcp__supabase__execute_sql tool. Query classification_settings: SELECT layer1_rules, layer2_rules, layer3_rules, confidence_bands FROM classification_settings LIMIT 1 → verify layer-structured schema. Query results: SELECT url, elimination_layer, confidence, confidence_band, manual_review_required, layer1_reasoning, layer2_signals FROM results WHERE job_id='...' ORDER BY created_at DESC LIMIT 20 → verify new fields populated. Query jobs: SELECT current_layer, layer1_eliminated_count, layer2_eliminated_count, scraping_cost, estimated_savings, gemini_cost, gpt_cost FROM jobs WHERE id='...' → verify new counters. Test Realtime subscription (via browser console) → create job → verify events fire for layer transitions (current_layer updates from 1 → 2 → 3).</description>
+      </testIdea>
+      <testIdea ac="AC10">
+        <title>Production Readiness Checklist</title>
+        <description>Review test report summary: AC1-AC9 results, Layer 1 elimination rate (target: 40-60%), Layer 2 elimination rate (target: ~30%), Layer 3 confidence distribution (target: 60/20/15/5), cost savings (LLM: 60-70%, scraping: 40-60%), performance targets (Layer 1: <50ms, Layer 2: <5s, Layer 3: <10s, overall: 20+ URLs/min). Document: Test environment (Local + Supabase Cloud + real APIs), test date, total URLs tested, per-layer eliminations, manual review queue size, total cost, estimated savings vs V1. Verify: No critical errors, no memory leaks, no CPU spikes. Create production deployment readiness report with recommendations for Story 3.2.</description>
+      </testIdea>
+    </ideas>
+  </tests>
+</story-context>

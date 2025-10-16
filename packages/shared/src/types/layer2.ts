@@ -86,6 +86,11 @@ export interface Layer2Rules {
   required_pages_count: number;
   /** Minimum tech stack tools required (default: 2) */
   min_tech_stack_tools: number;
+  /** Tech stack tools grouped by category */
+  tech_stack_tools: {
+    analytics: string[];
+    marketing: string[];
+  };
   /** Minimum design quality score (default: 6) */
   min_design_quality_score: number;
 }

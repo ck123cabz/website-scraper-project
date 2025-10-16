@@ -6,7 +6,16 @@ export type { Database, Tables, TablesInsert, TablesUpdate, Enums } from './type
 export type { PreFilterRule, PreFilterResult, PreFilterConfig } from './types/prefilter';
 export type { ScraperResult, ContentExtractionResult, ScrapingBeeResponse, ScrapingBeeErrorCode } from './types/scraper';
 export type { UrlJobData, WorkerStatus, WorkerProgress } from './types/worker';
-export type { ClassificationSettings, PreFilterRuleWithEnabled, UpdateClassificationSettingsDto } from './types/settings';
+export type {
+  ClassificationSettings,
+  PreFilterRuleWithEnabled,
+  UpdateClassificationSettingsDto,
+  Layer1Rules,
+  Layer3Rules,
+  ConfidenceBandConfig,
+  ConfidenceBands,
+  ManualReviewSettings,
+} from './types/settings';
 export type {
   Layer1AnalysisResult,
   Layer1DomainRules,

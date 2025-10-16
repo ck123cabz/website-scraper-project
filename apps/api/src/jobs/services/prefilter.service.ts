@@ -44,7 +44,7 @@ export class PreFilterService implements OnModuleInit {
 
       // Check if settings came from database or defaults
       const isFromDatabase = settings.id !== 'default';
-      const rules = settings.prefilter_rules;
+      const rules = settings.prefilter_rules ?? [];
 
       // Filter only enabled rules (Story 3.0 AC6)
       const enabledRules = rules.filter((rule) => rule.enabled);

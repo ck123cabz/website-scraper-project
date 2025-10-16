@@ -23,6 +23,9 @@ describe('SettingsService', () => {
     llm_temperature: 0.5,
     confidence_threshold: 0.3,
     content_truncation_limit: 5000,
+    confidence_threshold_high: 0.8,
+    confidence_threshold_medium: 0.5,
+    confidence_threshold_low: 0.3,
     updated_at: new Date().toISOString(),
   };
 
@@ -71,7 +74,11 @@ describe('SettingsService', () => {
 
       const result = await service.getSettings();
 
-      expect(result).toEqual(mockSettings);
+      // Normalized settings will have layer fields added from defaults
+      expect(result).toMatchObject(mockSettings);
+      expect(result.layer1_rules).toBeDefined();
+      expect(result.layer2_rules).toBeDefined();
+      expect(result.layer3_rules).toBeDefined();
       expect(mockSupabaseClient.from).toHaveBeenCalledWith('classification_settings');
     });
 
@@ -87,7 +94,9 @@ describe('SettingsService', () => {
       // Second call - should hit cache
       const result = await service.getSettings();
 
-      expect(result).toEqual(mockSettings);
+      // Normalized settings will have layer fields added from defaults
+      expect(result).toMatchObject(mockSettings);
+      expect(result.layer1_rules).toBeDefined();
       // Should only call database once
       expect(mockSupabaseClient.from).toHaveBeenCalledTimes(1);
     });
@@ -250,9 +259,9 @@ describe('SettingsService', () => {
       expect(mockSupabaseClient.update).toHaveBeenCalled();
       expect(mockSupabaseClient.insert).not.toHaveBeenCalled();
       expect(result.id).toBe(mockSettings.id);
-      expect(result.llm_temperature).toBeCloseTo(defaults.llm_temperature);
-      expect(result.confidence_threshold).toBeCloseTo(defaults.confidence_threshold);
-      expect(result.content_truncation_limit).toBe(defaults.content_truncation_limit);
+      expect(result.llm_temperature).toBeCloseTo(defaults.llm_temperature!);
+      expect(result.confidence_threshold).toBeCloseTo(defaults.confidence_threshold!);
+      expect(result.content_truncation_limit).toBe(defaults.content_truncation_limit!);
     });
 
     it('should insert defaults when no existing record is found', async () => {
@@ -268,7 +277,7 @@ describe('SettingsService', () => {
 
       expect(mockSupabaseClient.insert).toHaveBeenCalled();
       expect(result.id).toBe('new-id');
-      expect(result.llm_temperature).toBeCloseTo(defaults.llm_temperature);
+      expect(result.llm_temperature).toBeCloseTo(defaults.llm_temperature!);
     });
 
     it('should throw BadRequestException if reset fails', async () => {
@@ -293,11 +302,17 @@ describe('SettingsService', () => {
       expect(defaults.llm_temperature).toBe(0.3);
       expect(defaults.confidence_threshold).toBe(0.0);
       expect(defaults.content_truncation_limit).toBe(10000);
+      // Story 3.0: Verify layer-specific defaults exist
+      expect(defaults.layer1_rules).toBeDefined();
+      expect(defaults.layer2_rules).toBeDefined();
+      expect(defaults.layer3_rules).toBeDefined();
+      expect(defaults.confidence_bands).toBeDefined();
+      expect(defaults.manual_review_settings).toBeDefined();
     });
 
     it('should include all required rule categories', () => {
       const defaults = service.getDefaultSettings();
-      const categories = defaults.prefilter_rules.map((r) => r.category);
+      const categories = defaults.prefilter_rules!.map((r) => r.category);
 
       expect(categories).toContain('blog_platform');
       expect(categories).toContain('social_media');

@@ -24,6 +24,27 @@
       ".blogspot.com",
       ".tumblr.com",
       ".wixsite.com"
+    ],
+    "blog_platform_domains": [
+      "wordpress.com",
+      "medium.com",
+      "blogger.com",
+      "substack.com",
+      "ghost.org",
+      "wix.com",
+      "squarespace.com",
+      "weebly.com",
+      "jimdo.com",
+      "site123.com",
+      "webnode.com",
+      "hubpages.com",
+      "livejournal.com",
+      "typepad.com",
+      "penzu.com",
+      "write.as",
+      "posthaven.com",
+      "svbtle.com",
+      "telegra.ph"
     ]
   },
   "domain_classification": {

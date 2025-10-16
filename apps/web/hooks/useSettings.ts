@@ -15,16 +15,24 @@ export function buildUpdatePayload(
   settings: ClassificationSettings,
 ): UpdateClassificationSettingsDto {
   return {
-    prefilter_rules: settings.prefilter_rules.map((rule) => ({
+    // Layer-specific fields (Story 3.0)
+    layer1_rules: settings.layer1_rules,
+    layer2_rules: settings.layer2_rules,
+    layer3_rules: settings.layer3_rules,
+    confidence_bands: settings.confidence_bands,
+    manual_review_settings: settings.manual_review_settings,
+
+    // V1 fields for backward compatibility
+    prefilter_rules: settings.prefilter_rules?.map((rule) => ({
       category: rule.category,
       pattern: rule.pattern,
       reasoning: rule.reasoning,
       enabled: Boolean(rule.enabled),
     })),
-    classification_indicators: [...settings.classification_indicators],
-    llm_temperature: Number(settings.llm_temperature),
-    confidence_threshold: Number(settings.confidence_threshold),
-    content_truncation_limit: Number(settings.content_truncation_limit),
+    classification_indicators: settings.classification_indicators,
+    llm_temperature: settings.llm_temperature,
+    confidence_threshold: settings.confidence_threshold,
+    content_truncation_limit: settings.content_truncation_limit,
   };
 }
 
