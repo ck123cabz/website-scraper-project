@@ -7,5 +7,6 @@ cmds = ["npm ci"]
 [phases.build]
 cmds = ["npm run build"]
 
-[start]
-cmd = "npm run start:prod"
+# Note: No [start] command here - each Railway service configures its own start command in the dashboard
+# API service: cd apps/api && npm run start:prod
+# Web service: cd apps/web && npm run start
