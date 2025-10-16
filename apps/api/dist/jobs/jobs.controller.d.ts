@@ -39,7 +39,6 @@ export declare class JobsController {
             gemini_cost: number;
             gpt_cost: number;
             id: string;
-            layer1_eliminated_count: number | null;
             name: string | null;
             prefilter_passed_count: number | null;
             prefilter_rejected_count: number | null;
@@ -68,7 +67,6 @@ export declare class JobsController {
             gemini_cost: number;
             gpt_cost: number;
             id: string;
-            layer1_eliminated_count: number | null;
             name: string | null;
             prefilter_passed_count: number | null;
             prefilter_rejected_count: number | null;
@@ -97,7 +95,6 @@ export declare class JobsController {
             gemini_cost: number;
             gpt_cost: number;
             id: string;
-            layer1_eliminated_count: number | null;
             name: string | null;
             prefilter_passed_count: number | null;
             prefilter_rejected_count: number | null;
@@ -137,7 +134,6 @@ export declare class JobsController {
             gemini_cost: number;
             gpt_cost: number;
             id: string;
-            layer1_eliminated_count: number | null;
             name: string | null;
             prefilter_passed_count: number | null;
             prefilter_rejected_count: number | null;
@@ -167,7 +163,6 @@ export declare class JobsController {
             gemini_cost: number;
             gpt_cost: number;
             id: string;
-            layer1_eliminated_count: number | null;
             name: string | null;
             prefilter_passed_count: number | null;
             prefilter_rejected_count: number | null;
@@ -197,7 +192,6 @@ export declare class JobsController {
             gemini_cost: number;
             gpt_cost: number;
             id: string;
-            layer1_eliminated_count: number | null;
             name: string | null;
             prefilter_passed_count: number | null;
             prefilter_rejected_count: number | null;
