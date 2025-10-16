@@ -559,5 +559,29 @@ _All action items tracked in docs/backlog.md and Story 2.5 tasks section._
 
 ---
 
+### Story 2.3-refactored Review Action Items (2025-10-16)
+
+**Critical Integration Issues (BLOCKING):**
+
+1. **[HIGH] Register Layer1DomainAnalysisService in JobsModule** - Service not registered in any NestJS module providers array. Will never be instantiated by dependency injection, making all implementation code unreachable. Must add to apps/api/src/jobs/jobs.module.ts providers and exports. See Action Item #1 in Story 2.3-refactored review.
+
+2. **[HIGH] Integrate Layer1DomainAnalysisService into Worker Pipeline** - No code calls analyzeUrl() from URL processing worker. Service exists in isolation but is never invoked during actual URL processing. Must inject into worker and call before scraping. See Action Item #2 in Story 2.3-refactored review.
+
+3. **[HIGH] Verify Database Migration Applied to Supabase** - Migration file exists but no evidence of application to production database. Runtime errors will occur when code attempts to persist elimination_layer, layer1_reasoning fields. Must run supabase db push and verify. See Action Item #3 in Story 2.3-refactored review.
+
+4. **[HIGH] Fix Configuration File Path Resolution for Production** - File path uses __dirname which may fail in Railway production builds. Service will fail-open and eliminate cost savings. Must use ConfigModule and copy config to dist/ during build. See Action Item #4 in Story 2.3-refactored review.
+
+**High Priority:**
+
+5. **[MED] Add Integration Tests** - Only unit tests exist; no tests verify Layer 1 service works with JobsModule, worker, or database persistence. See Action Item #5 in Story 2.3-refactored review.
+
+6. **[MED] Implement Safe-Regex Validation** - AC1 requires safe-regex validation but implementation lacks this security feature. Malformed patterns could cause ReDoS vulnerabilities. See Action Item #6 in Story 2.3-refactored review.
+
+7. **[MED] Regenerate Story Context** - Current context describes original PreFilterService, not refactored Layer1DomainAnalysisService. Future developers will get outdated information. See Action Item #7 in Story 2.3-refactored review.
+
+_All action items tracked in docs/backlog.md and Story 2.3-refactored tasks section._
+
+---
+
 **Status**: Draft
-**Next Steps**: **BLOCKED** - Story 2.5 requires critical fixes (items 1-3 above) before production deployment. Begin Story 2.1 implementation after frontend mockup demonstrates API contract needs
+**Next Steps**: **BLOCKED** - Story 2.3-refactored requires 4 CRITICAL integration fixes before service becomes functional. Story 2.5 also requires critical fixes (graceful shutdown, env validation) before production deployment.

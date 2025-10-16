@@ -1,7 +1,7 @@
 // Types
 export type { Job, JobStatus, ProcessingStage } from './types/job';
 export type { ActivityLog, LogSeverity } from './types/activity-log';
-export type { Result, ResultStatus, ClassificationResult, LlmProvider, ClassificationResponse } from './types/result';
+export type { Result, ResultStatus, ClassificationResult, LlmProvider, ConfidenceBand, ClassificationResponse } from './types/result';
 export type { Database, Tables, TablesInsert, TablesUpdate, Enums } from './types/database.types';
 export type { PreFilterRule, PreFilterResult, PreFilterConfig } from './types/prefilter';
 export type { ScraperResult, ContentExtractionResult, ScrapingBeeResponse, ScrapingBeeErrorCode } from './types/scraper';

@@ -63,7 +63,8 @@ export class LlmService {
   }
 
   /**
-   * Get the classification prompt for guest post suitability analysis
+   * Get the enhanced classification prompt for guest post suitability analysis
+   * Story 2.4-refactored AC2: Enhanced with sophistication signals
    * Story 3.0 AC7: Loads indicators and content limit from database settings
    * @param url - URL being analyzed
    * @param content - Website content to analyze
@@ -72,7 +73,6 @@ export class LlmService {
   private async getClassificationPrompt(url: string, content: string): Promise<string> {
     try {
       const settings = await this.settingsService.getSettings();
-      const indicators = settings.classification_indicators || this.DEFAULT_INDICATORS;
       const contentLimit = this.asNumber(
         settings.content_truncation_limit,
         this.DEFAULT_CONTENT_LIMIT,
@@ -83,45 +83,117 @@ export class LlmService {
         this.logger.debug('Using default classification settings (database unavailable)');
       }
 
-      // Build indicator list
-      const indicatorsList = indicators.map((ind) => `- ${ind}`).join('\n');
+      // Log content truncation for debugging (Story 2.4 Lessons Learned)
+      if (content.length > contentLimit) {
+        this.logger.debug(
+          `Content truncated from ${content.length} to ${contentLimit} characters for URL: ${url}`,
+        );
+      }
 
-      return `Analyze the following website content and determine if it accepts guest post contributions.
+      const truncatedContent = content.slice(0, contentLimit);
+      const isTruncated = content.length > contentLimit;
 
-Consider these indicators:
-${indicatorsList}
+      // Enhanced prompt with sophistication signals (Story 2.4-refactored AC2)
+      return `You are an AI assistant that analyzes website content to determine if the site accepts guest post contributions. Focus on content marketing sophistication, SEO investment, and explicit guest post signals.
+
+Analyze the following website content and determine if it accepts guest posts.
+
+**Content Marketing Sophistication Indicators:**
+- Author bylines with external contributor profiles
+- Editorial quality: writing depth, professional tone, well-researched content
+- Audience engagement signals: comment sections, social shares, community interaction
+- Multiple authors or contributors (indicates editorial process)
+- Regular publishing cadence with diverse content
+
+**SEO Investment Signals:**
+- Structured data: schema markup, JSON-LD, Open Graph tags
+- Meta optimization: descriptive title tags, meta descriptions, canonical tags
+- Technical SEO: sitemap.xml, robots.txt, proper heading hierarchy
+- Internal linking strategy and content organization
+- Mobile optimization and page speed indicators
+
+**Guest Post Opportunity Signals:**
+- Explicit "Write for Us" or "Guest Post Guidelines" pages
+- Contributor sections with submission forms or guidelines
+- "Become a contributor" CTAs or author recruitment messaging
+- Clear evidence of accepting external content
+- Guest author attribution and bio sections
 
 Website URL: ${url}
 
-Website Content:
-${content.slice(0, contentLimit)} ${content.length > contentLimit ? '...(truncated)' : ''}
+Website Content${isTruncated ? ' (truncated to 10,000 chars)' : ''}:
+${truncatedContent}
 
 Respond ONLY with valid JSON in this exact format:
 {
   "suitable": boolean,
-  "confidence": number (0-1),
-  "reasoning": "string"
-}`;
+  "confidence": number (0-1, where 1.0 is absolute certainty),
+  "reasoning": "string explaining the decision with specific evidence",
+  "sophistication_signals": ["array", "of", "detected", "signals"]
+}
+
+**Confidence Scoring Guidance:**
+- High confidence (0.8-1.0): Multiple strong signals found, clear evidence, consistent indicators
+- Medium confidence (0.5-0.79): Some signals present, but ambiguous or conflicting evidence
+- Low confidence (0.3-0.49): Weak signals, limited evidence, unclear intent
+- Auto-reject (0-0.29): No relevant signals, clear mismatch, or negative indicators`;
+
     } catch (error) {
       this.logger.warn('Failed to load settings for prompt. Using defaults.');
-      const indicatorsList = this.DEFAULT_INDICATORS.map((ind) => `- ${ind}`).join('\n');
 
-      return `Analyze the following website content and determine if it accepts guest post contributions.
+      // Fallback prompt (same enhanced format)
+      const isTruncated = content.length > this.DEFAULT_CONTENT_LIMIT;
+      const truncatedContent = content.slice(0, this.DEFAULT_CONTENT_LIMIT);
 
-Consider these indicators:
-${indicatorsList}
+      if (isTruncated) {
+        this.logger.debug(
+          `Content truncated from ${content.length} to ${this.DEFAULT_CONTENT_LIMIT} characters (fallback)`,
+        );
+      }
+
+      return `You are an AI assistant that analyzes website content to determine if the site accepts guest post contributions. Focus on content marketing sophistication, SEO investment, and explicit guest post signals.
+
+Analyze the following website content and determine if it accepts guest posts.
+
+**Content Marketing Sophistication Indicators:**
+- Author bylines with external contributor profiles
+- Editorial quality: writing depth, professional tone, well-researched content
+- Audience engagement signals: comment sections, social shares, community interaction
+- Multiple authors or contributors (indicates editorial process)
+- Regular publishing cadence with diverse content
+
+**SEO Investment Signals:**
+- Structured data: schema markup, JSON-LD, Open Graph tags
+- Meta optimization: descriptive title tags, meta descriptions, canonical tags
+- Technical SEO: sitemap.xml, robots.txt, proper heading hierarchy
+- Internal linking strategy and content organization
+- Mobile optimization and page speed indicators
+
+**Guest Post Opportunity Signals:**
+- Explicit "Write for Us" or "Guest Post Guidelines" pages
+- Contributor sections with submission forms or guidelines
+- "Become a contributor" CTAs or author recruitment messaging
+- Clear evidence of accepting external content
+- Guest author attribution and bio sections
 
 Website URL: ${url}
 
-Website Content:
-${content.slice(0, this.DEFAULT_CONTENT_LIMIT)} ${content.length > this.DEFAULT_CONTENT_LIMIT ? '...(truncated)' : ''}
+Website Content${isTruncated ? ' (truncated to 10,000 chars)' : ''}:
+${truncatedContent}
 
 Respond ONLY with valid JSON in this exact format:
 {
   "suitable": boolean,
-  "confidence": number (0-1),
-  "reasoning": "string"
-}`;
+  "confidence": number (0-1, where 1.0 is absolute certainty),
+  "reasoning": "string explaining the decision with specific evidence",
+  "sophistication_signals": ["array", "of", "detected", "signals"]
+}
+
+**Confidence Scoring Guidance:**
+- High confidence (0.8-1.0): Multiple strong signals found, clear evidence, consistent indicators
+- Medium confidence (0.5-0.79): Some signals present, but ambiguous or conflicting evidence
+- Low confidence (0.3-0.49): Weak signals, limited evidence, unclear intent
+- Auto-reject (0-0.29): No relevant signals, clear mismatch, or negative indicators`;
     }
   }
 
@@ -487,6 +559,7 @@ Respond ONLY with valid JSON in this exact format:
 
   /**
    * Parse and validate classification response JSON
+   * Story 2.4-refactored: Enhanced to handle sophistication_signals array
    * @private
    */
   private parseClassificationResponse(text: string): ClassificationResponse {
@@ -512,6 +585,24 @@ Respond ONLY with valid JSON in this exact format:
 
       if (typeof parsed.reasoning !== 'string' || parsed.reasoning.length === 0) {
         throw new Error('Invalid response: "reasoning" field must be non-empty string');
+      }
+
+      // Validate sophistication_signals array (Story 2.4-refactored AC2)
+      // This field is optional but if present must be an array
+      if (parsed.sophistication_signals !== undefined) {
+        if (!Array.isArray(parsed.sophistication_signals)) {
+          this.logger.warn(
+            'Invalid sophistication_signals field (not an array). Ignoring field.',
+          );
+          delete parsed.sophistication_signals;
+        } else if (!parsed.sophistication_signals.every((s: unknown) => typeof s === 'string')) {
+          this.logger.warn(
+            'Invalid sophistication_signals field (contains non-string values). Filtering to strings only.',
+          );
+          parsed.sophistication_signals = parsed.sophistication_signals.filter(
+            (s: unknown) => typeof s === 'string',
+          );
+        }
       }
 
       return parsed as ClassificationResponse;

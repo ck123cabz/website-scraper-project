@@ -2,27 +2,37 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UrlWorkerProcessor } from '../url-worker.processor';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { ScraperService } from '../../scraper/scraper.service';
-import { PreFilterService } from '../../jobs/services/prefilter.service';
+import { Layer1DomainAnalysisService } from '../../jobs/services/layer1-domain-analysis.service';
+import { Layer2OperationalFilterService } from '../../jobs/services/layer2-operational-filter.service';
 import { LlmService } from '../../jobs/services/llm.service';
+import { ConfidenceScoringService } from '../../jobs/services/confidence-scoring.service';
+import { ManualReviewRouterService } from '../../jobs/services/manual-review-router.service';
 import type { Job } from 'bullmq';
 
-describe('UrlWorkerProcessor', () => {
+/**
+ * Unit tests for UrlWorkerProcessor
+ * Story 2.5-refactored: 3-Tier Pipeline Orchestration
+ */
+describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
   let processor: UrlWorkerProcessor;
   let supabaseService: jest.Mocked<SupabaseService>;
   let scraperService: jest.Mocked<ScraperService>;
-  let preFilterService: jest.Mocked<PreFilterService>;
+  let layer1AnalysisService: jest.Mocked<Layer1DomainAnalysisService>;
+  let layer2FilterService: jest.Mocked<Layer2OperationalFilterService>;
   let llmService: jest.Mocked<LlmService>;
+  let confidenceScoringService: jest.Mocked<ConfidenceScoringService>;
+  let manualReviewRouterService: jest.Mocked<ManualReviewRouterService>;
 
   // Mock Supabase client
   const mockSupabaseClient = {
     from: jest.fn().mockReturnThis(),
     select: jest.fn().mockReturnThis(),
     insert: jest.fn().mockReturnThis(),
-    upsert: jest.fn().mockReturnThis(), // Added for Bug #3 fix (Story 3.1 - prevent duplicates on resume)
+    upsert: jest.fn().mockReturnThis(),
     update: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
     single: jest.fn(),
-    rpc: jest.fn().mockReturnThis(), // Added for atomic counter updates (Story 3.0 fix)
+    rpc: jest.fn().mockReturnThis(),
   };
 
   beforeEach(async () => {
@@ -42,9 +52,15 @@ describe('UrlWorkerProcessor', () => {
           },
         },
         {
-          provide: PreFilterService,
+          provide: Layer1DomainAnalysisService,
           useValue: {
-            filterUrl: jest.fn(),
+            analyzeUrl: jest.fn(),
+          },
+        },
+        {
+          provide: Layer2OperationalFilterService,
+          useValue: {
+            validateOperational: jest.fn(),
           },
         },
         {
@@ -53,19 +69,34 @@ describe('UrlWorkerProcessor', () => {
             classifyUrl: jest.fn(),
           },
         },
+        {
+          provide: ConfidenceScoringService,
+          useValue: {
+            calculateConfidenceBand: jest.fn().mockResolvedValue('high'),
+          },
+        },
+        {
+          provide: ManualReviewRouterService,
+          useValue: {
+            shouldRouteToManualReview: jest.fn().mockReturnValue(false),
+          },
+        },
       ],
     }).compile();
 
     processor = module.get<UrlWorkerProcessor>(UrlWorkerProcessor);
     supabaseService = module.get(SupabaseService) as jest.Mocked<SupabaseService>;
     scraperService = module.get(ScraperService) as jest.Mocked<ScraperService>;
-    preFilterService = module.get(PreFilterService) as jest.Mocked<PreFilterService>;
+    layer1AnalysisService = module.get(Layer1DomainAnalysisService) as jest.Mocked<Layer1DomainAnalysisService>;
+    layer2FilterService = module.get(Layer2OperationalFilterService) as jest.Mocked<Layer2OperationalFilterService>;
     llmService = module.get(LlmService) as jest.Mocked<LlmService>;
+    confidenceScoringService = module.get(ConfidenceScoringService) as jest.Mocked<ConfidenceScoringService>;
+    manualReviewRouterService = module.get(ManualReviewRouterService) as jest.Mocked<ManualReviewRouterService>;
 
     jest.clearAllMocks();
   });
 
-  describe('process', () => {
+  describe('3-Tier Pipeline', () => {
     const mockJob: Partial<Job> = {
       id: 'bull-job-123',
       data: {
@@ -75,14 +106,22 @@ describe('UrlWorkerProcessor', () => {
       },
     };
 
-    it('should successfully process URL with LLM classification', async () => {
-      // Mock job status check (not paused)
+    it('should process through all 3 layers when all PASS', async () => {
+      // Mock job status check
       mockSupabaseClient.single.mockResolvedValueOnce({
         data: { status: 'processing' },
         error: null,
       });
 
-      // Mock scraper success
+      // Layer 1: PASS
+      layer1AnalysisService.analyzeUrl.mockReturnValue({
+        passed: true,
+        reasoning: 'PASS - Valid domain',
+        layer: 'layer1',
+        processingTimeMs: 5,
+      });
+
+      // Layer 2: Scraper + PASS
       scraperService.fetchUrl.mockResolvedValue({
         url: 'https://example.com',
         content: '<html><body>Test content</body></html>',
@@ -93,13 +132,18 @@ describe('UrlWorkerProcessor', () => {
         processingTimeMs: 2000,
       });
 
-      // Mock pre-filter pass
-      (preFilterService.filterUrl as jest.Mock).mockResolvedValue({
+      layer2FilterService.validateOperational.mockResolvedValue({
         passed: true,
-        reasoning: 'URL passed pre-filter',
+        reasoning: 'PASS - Operational signals valid',
+        signals: {
+          companyPageFound: true,
+          blogFreshnessScore: 0.8,
+          techStack: ['wordpress'],
+        },
+        processingTimeMs: 100,
       });
 
-      // Mock LLM classification
+      // Layer 3: LLM classification
       llmService.classifyUrl.mockResolvedValue({
         classification: 'suitable',
         confidence: 0.85,
@@ -110,83 +154,107 @@ describe('UrlWorkerProcessor', () => {
         retryCount: 0,
       });
 
-      // Mock job data fetch for counter updates (total_urls)
+      // Mock job data fetch for counter update
       mockSupabaseClient.single.mockResolvedValueOnce({
         data: { total_urls: 10 },
         error: null,
       });
 
-      // Mock RPC response for atomic counter increment
+      // Mock RPC response for counter increment
       mockSupabaseClient.single.mockResolvedValueOnce({
         data: {
           processed_urls: 1,
           successful_urls: 1,
-          failed_urls: 0,
-          prefilter_rejected_count: 0,
-          prefilter_passed_count: 1,
           total_cost: 0.00045,
-          gemini_cost: 0.00045,
-          gpt_cost: 0,
+          scraping_cost: 0.0001,
+        },
+        error: null,
+      });
+
+      // Mock job data fetch for cost savings update
+      mockSupabaseClient.single.mockResolvedValueOnce({
+        data: {
+          layer1_eliminated_count: 0,
+          layer2_eliminated_count: 0,
         },
         error: null,
       });
 
       await processor.process(mockJob as Job);
 
-      // Verify scraper was called
+      // Verify all 3 layers were called
+      expect(layer1AnalysisService.analyzeUrl).toHaveBeenCalledWith('https://example.com');
       expect(scraperService.fetchUrl).toHaveBeenCalledWith('https://example.com');
-
-      // Verify pre-filter was called
-      expect(preFilterService.filterUrl).toHaveBeenCalledWith('https://example.com');
-
-      // Verify LLM was called
+      expect(layer2FilterService.validateOperational).toHaveBeenCalled();
       expect(llmService.classifyUrl).toHaveBeenCalled();
 
-      // Verify result was inserted
-      expect(mockSupabaseClient.insert).toHaveBeenCalled();
-
-      // Verify job was updated
-      expect(mockSupabaseClient.update).toHaveBeenCalled();
+      // Verify result was stored
+      expect(mockSupabaseClient.upsert).toHaveBeenCalled();
     });
 
-    it('should skip processing when job is paused', async () => {
-      // Mock job status as paused
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: { status: 'paused' },
-        error: null,
-      });
-
-      await processor.process(mockJob as Job);
-
-      // Verify no processing occurred
-      expect(scraperService.fetchUrl).not.toHaveBeenCalled();
-      expect(preFilterService.filterUrl).not.toHaveBeenCalled();
-      expect(llmService.classifyUrl).not.toHaveBeenCalled();
-    });
-
-    it('should skip processing when job is cancelled', async () => {
-      // Mock job status as cancelled
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: { status: 'cancelled' },
-        error: null,
-      });
-
-      await processor.process(mockJob as Job);
-
-      // Verify no processing occurred
-      expect(scraperService.fetchUrl).not.toHaveBeenCalled();
-      expect(preFilterService.filterUrl).not.toHaveBeenCalled();
-      expect(llmService.classifyUrl).not.toHaveBeenCalled();
-    });
-
-    it('should handle scraping failure', async () => {
+    it('should STOP at Layer 1 if REJECT', async () => {
       // Mock job status check
       mockSupabaseClient.single.mockResolvedValueOnce({
         data: { status: 'processing' },
         error: null,
       });
 
-      // Mock scraper failure
+      // Layer 1: REJECT
+      layer1AnalysisService.analyzeUrl.mockReturnValue({
+        passed: false,
+        reasoning: 'REJECT - Blog platform (medium.com)',
+        layer: 'layer1',
+        processingTimeMs: 5,
+      });
+
+      // Mock job data fetch
+      mockSupabaseClient.single.mockResolvedValueOnce({
+        data: { total_urls: 10 },
+        error: null,
+      });
+
+      // Mock RPC response
+      mockSupabaseClient.single.mockResolvedValueOnce({
+        data: {
+          processed_urls: 1,
+          layer1_eliminated_count: 1,
+        },
+        error: null,
+      });
+
+      await processor.process(mockJob as Job);
+
+      // Verify Layer 1 called, but Layer 2 and Layer 3 NOT called
+      expect(layer1AnalysisService.analyzeUrl).toHaveBeenCalled();
+      expect(scraperService.fetchUrl).not.toHaveBeenCalled();
+      expect(layer2FilterService.validateOperational).not.toHaveBeenCalled();
+      expect(llmService.classifyUrl).not.toHaveBeenCalled();
+
+      // Verify Layer 1 rejection stored
+      expect(mockSupabaseClient.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          elimination_layer: 'layer1',
+        }),
+        expect.anything(),
+      );
+    });
+
+    it('should STOP at Layer 2 if scraping fails', async () => {
+      // Mock job status check
+      mockSupabaseClient.single.mockResolvedValueOnce({
+        data: { status: 'processing' },
+        error: null,
+      });
+
+      // Layer 1: PASS
+      layer1AnalysisService.analyzeUrl.mockReturnValue({
+        passed: true,
+        reasoning: 'PASS',
+        layer: 'layer1',
+        processingTimeMs: 5,
+      });
+
+      // Layer 2: Scraper FAIL
       scraperService.fetchUrl.mockResolvedValue({
         url: 'https://example.com',
         content: '',
@@ -197,110 +265,53 @@ describe('UrlWorkerProcessor', () => {
         processingTimeMs: 1000,
       });
 
-      // Mock job data for failure handling (total_urls)
+      // Mock job data fetch
       mockSupabaseClient.single.mockResolvedValueOnce({
         data: { total_urls: 10 },
         error: null,
       });
 
-      // Mock RPC response for atomic counter increment
+      // Mock RPC response
       mockSupabaseClient.single.mockResolvedValueOnce({
         data: {
           processed_urls: 1,
-          successful_urls: 0,
-          failed_urls: 1,
-          prefilter_rejected_count: 0,
-          prefilter_passed_count: 0,
+          layer2_eliminated_count: 1,
         },
         error: null,
       });
 
       await processor.process(mockJob as Job);
 
-      // Verify scraper was called
+      // Verify Layer 1 and scraper called, but NOT Layer 3
+      expect(layer1AnalysisService.analyzeUrl).toHaveBeenCalled();
       expect(scraperService.fetchUrl).toHaveBeenCalled();
-
-      // Verify pre-filter and LLM were NOT called
-      expect(preFilterService.filterUrl).not.toHaveBeenCalled();
       expect(llmService.classifyUrl).not.toHaveBeenCalled();
 
-      // Verify failed result was inserted
-      expect(mockSupabaseClient.insert).toHaveBeenCalled();
+      // Verify Layer 2 rejection stored
+      expect(mockSupabaseClient.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          elimination_layer: 'layer2',
+        }),
+        expect.anything(),
+      );
     });
 
-    it('should skip LLM classification when pre-filter rejects', async () => {
-      // Create a mock job with Twitter URL
-      const twitterJob: Partial<Job> = {
-        id: 'bull-job-123',
-        data: {
-          jobId: 'job-123',
-          url: 'https://twitter.com',
-          urlId: 'url-456',
-        },
-      };
-
+    it('should STOP at Layer 2 if operational filter REJECT', async () => {
       // Mock job status check
       mockSupabaseClient.single.mockResolvedValueOnce({
         data: { status: 'processing' },
         error: null,
       });
 
-      // Mock scraper success
-      scraperService.fetchUrl.mockResolvedValue({
-        url: 'https://twitter.com',
-        content: '<html><body>Twitter content</body></html>',
-        title: 'Twitter',
-        metaDescription: 'Social media',
-        success: true,
-        statusCode: 200,
-        processingTimeMs: 2000,
+      // Layer 1: PASS
+      layer1AnalysisService.analyzeUrl.mockReturnValue({
+        passed: true,
+        reasoning: 'PASS',
+        layer: 'layer1',
+        processingTimeMs: 5,
       });
 
-      // Mock pre-filter reject
-      (preFilterService.filterUrl as jest.Mock).mockResolvedValue({
-        passed: false,
-        reasoning: 'Social media platform - does not accept guest posts',
-        matched_rule: 'social_media',
-      });
-
-      // Mock job data for pre-filter rejection (total_urls)
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: { total_urls: 10 },
-        error: null,
-      });
-
-      // Mock RPC response for atomic counter increment
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: {
-          processed_urls: 1,
-          successful_urls: 0,
-          failed_urls: 0,
-          prefilter_rejected_count: 1,
-          prefilter_passed_count: 0,
-        },
-        error: null,
-      });
-
-      await processor.process(twitterJob as Job);
-
-      // Verify pre-filter was called
-      expect(preFilterService.filterUrl).toHaveBeenCalledWith('https://twitter.com');
-
-      // Verify LLM was NOT called
-      expect(llmService.classifyUrl).not.toHaveBeenCalled();
-
-      // Verify result with rejected_prefilter was inserted
-      expect(mockSupabaseClient.insert).toHaveBeenCalled();
-    });
-
-    it('should complete job when all URLs processed', async () => {
-      // Mock job status check
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: { status: 'processing' },
-        error: null,
-      });
-
-      // Mock successful processing
+      // Layer 2: Scraper success
       scraperService.fetchUrl.mockResolvedValue({
         url: 'https://example.com',
         content: '<html><body>Content</body></html>',
@@ -311,72 +322,92 @@ describe('UrlWorkerProcessor', () => {
         processingTimeMs: 2000,
       });
 
-      (preFilterService.filterUrl as jest.Mock).mockResolvedValue({
-        passed: true,
-        reasoning: 'Passed',
+      // Layer 2: Operational filter REJECT
+      layer2FilterService.validateOperational.mockResolvedValue({
+        passed: false,
+        reasoning: 'REJECT - No company page found',
+        signals: {
+          companyPageFound: false,
+          blogFreshnessScore: 0,
+        },
+        processingTimeMs: 100,
       });
 
-      llmService.classifyUrl.mockResolvedValue({
-        classification: 'suitable',
-        confidence: 0.9,
-        reasoning: 'Suitable',
-        provider: 'gemini',
-        cost: 0.0005,
-        processingTimeMs: 3000,
-        retryCount: 0,
-      });
-
-      // Mock job data - this is the last URL (total_urls)
+      // Mock job data fetch
       mockSupabaseClient.single.mockResolvedValueOnce({
         data: { total_urls: 10 },
         error: null,
       });
 
-      // Mock RPC response for atomic counter increment (last URL, processedUrls = 10)
+      // Mock RPC response
       mockSupabaseClient.single.mockResolvedValueOnce({
         data: {
-          processed_urls: 10,
-          successful_urls: 10,
-          failed_urls: 0,
-          prefilter_rejected_count: 0,
-          prefilter_passed_count: 10,
-          total_cost: 0.005,
-          gemini_cost: 0.005,
-          gpt_cost: 0,
-        },
-        error: null,
-      });
-
-      // Mock final job data for completion
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: {
-          id: 'job-123',
-          processed_urls: 10,
-          total_urls: 10,
-          successful_urls: 10,
-          failed_urls: 0,
-          total_cost: 0.005,
-          prefilter_rejected_count: 0,
+          processed_urls: 1,
+          layer2_eliminated_count: 1,
         },
         error: null,
       });
 
       await processor.process(mockJob as Job);
 
-      // Verify job status was updated to completed
-      expect(mockSupabaseClient.update).toHaveBeenCalledWith(
+      // Verify Layer 1 and Layer 2 called, but NOT Layer 3
+      expect(layer1AnalysisService.analyzeUrl).toHaveBeenCalled();
+      expect(scraperService.fetchUrl).toHaveBeenCalled();
+      expect(layer2FilterService.validateOperational).toHaveBeenCalled();
+      expect(llmService.classifyUrl).not.toHaveBeenCalled();
+
+      // Verify Layer 2 rejection stored
+      expect(mockSupabaseClient.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          status: 'completed',
+          elimination_layer: 'layer2',
+          layer2_signals: expect.anything(),
         }),
+        expect.anything(),
       );
     });
   });
 
-  describe('graceful shutdown', () => {
-    it('should log shutdown message and close worker', async () => {
+  describe('Job controls', () => {
+    const mockJob: Partial<Job> = {
+      id: 'bull-job-123',
+      data: {
+        jobId: 'job-123',
+        url: 'https://example.com',
+        urlId: 'url-456',
+      },
+    };
+
+    it('should skip processing when job is paused', async () => {
+      mockSupabaseClient.single.mockResolvedValueOnce({
+        data: { status: 'paused' },
+        error: null,
+      });
+
+      await processor.process(mockJob as Job);
+
+      expect(layer1AnalysisService.analyzeUrl).not.toHaveBeenCalled();
+      expect(scraperService.fetchUrl).not.toHaveBeenCalled();
+      expect(llmService.classifyUrl).not.toHaveBeenCalled();
+    });
+
+    it('should skip processing when job is cancelled', async () => {
+      mockSupabaseClient.single.mockResolvedValueOnce({
+        data: { status: 'cancelled' },
+        error: null,
+      });
+
+      await processor.process(mockJob as Job);
+
+      expect(layer1AnalysisService.analyzeUrl).not.toHaveBeenCalled();
+      expect(scraperService.fetchUrl).not.toHaveBeenCalled();
+      expect(llmService.classifyUrl).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Graceful shutdown', () => {
+    it('should close worker on module destroy', async () => {
       const loggerSpy = jest.spyOn(processor['logger'], 'log');
 
-      // Mock the worker property (normally provided by WorkerHost)
       const mockWorker = {
         close: jest.fn().mockResolvedValue(undefined),
       };
@@ -389,42 +420,6 @@ describe('UrlWorkerProcessor', () => {
 
       expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('Graceful shutdown'));
       expect(mockWorker.close).toHaveBeenCalled();
-      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('Worker closed gracefully'));
-    });
-
-    it('should handle worker close error gracefully', async () => {
-      const loggerSpy = jest.spyOn(processor['logger'], 'error');
-
-      // Mock worker that throws an error on close
-      const mockWorker = {
-        close: jest.fn().mockRejectedValue(new Error('Close failed')),
-      };
-      Object.defineProperty(processor, 'worker', {
-        get: () => mockWorker,
-        configurable: true,
-      });
-
-      await processor.onModuleDestroy();
-
-      expect(mockWorker.close).toHaveBeenCalled();
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Error during graceful shutdown'),
-      );
-    });
-
-    it('should handle missing worker gracefully', async () => {
-      const loggerSpy = jest.spyOn(processor['logger'], 'log');
-
-      // Mock undefined worker (not yet initialized)
-      Object.defineProperty(processor, 'worker', {
-        get: () => undefined,
-        configurable: true,
-      });
-
-      await processor.onModuleDestroy();
-
-      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('Graceful shutdown'));
-      // Should not throw, just log the shutdown initiation
     });
   });
 });

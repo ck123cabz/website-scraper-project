@@ -7,12 +7,13 @@ import { JobsModule } from '../jobs/jobs.module';
 /**
  * Workers module for BullMQ background processing
  * Story 2.5: Worker Processing & Real-Time Updates
+ * Story 2.3: Layer 1 Domain Analysis (Pre-Scrape)
  */
 @Module({
   imports: [
     SupabaseModule,
     ScraperModule,
-    JobsModule, // Provides PreFilterService and LlmService
+    JobsModule, // Provides PreFilterService, Layer1DomainAnalysisService, and LlmService
   ],
   providers: [UrlWorkerProcessor],
   exports: [UrlWorkerProcessor],

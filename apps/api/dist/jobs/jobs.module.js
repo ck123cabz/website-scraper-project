@@ -14,8 +14,11 @@ const jobs_service_1 = require("./jobs.service");
 const file_parser_service_1 = require("./services/file-parser.service");
 const url_validation_service_1 = require("./services/url-validation.service");
 const prefilter_service_1 = require("./services/prefilter.service");
+const layer1_domain_analysis_service_1 = require("./services/layer1-domain-analysis.service");
 const llm_service_1 = require("./services/llm.service");
 const llm_service_mock_1 = require("./services/llm.service.mock");
+const confidence_scoring_service_1 = require("./services/confidence-scoring.service");
+const manual_review_router_service_1 = require("./services/manual-review-router.service");
 const queue_module_1 = require("../queue/queue.module");
 const settings_module_1 = require("../settings/settings.module");
 const multer_1 = require("multer");
@@ -51,12 +54,22 @@ exports.JobsModule = JobsModule = __decorate([
             file_parser_service_1.FileParserService,
             url_validation_service_1.UrlValidationService,
             prefilter_service_1.PreFilterService,
+            layer1_domain_analysis_service_1.Layer1DomainAnalysisService,
+            confidence_scoring_service_1.ConfidenceScoringService,
+            manual_review_router_service_1.ManualReviewRouterService,
             {
                 provide: llm_service_1.LlmService,
                 useClass: process.env.USE_MOCK_SERVICES === 'true' ? llm_service_mock_1.MockLlmService : llm_service_1.LlmService,
             },
         ],
-        exports: [jobs_service_1.JobsService, prefilter_service_1.PreFilterService, llm_service_1.LlmService],
+        exports: [
+            jobs_service_1.JobsService,
+            prefilter_service_1.PreFilterService,
+            layer1_domain_analysis_service_1.Layer1DomainAnalysisService,
+            llm_service_1.LlmService,
+            confidence_scoring_service_1.ConfidenceScoringService,
+            manual_review_router_service_1.ManualReviewRouterService,
+        ],
     })
 ], JobsModule);
 //# sourceMappingURL=jobs.module.js.map

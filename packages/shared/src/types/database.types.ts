@@ -49,6 +49,36 @@ export type Database = {
           },
         ]
       }
+      classification_settings: {
+        Row: {
+          classification_indicators: Json
+          confidence_threshold: number
+          content_truncation_limit: number
+          id: string
+          llm_temperature: number
+          prefilter_rules: Json
+          updated_at: string | null
+        }
+        Insert: {
+          classification_indicators?: Json
+          confidence_threshold?: number
+          content_truncation_limit?: number
+          id?: string
+          llm_temperature?: number
+          prefilter_rules?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          classification_indicators?: Json
+          confidence_threshold?: number
+          content_truncation_limit?: number
+          id?: string
+          llm_temperature?: number
+          prefilter_rules?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       jobs: {
         Row: {
           completed_at: string | null
@@ -61,6 +91,7 @@ export type Database = {
           gemini_cost: number
           gpt_cost: number
           id: string
+          layer1_eliminated_count: number | null
           name: string | null
           prefilter_passed_count: number | null
           prefilter_rejected_count: number | null
@@ -86,6 +117,7 @@ export type Database = {
           gemini_cost?: number
           gpt_cost?: number
           id?: string
+          layer1_eliminated_count?: number | null
           name?: string | null
           prefilter_passed_count?: number | null
           prefilter_rejected_count?: number | null
@@ -111,6 +143,7 @@ export type Database = {
           gemini_cost?: number
           gpt_cost?: number
           id?: string
+          layer1_eliminated_count?: number | null
           name?: string | null
           prefilter_passed_count?: number | null
           prefilter_rejected_count?: number | null
@@ -134,12 +167,16 @@ export type Database = {
             | Database["public"]["Enums"]["classification_result"]
             | null
           classification_score: number | null
+          confidence_band: string | null
           created_at: string
+          elimination_layer: string | null
           error_message: string | null
           id: string
           job_id: string
+          layer1_reasoning: string | null
           llm_cost: number | null
           llm_provider: Database["public"]["Enums"]["llm_provider"] | null
+          manual_review_required: boolean | null
           prefilter_passed: boolean | null
           prefilter_reasoning: string | null
           processed_at: string
@@ -154,12 +191,16 @@ export type Database = {
             | Database["public"]["Enums"]["classification_result"]
             | null
           classification_score?: number | null
+          confidence_band?: string | null
           created_at?: string
+          elimination_layer?: string | null
           error_message?: string | null
           id?: string
           job_id: string
+          layer1_reasoning?: string | null
           llm_cost?: number | null
           llm_provider?: Database["public"]["Enums"]["llm_provider"] | null
+          manual_review_required?: boolean | null
           prefilter_passed?: boolean | null
           prefilter_reasoning?: string | null
           processed_at?: string
@@ -174,12 +215,16 @@ export type Database = {
             | Database["public"]["Enums"]["classification_result"]
             | null
           classification_score?: number | null
+          confidence_band?: string | null
           created_at?: string
+          elimination_layer?: string | null
           error_message?: string | null
           id?: string
           job_id?: string
+          layer1_reasoning?: string | null
           llm_cost?: number | null
           llm_provider?: Database["public"]["Enums"]["llm_provider"] | null
+          manual_review_required?: boolean | null
           prefilter_passed?: boolean | null
           prefilter_reasoning?: string | null
           processed_at?: string
@@ -212,6 +257,46 @@ export type Database = {
           status: string
           total_urls: number
         }[]
+      }
+      increment_job_counters: {
+        Args: {
+          p_failed_urls_delta?: number
+          p_gemini_cost_delta?: number
+          p_gpt_cost_delta?: number
+          p_job_id: string
+          p_layer1_eliminated_delta?: number
+          p_prefilter_passed_delta?: number
+          p_prefilter_rejected_delta?: number
+          p_processed_urls_delta?: number
+          p_successful_urls_delta?: number
+          p_total_cost_delta?: number
+        }
+        Returns: {
+          completed_at: string | null
+          created_at: string
+          current_stage: Database["public"]["Enums"]["processing_stage"] | null
+          current_url: string | null
+          current_url_started_at: string | null
+          estimated_time_remaining: number | null
+          failed_urls: number
+          gemini_cost: number
+          gpt_cost: number
+          id: string
+          layer1_eliminated_count: number | null
+          name: string | null
+          prefilter_passed_count: number | null
+          prefilter_rejected_count: number | null
+          processed_urls: number
+          processing_rate: number | null
+          progress_percentage: number
+          rejected_urls: number
+          started_at: string | null
+          status: Database["public"]["Enums"]["job_status"]
+          successful_urls: number
+          total_cost: number
+          total_urls: number
+          updated_at: string
+        }
       }
     }
     Enums: {

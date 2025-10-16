@@ -5,7 +5,7 @@
   "description": "NestJS backend API for website scraper",
   "scripts": {
     "dev": "nest start --watch",
-    "build": "nest build",
+    "build": "nest build && mkdir -p dist/config && cp -r src/config/*.json dist/config/",
     "start": "node dist/main",
     "start:prod": "node dist/main",
     "test": "jest",
