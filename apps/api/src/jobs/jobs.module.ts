@@ -13,12 +13,14 @@ import { ConfidenceScoringService } from './services/confidence-scoring.service'
 import { ManualReviewRouterService } from './services/manual-review-router.service';
 import { QueueModule } from '../queue/queue.module';
 import { SettingsModule } from '../settings/settings.module';
+import { ScraperModule } from '../scraper/scraper.module';
 import { memoryStorage } from 'multer';
 import { extname } from 'path';
 
 /**
  * Jobs Module
  * Story 3.0: Settings integration for database-driven classification parameters
+ * Story 2.6: Layer 2 operational filtering (homepage scraping)
  *
  * Environment Variables:
  * - USE_MOCK_SERVICES=true → Use MockLlmService (no external LLM API calls)
@@ -28,6 +30,7 @@ import { extname } from 'path';
   imports: [
     QueueModule, // Import QueueModule to access QueueService
     SettingsModule, // Import SettingsModule for database-driven settings (Story 3.0)
+    ScraperModule, // Import ScraperModule for Layer 2 homepage scraping (Story 2.6)
     MulterModule.register({
       storage: memoryStorage(), // Use memory storage to avoid file cleanup issues (H2 fix)
       limits: {
@@ -51,7 +54,7 @@ import { extname } from 'path';
     UrlValidationService,
     PreFilterService,
     Layer1DomainAnalysisService,
-    Layer2OperationalFilterService, // Story 2.5-refactored: Layer 2 operational filtering (stub until Story 2.6)
+    Layer2OperationalFilterService, // Story 2.6: Layer 2 operational filtering (homepage scraping & validation)
     ConfidenceScoringService, // Story 2.4-refactored: Confidence band calculation
     ManualReviewRouterService, // Story 2.4-refactored: Manual review routing
     {

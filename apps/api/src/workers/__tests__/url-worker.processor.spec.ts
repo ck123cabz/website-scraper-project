@@ -60,7 +60,8 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
         {
           provide: Layer2OperationalFilterService,
           useValue: {
-            validateOperational: jest.fn(),
+            filterUrl: jest.fn(),
+            validateOperational: jest.fn(), // Keep for backward compatibility
           },
         },
         {
@@ -132,13 +133,14 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
         processingTimeMs: 2000,
       });
 
-      layer2FilterService.validateOperational.mockResolvedValue({
+      layer2FilterService.filterUrl.mockResolvedValue({
         passed: true,
         reasoning: 'PASS - Operational signals valid',
         signals: {
-          companyPageFound: true,
-          blogFreshnessScore: 0.8,
-          techStack: ['wordpress'],
+          company_pages: { has_about: true, has_team: true, has_contact: true, count: 3 },
+          blog_data: { has_blog: true, last_post_date: '2025-10-01', days_since_last_post: 15, passes_freshness: true },
+          tech_stack: { tools_detected: ['Google Analytics', 'HubSpot'], count: 2 },
+          design_quality: { score: 8, has_modern_framework: true, is_responsive: true, has_professional_imagery: true },
         },
         processingTimeMs: 100,
       });
@@ -185,7 +187,7 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
       // Verify all 3 layers were called
       expect(layer1AnalysisService.analyzeUrl).toHaveBeenCalledWith('https://example.com');
       expect(scraperService.fetchUrl).toHaveBeenCalledWith('https://example.com');
-      expect(layer2FilterService.validateOperational).toHaveBeenCalled();
+      expect(layer2FilterService.filterUrl).toHaveBeenCalled();
       expect(llmService.classifyUrl).toHaveBeenCalled();
 
       // Verify result was stored
@@ -227,7 +229,7 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
       // Verify Layer 1 called, but Layer 2 and Layer 3 NOT called
       expect(layer1AnalysisService.analyzeUrl).toHaveBeenCalled();
       expect(scraperService.fetchUrl).not.toHaveBeenCalled();
-      expect(layer2FilterService.validateOperational).not.toHaveBeenCalled();
+      expect(layer2FilterService.filterUrl).not.toHaveBeenCalled();
       expect(llmService.classifyUrl).not.toHaveBeenCalled();
 
       // Verify Layer 1 rejection stored
@@ -323,12 +325,14 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
       });
 
       // Layer 2: Operational filter REJECT
-      layer2FilterService.validateOperational.mockResolvedValue({
+      layer2FilterService.filterUrl.mockResolvedValue({
         passed: false,
         reasoning: 'REJECT - No company page found',
         signals: {
-          companyPageFound: false,
-          blogFreshnessScore: 0,
+          company_pages: { has_about: false, has_team: false, has_contact: false, count: 0 },
+          blog_data: { has_blog: false, last_post_date: null, days_since_last_post: null, passes_freshness: false },
+          tech_stack: { tools_detected: [], count: 0 },
+          design_quality: { score: 3, has_modern_framework: false, is_responsive: false, has_professional_imagery: false },
         },
         processingTimeMs: 100,
       });
@@ -353,7 +357,7 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
       // Verify Layer 1 and Layer 2 called, but NOT Layer 3
       expect(layer1AnalysisService.analyzeUrl).toHaveBeenCalled();
       expect(scraperService.fetchUrl).toHaveBeenCalled();
-      expect(layer2FilterService.validateOperational).toHaveBeenCalled();
+      expect(layer2FilterService.filterUrl).toHaveBeenCalled();
       expect(llmService.classifyUrl).not.toHaveBeenCalled();
 
       // Verify Layer 2 rejection stored

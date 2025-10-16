@@ -17,6 +17,15 @@ export type {
   Layer1Statistics,
   CostSavings,
 } from './types/layer1';
+export type {
+  Layer2FilterResult,
+  Layer2Signals,
+  Layer2Rules,
+  CompanyPageSignals,
+  BlogDataSignals,
+  TechStackSignals,
+  DesignQualitySignals,
+} from './types/layer2';
 
 // Schemas
 export { JobSchema, JobStatusSchema, ProcessingStageSchema } from './schemas/job';

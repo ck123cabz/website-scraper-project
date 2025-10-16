@@ -234,8 +234,8 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
       };
     }
 
-    // Validate operational signals
-    const layer2Result = await this.layer2Filter.validateOperational(url, scrapeResult);
+    // Validate operational signals (Story 2.6: Full Layer 2 implementation)
+    const layer2Result = await this.layer2Filter.filterUrl(url);
 
     return { scrapeResult, layer2Result };
   }
