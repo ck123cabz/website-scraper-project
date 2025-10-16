@@ -1,6 +1,0 @@
-# Railway Monorepo Configuration
-# Build happens at root, services run from subdirectories via railway.json
-# See: https://docs.railway.app/guides/monorepo
-
-# Shared monorepo configuration
-# Each service should have custom build/start commands configured in Railway dashboard
