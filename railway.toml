@@ -1,0 +1,6 @@
+# Railway configuration for monorepo
+# This file is intentionally minimal - service-specific configs are in Railway dashboard
+# See: https://docs.railway.app/guides/monorepo
+
+# Shared monorepo configuration
+# Each service should have custom build/start commands configured in Railway dashboard

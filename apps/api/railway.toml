@@ -1,8 +1,0 @@
-[build]
-builder = "NIXPACKS"
-buildCommand = "cd ../.. && npm install && npm run build --workspace=@website-scraper/api"
-
-[deploy]
-startCommand = "npm run start:prod"
-restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 10
