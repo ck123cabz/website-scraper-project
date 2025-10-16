@@ -39,18 +39,42 @@ function validateEnvironment(): void {
 }
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
+
   // Validate environment before creating app
   validateEnvironment();
 
   const app = await NestFactory.create(AppModule, { rawBody: true });
 
   // Enable shutdown hooks for graceful shutdown on SIGTERM (Railway deployments)
-  // This allows workers and other services to clean up properly
+  // Story 3.2 AC13: Graceful shutdown handling
   app.enableShutdownHooks();
 
-  // Enable CORS for frontend communication
+  // Handle SIGTERM for graceful shutdown (Railway sends this 10s before kill)
+  process.on('SIGTERM', async () => {
+    logger.log('SIGTERM received, closing server gracefully...');
+    await app.close();
+    logger.log('Server closed gracefully');
+    process.exit(0);
+  });
+
+  // Enable CORS for frontend communication (Story 3.2 - Production deployment)
+  const allowedOrigins = [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    'http://localhost:3000', // Always allow local development
+  ];
+
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.some(allowed => origin.startsWith(allowed))) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   });
 

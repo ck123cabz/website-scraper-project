@@ -1,14 +1,11 @@
 [phases.setup]
-nixPkgs = ["nodejs_18", "npm-9_x"]
+nixPkgs = ["nodejs_20", "npm"]
 
 [phases.install]
-cmds = ["npm install"]
+cmds = ["npm ci"]
 
 [phases.build]
-cmds = [
-  "npm run build --workspace=@website-scraper/api",
-  "npm run build --workspace=web"
-]
+cmds = ["npm run build"]
 
 [start]
 cmd = "npm run start:prod"
