@@ -1,5 +1,5 @@
-# Railway configuration for monorepo
-# This file is intentionally minimal - service-specific configs are in Railway dashboard
+# Railway Monorepo Configuration
+# Build happens at root, services run from subdirectories via railway.json
 # See: https://docs.railway.app/guides/monorepo
 
 # Shared monorepo configuration
