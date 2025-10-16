@@ -2,7 +2,7 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "nixpacksConfigPath": "nixpacks.toml",
+    "buildCommand": "npm ci && npm run build",
     "watchPatterns": [
       "/apps/web/**",
       "/packages/**",
@@ -12,7 +12,7 @@
     ]
   },
   "deploy": {
-    "startCommand": "npm run start --workspace=web",
+    "startCommand": "cd apps/web && npm run start",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
