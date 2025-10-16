@@ -1,6 +1,6 @@
 # Story 2.5: 3-Tier Pipeline Orchestration & Real-Time Updates (REFACTORED)
 
-Status: Draft
+Status: Ready for Integration Testing
 
 ## Story
 
@@ -576,8 +576,18 @@ This story implemented the 3-tier progressive filtering pipeline orchestration f
 
 - ScraperService currently doesn't differentiate between homepage vs full-site scraping (no `fullSite` flag). This optimization can be added in a follow-up story if needed.
 
-**Build Status**: ✅ TypeScript compiles successfully with no errors
-**Test Status**: ✅ All 7 unit tests passing (3-tier pipeline, STOP logic, job controls, graceful shutdown)
+**Verification Status (2025-10-16):**
+- ✅ **Build**: TypeScript compiles with 0 errors
+- ✅ **Unit Tests**: 7/7 passing (100% pass rate)
+  - ✅ Process through all 3 layers when all PASS
+  - ✅ STOP at Layer 1 if REJECT
+  - ✅ STOP at Layer 2 if scraping fails
+  - ✅ STOP at Layer 2 if operational filter REJECT
+  - ✅ Skip processing when job paused/cancelled
+  - ✅ Graceful shutdown
+- ✅ **Regression Tests**: 184/184 API tests passing (no regressions)
+- ✅ **Database Migration**: Applied successfully to Supabase
+- ✅ **Git Commit**: 2228089 (feature/story-3.0-settings-management)
 
 ### File List
 
