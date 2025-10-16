@@ -1,6 +1,6 @@
 # Story 3.2: Railway Production Deployment & Configuration
 
-**Status:** Complete ✅
+**Status:** In Progress - API Deployed, Frontend Deploying
 
 ## Story
 
@@ -487,9 +487,9 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 ```
 
 **Services Deployed:**
-1. Redis (Railway managed) - TCP proxy connection
-2. API (NestJS, Node.js 20) - Successfully deployed
-3. Web (Next.js) - Configuration in progress
+1. Redis (Railway managed) - ✅ Running (TCP proxy connection)
+2. API (NestJS, Node.js 20) - ✅ Successfully deployed and verified
+3. Web (Next.js) - ⏳ Configuration fixed, deployment in progress
 
 ### Debug Log References
 
@@ -537,7 +537,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 - Dependencies: Story 3.1 complete (E2E testing validated)
 - Status: Draft - Ready for Implementation
 
-**2025-10-16:** Railway Production Deployment COMPLETE ✅
+**2025-10-16:** Railway Production Deployment - Session 1 ✅
 - Railway services created: Redis, API (deployed), Web (in progress)
 - Enhanced health endpoint with connection checks for database and Redis
 - Implemented SIGTERM graceful shutdown handler for Railway deployments
@@ -546,4 +546,12 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 - All production environment variables set via Railway MCP
 - API successfully deployed: https://api-production-beab.up.railway.app
 - Health check verified: Database connected, Redis connected, status OK
-- Status: Complete - API deployment successful with all acceptance criteria met
+- Fixed monorepo configuration: Updated apps/web/railway.toml to build correct workspace
+- Status: API fully operational, Frontend deployment triggered
+
+**Next Session TODO:**
+- Verify Frontend deployment completes successfully
+- Test Frontend → API communication (CORS validation)
+- Run end-to-end smoke test (create job, verify results)
+- Update acceptance criteria checklist
+- Mark story as complete when both services verified
