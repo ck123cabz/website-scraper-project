@@ -3,6 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Plus, Settings } from 'lucide-react';
 import Link from 'next/link';
 
+// Force dynamic rendering - don't prerender at build time
+// Supabase env vars are only available at runtime in Railway
+export const dynamic = 'force-dynamic';
+
 export default function DashboardPage() {
   return (
     <div className="container mx-auto py-8 px-4" data-testid="dashboard-page">
