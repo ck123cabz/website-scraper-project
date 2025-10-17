@@ -581,3 +581,36 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 5. `6ea0e2c` - Removed legacy Python v1 artifacts (~28k lines)
 
 **All 13 Acceptance Criteria:** ✅ SATISFIED
+
+**2025-10-17:** Railway Deployment Re-verification - Session 3 ✅ **DEPLOYMENT CONFIRMED**
+- **Issue Found:** Services were down after previous configuration experiments
+  - API returning 404 pages (web service responding on API URL)
+  - Web service returning 307 redirects
+  - Multiple failed attempts with railway.json and railway.toml files in service directories
+- **Root Cause:** Railway config file precedence and monorepo configuration complexity
+  - Railway prioritizes config files but doesn't auto-detect service-specific files
+  - Services must be configured via Railway Dashboard for monorepo setup
+- **Solution Applied:** Restored to last known working configuration (commit 820b9c6)
+  - Removed all per-service railway.toml/railway.json files
+  - Restored minimal root railway.toml and nixpacks.toml
+  - User manually configured services via Railway Dashboard with exact commands:
+    - **API:** Build: `npm install && npm run build --workspace=@website-scraper/api` | Start: `cd apps/api && npm run start:prod`
+    - **Web:** Build: `npm install && npm run build --workspace=web` | Start: `cd apps/web && npm run start`
+    - **Root Directory:** Empty (build from repository root for monorepo dependencies)
+- **Added Environment Variable:** `SUPABASE_ANON_KEY` to API service (was missing)
+- **Verification Tests Performed (2025-10-17 05:48 UTC):**
+  - ✅ API Health Endpoint: `200 OK` - Database: connected, Redis: connected, Uptime: 499s
+  - ✅ API Logs: Clean, no errors - Job processing active (URL classification working)
+  - ✅ Web Service: Next.js started in 316ms - serving correct dashboard
+  - ✅ Production URLs responding correctly
+- **Working Configuration Pattern:**
+  - Build from root (preserves monorepo structure for shared packages)
+  - Deploy from service directory (via `cd apps/X` in start command)
+  - Use npm workspace commands for proper package isolation
+  - Manual Dashboard configuration required (config files not detected for monorepo)
+- **Key Commits:**
+  1. `8f3f869` - Updated railway.json files with build commands
+  2. `52fed5c` - Removed root railway.toml (failed attempt)
+  3. `75f9f37` - Added per-service railway.toml files (failed attempt)
+  4. `2ee2a62` - **WORKING:** Restored to last known working configuration
+- **Status:** ✅ **VERIFIED OPERATIONAL** - Both services confirmed running in production with active job processing
