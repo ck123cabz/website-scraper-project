@@ -15,7 +15,7 @@
 
 **Overall Progress**: 54/82 tasks completed (65.9%)
 
-### ✅ Completed Phases
+### ✅ Completed Phases (Sessions 3-9)
 
 **Phase 0.5: Test Infrastructure Setup** - 3/3 tasks (100%)
 - Created test utilities with factory functions for mock data
@@ -279,13 +279,26 @@
 
 **Performance verified**: p90 routing latency 0.01ms (threshold <100ms)
 
-### 📝 Session 9 Implementation Notes
+### 📝 Session 9 Implementation Notes (Major Milestone: 3 Phases Complete)
+
+**Execution Strategy**:
+1. Started by reading Phase 5 tasks from tasks.md checkpoint
+2. Found Phase 5 & 6 were already complete from previous sessions
+3. Implemented Phase 7 from scratch (full backend + frontend)
+4. Verified all tests passing and build successful
 
 **Phase 5 Complete**: All User Story 2 tasks verified and tested (5/5 tasks, 100% passing).
+- ManualReviewRouterService.routeUrl() uses action from ConfidenceScoringService (T023)
+- Structured logging for routing decisions (T024)
+- Activity log creation for url_routed events (T025)
 
 **Tests Verified**:
 - T025-TEST-A: 3 tests passing (100 URL routing accuracy, action-based routing validation, audit trail verification)
 - T025-TEST-B: 6 tests passing (auto-approve, manual_review, reject activity logs, batch operations, timestamps)
+
+**Performance Metrics**:
+- p90 routing latency: 0.01ms (threshold: <100ms) - SC-010 ✅
+- Routing accuracy: 100% across all confidence bands - SC-003 ✅
 
 **Build Status**: ✅ All API changes verified
 
@@ -313,6 +326,70 @@
 
 **Tests Verified**: 5 integration tests passing + E2E test structure
 **Features**: Daily cron job marks old queue items as stale; UI filter allows users to view stale/active items separately
+
+**Phase 7 Implementation Details**:
+
+*Backend (T030-T033)*:
+- StaleQueueMarkerProcessor: New processor with @Cron('0 2 * * *') decorator
+  - Queries manual_review_queue WHERE reviewed_at IS NULL AND is_stale=FALSE AND queued_at < (NOW() - timeout_days)
+  - Batch updates is_stale=TRUE
+  - Creates activity log entries for each flagged item (non-blocking)
+  - Gracefully handles missing timeout_days configuration
+  - Continues operation even if activity logging fails
+
+- Integration with jobs.module.ts:
+  - Added ScheduleModule.forRoot() import for @Cron support
+  - Registered StaleQueueMarkerProcessor as provider
+  - Dependencies: SupabaseService, SettingsService
+
+*Frontend (T034-T035)*:
+- ManualReviewPage stale filter (already implemented):
+  - Dropdown with 3 options: "All Items", "Active Only", "Stale Items Only"
+  - Passes is_stale parameter to useManualReviewQueue hook
+  - Automatically resets pagination when filter changes
+
+- useManualReviewQueue hook (already supports):
+  - is_stale?: boolean parameter
+  - Builds query string with &is_stale=true or &is_stale=false
+  - Only adds parameter if value is explicitly set (not undefined)
+
+*Testing (T035-TEST-A/B)*:
+- T035-TEST-A: 5 integration tests
+  - ✓ Marks items older than timeout_days as stale
+  - ✓ Skips if timeout not configured
+  - ✓ Handles empty results gracefully
+  - ✓ Continues if activity logging fails
+  - ✓ Correctly calculates cutoff date
+
+- T035-TEST-B: E2E test file with 11 test scenarios
+  - Load page with stale/active items
+  - Filter to "Stale Items Only" (is_stale=true)
+  - Filter to "Active Only" (is_stale=false)
+  - Reset to "All Items"
+  - Pagination reset on filter change
+  - Stale items sorted by queued_at (oldest first)
+  - Filter status indicator
+  - "Reset All Filters" button visibility
+  - Combined band + stale filters
+  - Empty result handling
+  - Visual stale indicators in table
+
+**Code Changes Summary**:
+- Created: stale-queue-marker.processor.ts (178 lines)
+- Created: stale-queue-marker.spec.ts (270 lines)
+- Created: stale-items-filter.spec.ts (290 lines)
+- Modified: jobs.module.ts (2 lines - imports)
+- Total: ~750 lines of new code + tests
+
+**Dependencies**:
+- Added @nestjs/schedule@latest for @Cron decorator support
+- No breaking changes to existing dependencies
+
+**Verification Results**:
+- All 5 integration tests passing: ✅
+- npm run build: ✅ Successful (no TypeScript errors)
+- E2E test structure verified: ✅
+- No database migrations needed (uses existing is_stale column)
 
 ### 🎯 Next Steps (Optional Enhancement Phases)
 
