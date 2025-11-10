@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { IncomingWebhook } from '@slack/webhook';
 
 /**
@@ -8,12 +9,14 @@ import { IncomingWebhook } from '@slack/webhook';
  * Currently supports Slack notifications via webhook.
  *
  * @example
- * const service = new NotificationService();
+ * const service = new NotificationService(configService);
  * const result = await service.sendSlackNotification(12, 'https://hooks.slack.com/services/...');
  */
 @Injectable()
 export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
+
+  constructor(private readonly configService: ConfigService) {}
 
   /**
    * Send Slack notification when queue reaches threshold
@@ -64,7 +67,11 @@ export class NotificationService {
       const webhook = new IncomingWebhook(slackWebhookUrl);
 
       // Build message with queue information
-      const manualReviewUrl = 'http://localhost:3000/manual-review';
+      const baseUrl = this.configService.get<string>(
+        'APP_BASE_URL',
+        'http://localhost:3000',
+      );
+      const manualReviewUrl = `${baseUrl}/manual-review`;
       const timestamp = new Date().toISOString();
 
       const message = {

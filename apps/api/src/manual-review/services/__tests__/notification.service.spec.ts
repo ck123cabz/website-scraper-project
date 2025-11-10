@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { NotificationService } from '../notification.service';
 import * as slackWebhook from '@slack/webhook';
 
@@ -19,6 +20,7 @@ import * as slackWebhook from '@slack/webhook';
 describe('NotificationService (T047-TEST-B)', () => {
   let service: NotificationService;
   let mockWebhookSend: jest.Mock;
+  let mockConfigService: jest.Mocked<ConfigService>;
 
   beforeEach(async () => {
     // Mock the IncomingWebhook
@@ -30,8 +32,24 @@ describe('NotificationService (T047-TEST-B)', () => {
         }) as any,
     );
 
+    // Mock ConfigService
+    mockConfigService = {
+      get: jest.fn((key: string, defaultValue?: string) => {
+        if (key === 'APP_BASE_URL') {
+          return 'http://localhost:3000';
+        }
+        return defaultValue;
+      }),
+    } as any;
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [NotificationService],
+      providers: [
+        NotificationService,
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
+        },
+      ],
     }).compile();
 
     service = module.get<NotificationService>(NotificationService);
