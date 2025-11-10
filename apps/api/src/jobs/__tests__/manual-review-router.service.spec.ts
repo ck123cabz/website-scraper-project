@@ -197,7 +197,13 @@ describe('ManualReviewRouterService (T010-TEST-C Integration)', () => {
         notes: 'Approved by user',
       };
 
-      await service.reviewAndSoftDelete(urlData.url_id, urlData.job_id, urlData.decision, urlData.notes);
+      await service.reviewAndSoftDelete({
+        queue_entry_id: 'queue-id-123',
+        url_id: urlData.url_id,
+        job_id: urlData.job_id,
+        decision: urlData.decision,
+        notes: urlData.notes,
+      });
 
       expect(supabaseService.getClient).toHaveBeenCalled();
     });
