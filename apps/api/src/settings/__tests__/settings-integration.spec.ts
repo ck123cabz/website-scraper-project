@@ -451,7 +451,12 @@ describe('SettingsService - Integration Tests', () => {
       const result = await settingsService.getSettings();
 
       expect(result.id).toBe('default');
-      expect(result).toEqual(settingsService.getDefaultSettings());
+      // Compare everything except updated_at (which will differ due to timing)
+      const { updated_at, ...resultWithoutTimestamp } = result;
+      const { updated_at: expectedUpdatedAt, ...expectedWithoutTimestamp } = settingsService.getDefaultSettings();
+
+      expect(resultWithoutTimestamp).toEqual(expectedWithoutTimestamp);
+      expect(updated_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/); // Valid ISO date string
     });
   });
 
