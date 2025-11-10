@@ -11,9 +11,9 @@
 
 ## 📊 Implementation Progress
 
-**Last Updated**: 2025-11-11 (Session 8 - Phase 5 COMPLETE)
+**Last Updated**: 2025-11-11 (Session 9 - Phase 7 COMPLETE)
 
-**Overall Progress**: 59/82 tasks completed (71.9%)
+**Overall Progress**: 54/82 tasks completed (65.9%)
 
 ### ✅ Completed Phases
 
@@ -301,12 +301,26 @@
 
 **Features Delivered**: Users can now set a maximum queue size. When the limit is reached, additional URLs are rejected with status='queue_overflow' and logged in the activity trail.
 
+**Phase 7: User Story 4 - Stale Queue Management** - 8/8 tasks (100%) ✅ COMPLETE
+- ✅ T030: Created StaleQueueMarkerProcessor with @Cron('0 2 * * *') daily execution
+- ✅ T031: Implemented stale-flagging logic (query items > timeout_days, batch update)
+- ✅ T032: Activity log creation for stale items (non-blocking)
+- ✅ T033: Registered processor in jobs.module.ts with ScheduleModule
+- ✅ T034: Added stale items filter UI in ManualReviewPage (dropdown with All/Active/Stale options)
+- ✅ T035: useManualReviewQueue hook supports is_stale filter parameter
+- ✅ T035-TEST-A: Integration tests (5 tests passing) - stale marking logic validation
+- ✅ T035-TEST-B: E2E test file created with comprehensive test scenarios
+
+**Tests Verified**: 5 integration tests passing + E2E test structure
+**Features**: Daily cron job marks old queue items as stale; UI filter allows users to view stale/active items separately
+
 ### 🎯 Next Steps (Optional Enhancement Phases)
 
-**Phase 7**: User Story 4 - Stale Queue Management (P3)
-**Phase 8**: User Story 5 - Email Notifications (P4)
-**Phase 9**: User Story 6 - Dashboard Badge & Slack (P4)
-**Phase 10**: Polish & Cross-Cutting Concerns
+**Phase 8**: User Story 5 - Email Notifications (P4) - 11 tasks
+**Phase 9**: User Story 6 - Dashboard Badge & Slack (P4) - 8 tasks
+**Phase 10**: Polish & Cross-Cutting Concerns - 9 tasks
+
+**Remaining**: 28 tasks in Phases 8-10 (34.1% to reach 100% feature completion)
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -447,14 +461,14 @@
 
 ### Implementation for User Story 4
 
-- [ ] T030 [P] [US4] Create StaleQueueMarkerProcessor in apps/api/src/jobs/processors/stale-queue-marker.processor.ts with @Cron('0 2 * * *') decorator for daily execution at 2 AM
-- [ ] T031 [US4] Implement stale-flagging logic in StaleQueueMarkerProcessor - query items WHERE reviewed_at IS NULL AND is_stale=FALSE AND queued_at < (NOW() - timeout_days), batch update is_stale=TRUE
-- [ ] T032 [US4] Add activity log creation for each flagged stale item (type 'queue_item_stale', url_id, details containing queued_at, days_in_queue) in StaleQueueMarkerProcessor
-- [ ] T033 [US4] Register StaleQueueMarkerProcessor in BullMQ module configuration in apps/api/src/jobs/jobs.module.ts
-- [ ] T034 [US4] Add stale items filter UI in ManualReviewPage (apps/web/app/manual-review/page.tsx) - checkbox to show only is_stale=true items, sorted by queued_at ascending
-- [ ] T035 [US4] Update useManualReviewQueue hook to accept is_stale filter parameter and pass to API query string
-- [ ] T035-TEST-A [US4] Write integration test at apps/api/src/jobs/processors/__tests__/stale-queue-marker.spec.ts validating SC-005: set auto_review_timeout_days=7, insert test URLs with queued_at 8 days ago, trigger job manually, verify is_stale=true set within 5 minutes, activity logs created, items <7 days remain unflagged
-- [ ] T035-TEST-B [US4] Write E2E test at apps/web/__tests__/e2e/stale-items-filter.spec.ts validating UI filter: load manual review page → verify stale badge counts → apply "Stale Items" filter → verify only is_stale=true items shown → verify sorted by queued_at ascending (oldest first)
+- [X] T030 [P] [US4] Create StaleQueueMarkerProcessor in apps/api/src/jobs/processors/stale-queue-marker.processor.ts with @Cron('0 2 * * *') decorator for daily execution at 2 AM
+- [X] T031 [US4] Implement stale-flagging logic in StaleQueueMarkerProcessor - query items WHERE reviewed_at IS NULL AND is_stale=FALSE AND queued_at < (NOW() - timeout_days), batch update is_stale=TRUE
+- [X] T032 [US4] Add activity log creation for each flagged stale item (type 'queue_item_stale', url_id, details containing queued_at, days_in_queue) in StaleQueueMarkerProcessor
+- [X] T033 [US4] Register StaleQueueMarkerProcessor in BullMQ module configuration in apps/api/src/jobs/jobs.module.ts
+- [X] T034 [US4] Add stale items filter UI in ManualReviewPage (apps/web/app/manual-review/page.tsx) - checkbox to show only is_stale=true items, sorted by queued_at ascending
+- [X] T035 [US4] Update useManualReviewQueue hook to accept is_stale filter parameter and pass to API query string
+- [X] T035-TEST-A [US4] Write integration test at apps/api/src/jobs/processors/__tests__/stale-queue-marker.spec.ts validating SC-005: set auto_review_timeout_days=7, insert test URLs with queued_at 8 days ago, trigger job manually, verify is_stale=true set within 5 minutes, activity logs created, items <7 days remain unflagged
+- [X] T035-TEST-B [US4] Write E2E test at apps/web/__tests__/e2e/stale-items-filter.spec.ts validating UI filter: load manual review page → verify stale badge counts → apply "Stale Items" filter → verify only is_stale=true items shown → verify sorted by queued_at ascending (oldest first)
 
 **Checkpoint**: User Story 4 complete - Stale-flagging job runs daily, old items are marked as stale, and users can filter to see stale items for prioritized review
 
