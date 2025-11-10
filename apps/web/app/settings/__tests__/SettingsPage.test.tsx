@@ -10,9 +10,11 @@ import { ClassificationSettings } from '@website-scraper/shared';
 jest.mock('axios');
 jest.mock('sonner');
 jest.mock('next/link', () => {
-  return ({ children, href }: { children: React.ReactNode; href: string }) => {
+  const MockLink = ({ children, href }: { children: React.ReactNode; href: string }) => {
     return <a href={href}>{children}</a>;
   };
+  MockLink.displayName = 'MockLink';
+  return MockLink;
 });
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
@@ -636,11 +638,11 @@ describe('Settings Page - Tab Validation Tests', () => {
   describe('6. Loading and Error States', () => {
     it('should show loading state initially', async () => {
       // Create a promise we can control
-      let resolvePromise: (value: any) => void;
+      let resolvePromise: (value: unknown) => void;
       const promise = new Promise((resolve) => {
         resolvePromise = resolve;
       });
-      mockedAxios.get.mockReturnValue(promise as any);
+      mockedAxios.get.mockReturnValue(promise as Promise<{ data: ClassificationSettings }>);
 
       renderWithQueryClient(<SettingsPage />);
 
