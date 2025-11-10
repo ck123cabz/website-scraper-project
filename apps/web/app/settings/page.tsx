@@ -49,21 +49,15 @@ export default function SettingsPage() {
   };
 
   const validateAllTabs = (): boolean => {
-    console.log('[DEBUG-VALIDATION] Starting validation');
     // Basic validation for layer-specific fields
-    if (!formData) {
-      console.log('[DEBUG-VALIDATION] No formData');
-      return false;
-    }
+    if (!formData) return false;
 
     // Layer 1: Check TLD filters
     const hasAnyTld =
       formData.layer1_rules.tld_filters.commercial.length > 0 ||
       formData.layer1_rules.tld_filters.non_commercial.length > 0 ||
       formData.layer1_rules.tld_filters.personal.length > 0;
-    console.log('[DEBUG-VALIDATION] Has any TLD:', hasAnyTld);
     if (!hasAnyTld) {
-      console.log('[DEBUG-VALIDATION] FAIL: No TLDs selected');
       toast.error('Layer 1: At least one TLD filter must be selected');
       return false;
     }
@@ -73,49 +67,37 @@ export default function SettingsPage() {
       formData.layer1_rules.url_pattern_exclusions.forEach((exclusion) => {
         new RegExp(exclusion.pattern);
       });
-      console.log('[DEBUG-VALIDATION] URL patterns valid');
-    } catch (e) {
-      console.log('[DEBUG-VALIDATION] FAIL: Invalid regex', e);
+    } catch {
       toast.error('Layer 1: Invalid regex pattern detected');
       return false;
     }
 
     // Layer 2: Validate ranges
-    console.log('[DEBUG-VALIDATION] Layer 2 blog_freshness_days:', formData.layer2_rules.blog_freshness_days);
     if (formData.layer2_rules.blog_freshness_days < 30 || formData.layer2_rules.blog_freshness_days > 180) {
-      console.log('[DEBUG-VALIDATION] FAIL: Blog freshness out of range');
       toast.error('Layer 2: Blog freshness must be between 30-180 days');
       return false;
     }
 
-    console.log('[DEBUG-VALIDATION] Layer 2 required_pages_count:', formData.layer2_rules.required_pages_count);
     if (formData.layer2_rules.required_pages_count < 1 || formData.layer2_rules.required_pages_count > 3) {
-      console.log('[DEBUG-VALIDATION] FAIL: Required pages out of range');
       toast.error('Layer 2: Required pages must be between 1-3');
       return false;
     }
 
-    console.log('[DEBUG-VALIDATION] Layer 2 min_design_quality_score:', formData.layer2_rules.min_design_quality_score);
     if (formData.layer2_rules.min_design_quality_score < 1 || formData.layer2_rules.min_design_quality_score > 10) {
-      console.log('[DEBUG-VALIDATION] FAIL: Design quality out of range');
       toast.error('Layer 2: Design quality score must be between 1-10');
       return false;
     }
 
     // Layer 3: Validate ranges
-    console.log('[DEBUG-VALIDATION] Layer 3 llm_temperature:', formData.layer3_rules.llm_temperature);
     if (formData.layer3_rules.llm_temperature < 0 || formData.layer3_rules.llm_temperature > 1) {
-      console.log('[DEBUG-VALIDATION] FAIL: Temperature out of range');
       toast.error('Layer 3: LLM temperature must be between 0-1');
       return false;
     }
 
-    console.log('[DEBUG-VALIDATION] Layer 3 content_truncation_limit:', formData.layer3_rules.content_truncation_limit);
     if (
       formData.layer3_rules.content_truncation_limit < 1000 ||
       formData.layer3_rules.content_truncation_limit > 50000
     ) {
-      console.log('[DEBUG-VALIDATION] FAIL: Truncation limit out of range');
       toast.error('Layer 3: Content truncation limit must be between 1000-50000');
       return false;
     }
@@ -123,60 +105,40 @@ export default function SettingsPage() {
     // Confidence bands: Check no overlaps and full coverage
     const bands = Object.entries(formData.confidence_bands);
     const sorted = bands.sort((a, b) => a[1].min - b[1].min);
-    console.log('[DEBUG-VALIDATION] Confidence bands:', JSON.stringify(sorted));
 
     if (sorted[0][1].min > 0) {
-      console.log('[DEBUG-VALIDATION] FAIL: Bands dont start at 0');
       toast.error('Confidence Bands: Range must start at 0');
       return false;
     }
 
     if (sorted[sorted.length - 1][1].max < 1) {
-      console.log('[DEBUG-VALIDATION] FAIL: Bands dont end at 1.0');
       toast.error('Confidence Bands: Range must end at 1.0');
       return false;
     }
 
     for (let i = 0; i < sorted.length - 1; i++) {
       if (sorted[i][1].max !== sorted[i + 1][1].min) {
-        console.log('[DEBUG-VALIDATION] FAIL: Band gap/overlap at index', i);
         toast.error('Confidence Bands: Ranges must be continuous with no gaps or overlaps');
         return false;
       }
     }
 
-    console.log('[DEBUG-VALIDATION] All validation passed!');
     return true;
   };
 
   const handleSave = async () => {
-    console.log('[DEBUG] handleSave called');
-    console.log('[DEBUG] formData exists:', !!formData);
+    if (!formData) return;
 
-    if (!formData) {
-      console.log('[DEBUG] No formData, returning early');
-      return;
-    }
-
-    console.log('[DEBUG] Starting validation...');
-    const isValid = validateAllTabs();
-    console.log('[DEBUG] Validation result:', isValid);
-
-    if (!isValid) {
-      console.log('[DEBUG] Validation failed, switching to layer1 tab');
+    if (!validateAllTabs()) {
       setActiveTab('layer1');
       return;
     }
 
-    console.log('[DEBUG] Validation passed, calling mutateAsync...');
     try {
-      console.log('[DEBUG] About to call updateSettings.mutateAsync');
       await updateSettings.mutateAsync(formData);
-      console.log('[DEBUG] mutateAsync completed successfully');
       setHasUnsavedChanges(false);
       toast.success('Settings saved successfully for all layers');
     } catch (error) {
-      console.error('[DEBUG] Error caught in handleSave:', error);
       const message = error instanceof Error ? error.message : 'Unknown error';
       toast.error(`Failed to save settings: ${message}`);
     }
