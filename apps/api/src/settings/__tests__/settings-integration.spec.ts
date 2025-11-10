@@ -212,7 +212,7 @@ describe('SettingsService - Integration Tests', () => {
       });
 
       // Initialize Layer1 service (onModuleInit loads from database)
-      await layer1Service.onModuleInit();
+      await (layer1Service as any).onModuleInit();
 
       // Get initial settings count
       const initialSettings = await settingsService.getSettings();
@@ -252,7 +252,7 @@ describe('SettingsService - Integration Tests', () => {
       });
 
       // Reload Layer1 service with updated settings
-      await layer1Service.onModuleInit();
+      await (layer1Service as any).onModuleInit();
 
       // Verify the service is using updated settings
       const settings = await settingsService.getSettings();
@@ -469,7 +469,7 @@ describe('SettingsService - Integration Tests', () => {
       });
 
       // Initialize all services
-      await layer1Service.onModuleInit();
+      await (layer1Service as any).onModuleInit();
       const initialSettings = await settingsService.getSettings();
 
       // Update settings with changes to all layers
@@ -765,7 +765,7 @@ describe('SettingsService - Integration Tests', () => {
       });
 
       // Layer1 service should initialize without throwing
-      await expect(layer1Service.onModuleInit()).resolves.not.toThrow();
+      await expect((layer1Service as any).onModuleInit()).resolves.not.toThrow();
 
       // Should still be able to analyze URLs with fallback config
       const result = layer1Service.analyzeUrl('https://example.com');

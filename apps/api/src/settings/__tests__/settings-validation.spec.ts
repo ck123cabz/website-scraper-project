@@ -75,10 +75,10 @@ describe('SettingsService - Advanced Validation Tests', () => {
       // Attempt to update with bands that have a gap (0.5-0.6 missing)
       const invalidBands = {
         confidence_bands: {
-          high: { min: 0.8, max: 1.0, action: 'auto_approve' },
-          medium: { min: 0.6, max: 0.79, action: 'manual_review' },
-          low: { min: 0.3, max: 0.49, action: 'manual_review' },
-          auto_reject: { min: 0.0, max: 0.29, action: 'reject' },
+          high: { min: 0.8, max: 1.0, action: 'auto_approve' as const },
+          medium: { min: 0.6, max: 0.79, action: 'manual_review' as const },
+          low: { min: 0.3, max: 0.49, action: 'manual_review' as const },
+          auto_reject: { min: 0.0, max: 0.29, action: 'reject' as const },
         },
       };
 
