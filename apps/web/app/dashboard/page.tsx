@@ -1,13 +1,31 @@
+'use client';
+
 import { JobList } from '@/components/job-list';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Plus, Settings, ClipboardList } from 'lucide-react';
 import Link from 'next/link';
+import { useDashboardBadge } from '@/hooks/useDashboardBadge';
 
 // Force dynamic rendering - don't prerender at build time
 // Supabase env vars are only available at runtime in Railway
 export const dynamic = 'force-dynamic';
 
+/**
+ * DashboardPage Component (Phase 6: T043)
+ *
+ * Main dashboard page with manual review queue badge UI.
+ * The badge displays queue count when dashboard_badge setting is enabled.
+ *
+ * Features:
+ * - Displays badge next to Manual Review button showing active queue count
+ * - Badge only visible when dashboard_badge setting is enabled
+ * - Uses useDashboardBadge hook to fetch queue status and settings
+ * - Loads within 1 second for badge display
+ */
 export default function DashboardPage() {
+  const { queueCount, isEnabled } = useDashboardBadge();
+
   return (
     <div className="container mx-auto py-8 px-4" data-testid="dashboard-page">
       {/* Header */}
@@ -20,9 +38,18 @@ export default function DashboardPage() {
         </div>
         <div className="flex gap-3">
           <Link href="/manual-review">
-            <Button size="lg" variant="outline" className="gap-2" data-testid="manual-review-button">
+            <Button size="lg" variant="outline" className="gap-2 relative" data-testid="manual-review-button">
               <ClipboardList className="h-5 w-5" />
               Manual Review
+              {/* Dashboard Badge - shows when enabled and queue has items */}
+              {isEnabled && queueCount > 0 && (
+                <Badge
+                  className="ml-2 bg-red-500 text-white hover:bg-red-600"
+                  data-testid="manual-review-badge"
+                >
+                  {queueCount}
+                </Badge>
+              )}
             </Button>
           </Link>
           <Link href="/settings">
