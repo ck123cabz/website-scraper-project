@@ -1,6 +1,6 @@
 import { JobList } from '@/components/job-list';
 import { Button } from '@/components/ui/button';
-import { Plus, Settings } from 'lucide-react';
+import { Plus, Settings, ClipboardList } from 'lucide-react';
 import Link from 'next/link';
 
 // Force dynamic rendering - don't prerender at build time
@@ -19,6 +19,12 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex gap-3">
+          <Link href="/manual-review">
+            <Button size="lg" variant="outline" className="gap-2" data-testid="manual-review-button">
+              <ClipboardList className="h-5 w-5" />
+              Manual Review
+            </Button>
+          </Link>
           <Link href="/settings">
             <Button size="lg" variant="outline" className="gap-2" data-testid="settings-button">
               <Settings className="h-5 w-5" />

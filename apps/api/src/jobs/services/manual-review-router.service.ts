@@ -332,20 +332,48 @@ export class ManualReviewRouterService {
 
   /**
    * Review and soft-delete a queue entry
-   * Called by ManualReviewService when user makes a decision
+   * Called by ManualReviewController when user makes a decision
    *
-   * @param queueEntryId - ID of the queue entry
-   * @param decision - User's decision (approved/rejected)
+   * Supports both overloaded call signatures for backward compatibility:
+   * - reviewAndSoftDelete(queueEntryId, decision, notes)
+   * - reviewAndSoftDelete({ queue_entry_id, decision, notes, ... })
+   *
+   * @param queueEntryIdOrData - ID of the queue entry OR review data object
+   * @param decision - User's decision (approved/rejected) - optional if first param is object
    * @param notes - Optional reviewer notes
    */
   async reviewAndSoftDelete(
-    queueEntryId: string,
-    decision: 'approved' | 'rejected',
+    queueEntryIdOrData: string | {
+      queue_entry_id: string;
+      url_id: string;
+      job_id: string;
+      decision: 'approved' | 'rejected';
+      notes?: string;
+      confidence_band?: string;
+    },
+    decision?: 'approved' | 'rejected',
     notes?: string,
   ): Promise<void> {
+    let queueEntryId: string;
+    let finalDecision: 'approved' | 'rejected';
+    let finalNotes: string | undefined;
+
+    // Handle both call signatures
+    if (typeof queueEntryIdOrData === 'string') {
+      // Legacy signature: reviewAndSoftDelete(id, decision, notes)
+      queueEntryId = queueEntryIdOrData;
+      finalDecision = decision!;
+      finalNotes = notes;
+    } else {
+      // New signature: reviewAndSoftDelete({ queue_entry_id, decision, notes, ... })
+      queueEntryId = queueEntryIdOrData.queue_entry_id;
+      finalDecision = queueEntryIdOrData.decision;
+      finalNotes = queueEntryIdOrData.notes;
+    }
+
     const client = this.supabase.getClient();
 
-    // Get the queue entry
+    // Get the queue entry (if not provided in data object)
     const { data: queueEntry, error: fetchError } = await client
       .from('manual_review_queue')
       .select('*')
@@ -360,10 +388,10 @@ export class ManualReviewRouterService {
     await client.from('url_results').insert({
       url_id: queueEntry.url_id,
       job_id: queueEntry.job_id,
-      status: decision,
+      status: finalDecision,
       confidence_score: queueEntry.confidence_score,
       confidence_band: queueEntry.confidence_band,
-      reviewer_notes: notes || null,
+      reviewer_notes: finalNotes || null,
     });
 
     // Soft-delete queue entry (set reviewed_at)
@@ -371,8 +399,8 @@ export class ManualReviewRouterService {
       .from('manual_review_queue')
       .update({
         reviewed_at: new Date().toISOString(),
-        review_decision: decision,
-        reviewer_notes: notes || null,
+        review_decision: finalDecision,
+        reviewer_notes: finalNotes || null,
       })
       .eq('id', queueEntryId);
 
@@ -380,8 +408,17 @@ export class ManualReviewRouterService {
       throw new Error(`Failed to update queue entry: ${updateError.message}`);
     }
 
+    // Log activity for audit trail
+    await this.logActivity({
+      type: 'url_routed',
+      url_id: queueEntry.url_id,
+      band: queueEntry.confidence_band,
+      action: finalDecision === 'approved' ? 'manual_approval' : 'manual_rejection',
+      score: queueEntry.confidence_score,
+    });
+
     this.logger.log(
-      `Queue entry ${queueEntryId} reviewed: decision=${decision}`,
+      `Queue entry ${queueEntryId} reviewed: decision=${finalDecision}`,
     );
   }
 }
