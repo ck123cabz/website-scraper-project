@@ -1,7 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
+import { validate } from 'class-validator';
+import { plainToClass } from 'class-transformer';
 import { SettingsService } from '../settings.service';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { UpdateSettingsDto } from '../dto/update-settings.dto';
 import type { ClassificationSettings } from '@website-scraper/shared';
 
 describe('SettingsService - Advanced Validation Tests', () => {
@@ -581,6 +584,961 @@ describe('SettingsService - Advanced Validation Tests', () => {
     it('should allow manual cache invalidation', () => {
       // This should not throw
       expect(() => service.invalidateCache()).not.toThrow();
+    });
+  });
+
+  describe('Layer-Specific Field Boundary Validation', () => {
+    describe('Layer 2 - blog_freshness_days (30-180)', () => {
+      it('should reject blog_freshness_days below minimum (29)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const invalidUpdate = {
+          layer2_rules: {
+            blog_freshness_days: 29,
+            required_pages_count: 2,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 6,
+          },
+        };
+
+        await expect(service.updateSettings(invalidUpdate)).rejects.toThrow(BadRequestException);
+      });
+
+      it('should reject blog_freshness_days above maximum (181)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const invalidUpdate = {
+          layer2_rules: {
+            blog_freshness_days: 181,
+            required_pages_count: 2,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 6,
+          },
+        };
+
+        await expect(service.updateSettings(invalidUpdate)).rejects.toThrow(BadRequestException);
+      });
+
+      it('should accept blog_freshness_days at minimum boundary (30)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const updatedSettings = {
+          ...mockSettings,
+          layer2_rules: { ...mockSettings.layer2_rules, blog_freshness_days: 30 },
+          updated_at: new Date().toISOString(),
+        };
+        mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
+
+        const validUpdate = {
+          layer2_rules: {
+            blog_freshness_days: 30,
+            required_pages_count: 2,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 6,
+          },
+        };
+
+        const result = await service.updateSettings(validUpdate);
+        expect(result.layer2_rules?.blog_freshness_days).toBe(30);
+      });
+
+      it('should accept blog_freshness_days at middle value (90)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const updatedSettings = {
+          ...mockSettings,
+          layer2_rules: { ...mockSettings.layer2_rules, blog_freshness_days: 90 },
+          updated_at: new Date().toISOString(),
+        };
+        mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
+
+        const validUpdate = {
+          layer2_rules: {
+            blog_freshness_days: 90,
+            required_pages_count: 2,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 6,
+          },
+        };
+
+        const result = await service.updateSettings(validUpdate);
+        expect(result.layer2_rules?.blog_freshness_days).toBe(90);
+      });
+
+      it('should accept blog_freshness_days at maximum boundary (180)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const updatedSettings = {
+          ...mockSettings,
+          layer2_rules: { ...mockSettings.layer2_rules, blog_freshness_days: 180 },
+          updated_at: new Date().toISOString(),
+        };
+        mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
+
+        const validUpdate = {
+          layer2_rules: {
+            blog_freshness_days: 180,
+            required_pages_count: 2,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 6,
+          },
+        };
+
+        const result = await service.updateSettings(validUpdate);
+        expect(result.layer2_rules?.blog_freshness_days).toBe(180);
+      });
+    });
+
+    describe('Layer 2 - required_pages_count (1-3)', () => {
+      it('should reject required_pages_count below minimum (0)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const invalidUpdate = {
+          layer2_rules: {
+            blog_freshness_days: 90,
+            required_pages_count: 0,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 6,
+          },
+        };
+
+        await expect(service.updateSettings(invalidUpdate)).rejects.toThrow(BadRequestException);
+      });
+
+      it('should reject required_pages_count above maximum (4)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const invalidUpdate = {
+          layer2_rules: {
+            blog_freshness_days: 90,
+            required_pages_count: 4,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 6,
+          },
+        };
+
+        await expect(service.updateSettings(invalidUpdate)).rejects.toThrow(BadRequestException);
+      });
+
+      it('should accept required_pages_count at minimum boundary (1)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const updatedSettings = {
+          ...mockSettings,
+          layer2_rules: { ...mockSettings.layer2_rules, required_pages_count: 1 },
+          updated_at: new Date().toISOString(),
+        };
+        mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
+
+        const validUpdate = {
+          layer2_rules: {
+            blog_freshness_days: 90,
+            required_pages_count: 1,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 6,
+          },
+        };
+
+        const result = await service.updateSettings(validUpdate);
+        expect(result.layer2_rules?.required_pages_count).toBe(1);
+      });
+
+      it('should accept required_pages_count at middle value (2)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const updatedSettings = {
+          ...mockSettings,
+          layer2_rules: { ...mockSettings.layer2_rules, required_pages_count: 2 },
+          updated_at: new Date().toISOString(),
+        };
+        mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
+
+        const validUpdate = {
+          layer2_rules: {
+            blog_freshness_days: 90,
+            required_pages_count: 2,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 6,
+          },
+        };
+
+        const result = await service.updateSettings(validUpdate);
+        expect(result.layer2_rules?.required_pages_count).toBe(2);
+      });
+
+      it('should accept required_pages_count at maximum boundary (3)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const updatedSettings = {
+          ...mockSettings,
+          layer2_rules: { ...mockSettings.layer2_rules, required_pages_count: 3 },
+          updated_at: new Date().toISOString(),
+        };
+        mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
+
+        const validUpdate = {
+          layer2_rules: {
+            blog_freshness_days: 90,
+            required_pages_count: 3,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 6,
+          },
+        };
+
+        const result = await service.updateSettings(validUpdate);
+        expect(result.layer2_rules?.required_pages_count).toBe(3);
+      });
+    });
+
+    describe('Layer 2 - min_design_quality_score (1-10)', () => {
+      it('should reject min_design_quality_score below minimum (0)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const invalidUpdate = {
+          layer2_rules: {
+            blog_freshness_days: 90,
+            required_pages_count: 2,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 0,
+          },
+        };
+
+        await expect(service.updateSettings(invalidUpdate)).rejects.toThrow(BadRequestException);
+      });
+
+      it('should reject min_design_quality_score above maximum (11)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const invalidUpdate = {
+          layer2_rules: {
+            blog_freshness_days: 90,
+            required_pages_count: 2,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 11,
+          },
+        };
+
+        await expect(service.updateSettings(invalidUpdate)).rejects.toThrow(BadRequestException);
+      });
+
+      it('should accept min_design_quality_score at minimum boundary (1)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const updatedSettings = {
+          ...mockSettings,
+          layer2_rules: { ...mockSettings.layer2_rules, min_design_quality_score: 1 },
+          updated_at: new Date().toISOString(),
+        };
+        mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
+
+        const validUpdate = {
+          layer2_rules: {
+            blog_freshness_days: 90,
+            required_pages_count: 2,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 1,
+          },
+        };
+
+        const result = await service.updateSettings(validUpdate);
+        expect(result.layer2_rules?.min_design_quality_score).toBe(1);
+      });
+
+      it('should accept min_design_quality_score at middle value (5)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const updatedSettings = {
+          ...mockSettings,
+          layer2_rules: { ...mockSettings.layer2_rules, min_design_quality_score: 5 },
+          updated_at: new Date().toISOString(),
+        };
+        mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
+
+        const validUpdate = {
+          layer2_rules: {
+            blog_freshness_days: 90,
+            required_pages_count: 2,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 5,
+          },
+        };
+
+        const result = await service.updateSettings(validUpdate);
+        expect(result.layer2_rules?.min_design_quality_score).toBe(5);
+      });
+
+      it('should accept min_design_quality_score at maximum boundary (10)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const updatedSettings = {
+          ...mockSettings,
+          layer2_rules: { ...mockSettings.layer2_rules, min_design_quality_score: 10 },
+          updated_at: new Date().toISOString(),
+        };
+        mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
+
+        const validUpdate = {
+          layer2_rules: {
+            blog_freshness_days: 90,
+            required_pages_count: 2,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 10,
+          },
+        };
+
+        const result = await service.updateSettings(validUpdate);
+        expect(result.layer2_rules?.min_design_quality_score).toBe(10);
+      });
+    });
+
+    describe('Layer 3 - llm_temperature (0-1)', () => {
+      it('should reject llm_temperature below minimum (-0.1)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const invalidUpdate = {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: -0.1,
+            content_truncation_limit: 10000,
+          },
+        };
+
+        await expect(service.updateSettings(invalidUpdate)).rejects.toThrow(BadRequestException);
+      });
+
+      it('should reject llm_temperature above maximum (1.1)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const invalidUpdate = {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: 1.1,
+            content_truncation_limit: 10000,
+          },
+        };
+
+        await expect(service.updateSettings(invalidUpdate)).rejects.toThrow(BadRequestException);
+      });
+
+      it('should accept llm_temperature at minimum boundary (0)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const updatedSettings = {
+          ...mockSettings,
+          layer3_rules: { ...mockSettings.layer3_rules, llm_temperature: 0 },
+          updated_at: new Date().toISOString(),
+        };
+        mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
+
+        const validUpdate = {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: 0,
+            content_truncation_limit: 10000,
+          },
+        };
+
+        const result = await service.updateSettings(validUpdate);
+        expect(result.layer3_rules?.llm_temperature).toBe(0);
+      });
+
+      it('should accept llm_temperature at middle value (0.5)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const updatedSettings = {
+          ...mockSettings,
+          layer3_rules: { ...mockSettings.layer3_rules, llm_temperature: 0.5 },
+          updated_at: new Date().toISOString(),
+        };
+        mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
+
+        const validUpdate = {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: 0.5,
+            content_truncation_limit: 10000,
+          },
+        };
+
+        const result = await service.updateSettings(validUpdate);
+        expect(result.layer3_rules?.llm_temperature).toBe(0.5);
+      });
+
+      it('should accept llm_temperature at maximum boundary (1)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const updatedSettings = {
+          ...mockSettings,
+          layer3_rules: { ...mockSettings.layer3_rules, llm_temperature: 1 },
+          updated_at: new Date().toISOString(),
+        };
+        mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
+
+        const validUpdate = {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: 1,
+            content_truncation_limit: 10000,
+          },
+        };
+
+        const result = await service.updateSettings(validUpdate);
+        expect(result.layer3_rules?.llm_temperature).toBe(1);
+      });
+    });
+
+    describe('Layer 3 - content_truncation_limit (1000-50000)', () => {
+      it('should reject content_truncation_limit below minimum (999)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const invalidUpdate = {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: 0.3,
+            content_truncation_limit: 999,
+          },
+        };
+
+        await expect(service.updateSettings(invalidUpdate)).rejects.toThrow(BadRequestException);
+      });
+
+      it('should reject content_truncation_limit above maximum (50001)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const invalidUpdate = {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: 0.3,
+            content_truncation_limit: 50001,
+          },
+        };
+
+        await expect(service.updateSettings(invalidUpdate)).rejects.toThrow(BadRequestException);
+      });
+
+      it('should accept content_truncation_limit at minimum boundary (1000)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const updatedSettings = {
+          ...mockSettings,
+          layer3_rules: { ...mockSettings.layer3_rules, content_truncation_limit: 1000 },
+          updated_at: new Date().toISOString(),
+        };
+        mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
+
+        const validUpdate = {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: 0.3,
+            content_truncation_limit: 1000,
+          },
+        };
+
+        const result = await service.updateSettings(validUpdate);
+        expect(result.layer3_rules?.content_truncation_limit).toBe(1000);
+      });
+
+      it('should accept content_truncation_limit at middle value (10000)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const updatedSettings = {
+          ...mockSettings,
+          layer3_rules: { ...mockSettings.layer3_rules, content_truncation_limit: 10000 },
+          updated_at: new Date().toISOString(),
+        };
+        mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
+
+        const validUpdate = {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: 0.3,
+            content_truncation_limit: 10000,
+          },
+        };
+
+        const result = await service.updateSettings(validUpdate);
+        expect(result.layer3_rules?.content_truncation_limit).toBe(10000);
+      });
+
+      it('should accept content_truncation_limit at maximum boundary (50000)', async () => {
+        const mockSettings = service.getDefaultSettings();
+        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
+
+        const updatedSettings = {
+          ...mockSettings,
+          layer3_rules: { ...mockSettings.layer3_rules, content_truncation_limit: 50000 },
+          updated_at: new Date().toISOString(),
+        };
+        mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
+
+        const validUpdate = {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: 0.3,
+            content_truncation_limit: 50000,
+          },
+        };
+
+        const result = await service.updateSettings(validUpdate);
+        expect(result.layer3_rules?.content_truncation_limit).toBe(50000);
+      });
+    });
+  });
+
+  describe('DTO Validation Pipeline - Layer 2 Boundaries', () => {
+    describe('blog_freshness_days DTO validation', () => {
+      it('should fail DTO validation for blog_freshness_days = 29', async () => {
+        const dto = plainToClass(UpdateSettingsDto, {
+          layer2_rules: {
+            blog_freshness_days: 29,
+            required_pages_count: 2,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 6,
+          },
+        });
+
+        const errors = await validate(dto);
+        expect(errors.length).toBeGreaterThan(0);
+        const layer2Errors = errors.find(e => e.property === 'layer2_rules');
+        expect(layer2Errors).toBeDefined();
+        expect(JSON.stringify(layer2Errors)).toMatch(/blog.*freshness.*days/i);
+      });
+
+      it('should fail DTO validation for blog_freshness_days = 181', async () => {
+        const dto = plainToClass(UpdateSettingsDto, {
+          layer2_rules: {
+            blog_freshness_days: 181,
+            required_pages_count: 2,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 6,
+          },
+        });
+
+        const errors = await validate(dto);
+        expect(errors.length).toBeGreaterThan(0);
+        const layer2Errors = errors.find(e => e.property === 'layer2_rules');
+        expect(layer2Errors).toBeDefined();
+      });
+
+      it('should pass DTO validation for blog_freshness_days at boundaries (30, 180)', async () => {
+        const dto30 = plainToClass(UpdateSettingsDto, {
+          layer2_rules: {
+            blog_freshness_days: 30,
+            required_pages_count: 2,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 6,
+          },
+        });
+
+        const dto180 = plainToClass(UpdateSettingsDto, {
+          layer2_rules: {
+            blog_freshness_days: 180,
+            required_pages_count: 2,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 6,
+          },
+        });
+
+        const errors30 = await validate(dto30);
+        const errors180 = await validate(dto180);
+
+        expect(errors30.length).toBe(0);
+        expect(errors180.length).toBe(0);
+      });
+    });
+
+    describe('required_pages_count DTO validation', () => {
+      it('should fail DTO validation for required_pages_count = 0', async () => {
+        const dto = plainToClass(UpdateSettingsDto, {
+          layer2_rules: {
+            blog_freshness_days: 90,
+            required_pages_count: 0,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 6,
+          },
+        });
+
+        const errors = await validate(dto);
+        expect(errors.length).toBeGreaterThan(0);
+        const layer2Errors = errors.find(e => e.property === 'layer2_rules');
+        expect(layer2Errors).toBeDefined();
+      });
+
+      it('should fail DTO validation for required_pages_count = 4', async () => {
+        const dto = plainToClass(UpdateSettingsDto, {
+          layer2_rules: {
+            blog_freshness_days: 90,
+            required_pages_count: 4,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 6,
+          },
+        });
+
+        const errors = await validate(dto);
+        expect(errors.length).toBeGreaterThan(0);
+        const layer2Errors = errors.find(e => e.property === 'layer2_rules');
+        expect(layer2Errors).toBeDefined();
+      });
+
+      it('should pass DTO validation for required_pages_count at boundaries (1, 3)', async () => {
+        const dto1 = plainToClass(UpdateSettingsDto, {
+          layer2_rules: {
+            blog_freshness_days: 90,
+            required_pages_count: 1,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 6,
+          },
+        });
+
+        const dto3 = plainToClass(UpdateSettingsDto, {
+          layer2_rules: {
+            blog_freshness_days: 90,
+            required_pages_count: 3,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 6,
+          },
+        });
+
+        const errors1 = await validate(dto1);
+        const errors3 = await validate(dto3);
+
+        expect(errors1.length).toBe(0);
+        expect(errors3.length).toBe(0);
+      });
+    });
+
+    describe('min_design_quality_score DTO validation', () => {
+      it('should fail DTO validation for min_design_quality_score = 0', async () => {
+        const dto = plainToClass(UpdateSettingsDto, {
+          layer2_rules: {
+            blog_freshness_days: 90,
+            required_pages_count: 2,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 0,
+          },
+        });
+
+        const errors = await validate(dto);
+        expect(errors.length).toBeGreaterThan(0);
+        const layer2Errors = errors.find(e => e.property === 'layer2_rules');
+        expect(layer2Errors).toBeDefined();
+      });
+
+      it('should fail DTO validation for min_design_quality_score = 11', async () => {
+        const dto = plainToClass(UpdateSettingsDto, {
+          layer2_rules: {
+            blog_freshness_days: 90,
+            required_pages_count: 2,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 11,
+          },
+        });
+
+        const errors = await validate(dto);
+        expect(errors.length).toBeGreaterThan(0);
+        const layer2Errors = errors.find(e => e.property === 'layer2_rules');
+        expect(layer2Errors).toBeDefined();
+      });
+
+      it('should pass DTO validation for min_design_quality_score at boundaries (1, 10)', async () => {
+        const dto1 = plainToClass(UpdateSettingsDto, {
+          layer2_rules: {
+            blog_freshness_days: 90,
+            required_pages_count: 2,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 1,
+          },
+        });
+
+        const dto10 = plainToClass(UpdateSettingsDto, {
+          layer2_rules: {
+            blog_freshness_days: 90,
+            required_pages_count: 2,
+            min_tech_stack_tools: 2,
+            tech_stack_tools: { analytics: [], marketing: [] },
+            min_design_quality_score: 10,
+          },
+        });
+
+        const errors1 = await validate(dto1);
+        const errors10 = await validate(dto10);
+
+        expect(errors1.length).toBe(0);
+        expect(errors10.length).toBe(0);
+      });
+    });
+  });
+
+  describe('DTO Validation Pipeline - Layer 3 Boundaries', () => {
+    describe('llm_temperature DTO validation', () => {
+      it('should fail DTO validation for llm_temperature = -0.1', async () => {
+        const dto = plainToClass(UpdateSettingsDto, {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: -0.1,
+            content_truncation_limit: 10000,
+          },
+        });
+
+        const errors = await validate(dto);
+        expect(errors.length).toBeGreaterThan(0);
+        const layer3Errors = errors.find(e => e.property === 'layer3_rules');
+        expect(layer3Errors).toBeDefined();
+      });
+
+      it('should fail DTO validation for llm_temperature = 1.1', async () => {
+        const dto = plainToClass(UpdateSettingsDto, {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: 1.1,
+            content_truncation_limit: 10000,
+          },
+        });
+
+        const errors = await validate(dto);
+        expect(errors.length).toBeGreaterThan(0);
+        const layer3Errors = errors.find(e => e.property === 'layer3_rules');
+        expect(layer3Errors).toBeDefined();
+      });
+
+      it('should pass DTO validation for llm_temperature at boundaries (0, 1)', async () => {
+        const dto0 = plainToClass(UpdateSettingsDto, {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: 0,
+            content_truncation_limit: 10000,
+          },
+        });
+
+        const dto1 = plainToClass(UpdateSettingsDto, {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: 1,
+            content_truncation_limit: 10000,
+          },
+        });
+
+        const errors0 = await validate(dto0);
+        const errors1 = await validate(dto1);
+
+        expect(errors0.length).toBe(0);
+        expect(errors1.length).toBe(0);
+      });
+
+      it('should pass DTO validation for llm_temperature = 0.5', async () => {
+        const dto = plainToClass(UpdateSettingsDto, {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: 0.5,
+            content_truncation_limit: 10000,
+          },
+        });
+
+        const errors = await validate(dto);
+        expect(errors.length).toBe(0);
+      });
+    });
+
+    describe('content_truncation_limit DTO validation', () => {
+      it('should fail DTO validation for content_truncation_limit = 999', async () => {
+        const dto = plainToClass(UpdateSettingsDto, {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: 0.3,
+            content_truncation_limit: 999,
+          },
+        });
+
+        const errors = await validate(dto);
+        expect(errors.length).toBeGreaterThan(0);
+        const layer3Errors = errors.find(e => e.property === 'layer3_rules');
+        expect(layer3Errors).toBeDefined();
+      });
+
+      it('should fail DTO validation for content_truncation_limit = 50001', async () => {
+        const dto = plainToClass(UpdateSettingsDto, {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: 0.3,
+            content_truncation_limit: 50001,
+          },
+        });
+
+        const errors = await validate(dto);
+        expect(errors.length).toBeGreaterThan(0);
+        const layer3Errors = errors.find(e => e.property === 'layer3_rules');
+        expect(layer3Errors).toBeDefined();
+      });
+
+      it('should pass DTO validation for content_truncation_limit at boundaries (1000, 50000)', async () => {
+        const dto1000 = plainToClass(UpdateSettingsDto, {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: 0.3,
+            content_truncation_limit: 1000,
+          },
+        });
+
+        const dto50000 = plainToClass(UpdateSettingsDto, {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: 0.3,
+            content_truncation_limit: 50000,
+          },
+        });
+
+        const errors1000 = await validate(dto1000);
+        const errors50000 = await validate(dto50000);
+
+        expect(errors1000.length).toBe(0);
+        expect(errors50000.length).toBe(0);
+      });
+
+      it('should pass DTO validation for content_truncation_limit = 10000', async () => {
+        const dto = plainToClass(UpdateSettingsDto, {
+          layer3_rules: {
+            content_marketing_indicators: ['blog'],
+            seo_investment_signals: ['schema_markup'],
+            llm_temperature: 0.3,
+            content_truncation_limit: 10000,
+          },
+        });
+
+        const errors = await validate(dto);
+        expect(errors.length).toBe(0);
+      });
+    });
+  });
+
+  describe('DTO Validation Pipeline - Error Messages', () => {
+    it('should provide helpful error message for invalid blog_freshness_days', async () => {
+      const dto = plainToClass(UpdateSettingsDto, {
+        layer2_rules: {
+          blog_freshness_days: 200,
+          required_pages_count: 2,
+          min_tech_stack_tools: 2,
+          tech_stack_tools: { analytics: [], marketing: [] },
+          min_design_quality_score: 6,
+        },
+      });
+
+      const errors = await validate(dto);
+      expect(errors.length).toBeGreaterThan(0);
+      const layer2Errors = errors.find(e => e.property === 'layer2_rules');
+      expect(layer2Errors).toBeDefined();
+
+      // Verify error message mentions the valid range
+      const errorMessage = JSON.stringify(layer2Errors?.constraints || layer2Errors);
+      expect(errorMessage).toMatch(/30.*180|blog.*freshness/i);
+    });
+
+    it('should provide helpful error message for invalid llm_temperature', async () => {
+      const dto = plainToClass(UpdateSettingsDto, {
+        layer3_rules: {
+          content_marketing_indicators: ['blog'],
+          seo_investment_signals: ['schema_markup'],
+          llm_temperature: 2.0,
+          content_truncation_limit: 10000,
+        },
+      });
+
+      const errors = await validate(dto);
+      expect(errors.length).toBeGreaterThan(0);
+      const layer3Errors = errors.find(e => e.property === 'layer3_rules');
+      expect(layer3Errors).toBeDefined();
+
+      // Verify error message mentions the valid range
+      const errorMessage = JSON.stringify(layer3Errors?.constraints || layer3Errors);
+      expect(errorMessage).toMatch(/0.*1|temperature/i);
+    });
+
+    it('should provide helpful error message for invalid content_truncation_limit', async () => {
+      const dto = plainToClass(UpdateSettingsDto, {
+        layer3_rules: {
+          content_marketing_indicators: ['blog'],
+          seo_investment_signals: ['schema_markup'],
+          llm_temperature: 0.3,
+          content_truncation_limit: 100,
+        },
+      });
+
+      const errors = await validate(dto);
+      expect(errors.length).toBeGreaterThan(0);
+      const layer3Errors = errors.find(e => e.property === 'layer3_rules');
+      expect(layer3Errors).toBeDefined();
+
+      // Verify error message mentions the valid range
+      const errorMessage = JSON.stringify(layer3Errors?.constraints || layer3Errors);
+      expect(errorMessage).toMatch(/1000|1,000|50000|50,000|truncation/i);
     });
   });
 });
