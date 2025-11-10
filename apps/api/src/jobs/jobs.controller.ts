@@ -243,6 +243,7 @@ export class JobsController {
         .from('results')
         .select('*', { count: 'exact' })
         .eq('job_id', jobId)
+        .not('classification_result', 'is', null) // Only show results with classifications
         .order('processed_at', { ascending: false });
 
       // Apply filters

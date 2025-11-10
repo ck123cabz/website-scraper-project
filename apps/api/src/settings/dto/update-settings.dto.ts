@@ -21,6 +21,11 @@ import type {
   ConfidenceBands,
   ManualReviewSettings,
 } from '@website-scraper/shared';
+import { Layer1RulesDto } from './layer1-rules.dto';
+import { Layer2RulesDto } from './layer2-rules.dto';
+import { Layer3RulesDto } from './layer3-rules.dto';
+import { ConfidenceBandsDto } from './confidence-bands.dto';
+import { ManualReviewSettingsDto } from './manual-review-settings.dto';
 
 /**
  * Pre-filter rule with enabled flag
@@ -81,22 +86,27 @@ export class UpdateSettingsDto {
 
   // 3-Tier Architecture fields (Story 3.0)
   @IsOptional()
-  @IsObject()
-  layer1_rules?: Layer1Rules;
+  @ValidateNested()
+  @Type(() => Layer1RulesDto)
+  layer1_rules?: Layer1RulesDto;
 
   @IsOptional()
-  @IsObject()
-  layer2_rules?: Layer2Rules;
+  @ValidateNested()
+  @Type(() => Layer2RulesDto)
+  layer2_rules?: Layer2RulesDto;
 
   @IsOptional()
-  @IsObject()
-  layer3_rules?: Layer3Rules;
+  @ValidateNested()
+  @Type(() => Layer3RulesDto)
+  layer3_rules?: Layer3RulesDto;
 
   @IsOptional()
-  @IsObject()
-  confidence_bands?: ConfidenceBands;
+  @ValidateNested()
+  @Type(() => ConfidenceBandsDto)
+  confidence_bands?: ConfidenceBandsDto;
 
   @IsOptional()
-  @IsObject()
-  manual_review_settings?: ManualReviewSettings;
+  @ValidateNested()
+  @Type(() => ManualReviewSettingsDto)
+  manual_review_settings?: ManualReviewSettingsDto;
 }

@@ -155,8 +155,8 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
       const layer3Result = await this.executeLayer3(jobId, url, scrapeResult);
       const layer3Time = Date.now() - layer3Start;
 
-      // Layer 3 COMPLETE - Store result with all layer timing
-      await this.storeLayer3Success(
+      // Layer 3 COMPLETE - Route URL based on confidence band action (T009)
+      await this.routeAndStoreLayer3Result(
         jobId,
         url,
         urlId,
@@ -251,7 +251,10 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
   ): Promise<{
     classification: any;
     confidenceBand: string;
-    requiresManualReview: boolean;
+    action: 'auto_approve' | 'manual_review' | 'reject';
+    layer1Results: any;
+    layer2Results: any;
+    layer3Results: any;
   }> {
     // Classify with LLM (Gemini → GPT fallback, with retries)
     const classification = await this.retryWithBackoff(
@@ -260,33 +263,33 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
       url,
     );
 
-    // Calculate confidence band
-    const classificationResponse = {
-      suitable: classification.classification === 'suitable',
-      confidence: classification.confidence,
-      reasoning: classification.reasoning,
-      sophistication_signals: [], // LLM response includes this if available
-    };
-
-    const confidenceBand = await this.confidenceScoring.calculateConfidenceBand(
+    // Get confidence band action (T009: Confidence Band Action Routing)
+    const { band, action } = await this.confidenceScoring.getConfidenceBandAction(
       classification.confidence,
-      classificationResponse.sophistication_signals,
     );
 
-    // Route to manual review if medium/low confidence
-    const requiresManualReview = this.manualReviewRouter.shouldRouteToManualReview(
-      confidenceBand,
-      classification.confidence,
+    // Get structured layer results for routing and storage (T009)
+    const layer1Results = this.layer1Analysis.getStructuredResults(url);
+    const layer2Results = await this.layer2Filter.getStructuredResults(url);
+    const layer3Results = await this.llm.getStructuredResults(
       url,
+      scrapeResult.content || scrapeResult.title || '',
     );
 
     this.logger.log(
       `[Job ${jobId}] Layer 3 classified ${url.slice(0, 100)} - ${classification.classification} ` +
       `(${classification.provider}, ${classification.processingTimeMs}ms, $${classification.cost.toFixed(6)}, ` +
-      `confidence: ${classification.confidence.toFixed(2)}, band: ${confidenceBand}${requiresManualReview ? ', MANUAL_REVIEW' : ''})`,
+      `confidence: ${classification.confidence.toFixed(2)}, band: ${band}, action: ${action})`,
     );
 
-    return { classification, confidenceBand, requiresManualReview };
+    return {
+      classification,
+      confidenceBand: band,
+      action,
+      layer1Results,
+      layer2Results,
+      layer3Results,
+    };
   }
 
   /**
@@ -478,10 +481,11 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
   }
 
   /**
-   * Store result for successful Layer 3 LLM classification
+   * Route Layer 3 result based on confidence band action and store result (T009)
+   * Delegates routing decision to ManualReviewRouterService
    * @private
    */
-  private async storeLayer3Success(
+  private async routeAndStoreLayer3Result(
     jobId: string,
     url: string,
     urlId: string,
@@ -494,11 +498,11 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
   ): Promise<void> {
     const processingTimeMs = Date.now() - startTime;
 
-    // UPSERT result
+    // Store Layer 3 processing metadata in results table for all routing decisions
     await this.supabase.getClient().from('results').upsert({
       job_id: jobId,
       url: url,
-      status: 'success',
+      status: 'processing', // Will be updated by routeUrl() to final status
       classification_result: layer3Result.classification.classification,
       classification_score: layer3Result.classification.confidence,
       classification_reasoning: layer3Result.classification.reasoning,
@@ -509,14 +513,30 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
       layer2_processing_time_ms: layer2Time,
       layer3_processing_time_ms: layer3Time,
       confidence_band: layer3Result.confidenceBand,
-      manual_review_required: layer3Result.requiresManualReview,
       prefilter_passed: true, // Legacy field
       prefilter_reasoning: null,
     }, {
       onConflict: 'job_id,url',
     });
 
-    // Atomic update
+    // Route URL based on confidence band action (T009: Confidence Band Action Routing)
+    await this.manualReviewRouter.routeUrl(
+      {
+        url_id: urlId,
+        url,
+        job_id: jobId,
+        confidence_score: layer3Result.classification.confidence,
+        confidence_band: layer3Result.confidenceBand,
+        action: layer3Result.action,
+        reasoning: layer3Result.classification.reasoning,
+        sophistication_signals: layer3Result.layer3Results,
+      },
+      layer3Result.layer1Results,
+      layer3Result.layer2Results,
+      layer3Result.layer3Results,
+    );
+
+    // Update job counters
     const { data: jobMeta } = await this.supabase
       .getClient()
       .from('jobs')
@@ -559,20 +579,20 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
       .eq('id', jobId);
 
     this.logger.log(
-      `[Job ${jobId}] Layer 3 SUCCESS ${url.slice(0, 100)} (${processedUrls}/${jobMeta.total_urls}, $${totalCost.toFixed(6)})`,
+      `[Job ${jobId}] Layer 3 ROUTED ${url.slice(0, 100)} to ${layer3Result.action} (${processedUrls}/${jobMeta.total_urls}, $${totalCost.toFixed(6)})`,
     );
 
     await this.insertActivityLog(
       jobId,
       'success',
-      `Layer 3 CLASSIFIED - ${layer3Result.classification.classification} (confidence: ${layer3Result.classification.confidence.toFixed(2)})`,
+      `Layer 3 CLASSIFIED & ROUTED - ${layer3Result.classification.classification} (confidence: ${layer3Result.classification.confidence.toFixed(2)}, action: ${layer3Result.action})`,
       {
         url,
         layer: 3,
         provider: layer3Result.classification.provider,
         confidence: layer3Result.classification.confidence,
         confidenceBand: layer3Result.confidenceBand,
-        manualReviewRequired: layer3Result.requiresManualReview,
+        action: layer3Result.action,
         cost: layer3Result.classification.cost,
       },
     );

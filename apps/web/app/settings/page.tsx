@@ -12,7 +12,7 @@ import { useSettings, useUpdateSettings, useResetSettings } from '@/hooks/useSet
 import { ClassificationSettings } from '@website-scraper/shared';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, RotateCcw, AlertCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Loader2, RotateCcw, AlertCircle } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +22,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function SettingsPage() {
   const { data: settings, isLoading, error } = useSettings();
@@ -117,7 +116,9 @@ export default function SettingsPage() {
     }
 
     for (let i = 0; i < sorted.length - 1; i++) {
-      if (sorted[i][1].max !== sorted[i + 1][1].min) {
+      const gap = Math.abs(sorted[i + 1][1].min - sorted[i][1].max);
+      // Allow small gaps (<=0.02) for floating point precision
+      if (gap > 0.02) {
         toast.error('Confidence Bands: Ranges must be continuous with no gaps or overlaps');
         return false;
       }
@@ -207,17 +208,6 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
-
-      {/* Implementation Status Warning Banner */}
-      <Alert className="mb-6 border-amber-500 bg-amber-50 dark:bg-amber-950/20">
-        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
-        <AlertTitle className="text-amber-900 dark:text-amber-100">Partial Implementation Status</AlertTitle>
-        <AlertDescription className="text-amber-800 dark:text-amber-200 text-sm">
-          Settings UI is functional and saves to database, but most controls don&apos;t affect job processing yet.
-          Only <strong>URL Pattern Exclusions</strong>, <strong>Content Indicators</strong>, <strong>Temperature</strong>, and <strong>Truncation Limit</strong> are currently implemented.
-          See tooltips (⚠️) on individual controls for details. Full implementation planned in Story 3.1.
-        </AlertDescription>
-      </Alert>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

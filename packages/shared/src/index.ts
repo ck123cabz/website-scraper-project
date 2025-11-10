@@ -35,6 +35,16 @@ export type {
   TechStackSignals,
   DesignQualitySignals,
 } from './types/layer2';
+export type {
+  ManualReviewQueueEntry,
+  Layer1Results,
+  Layer2Results,
+  Layer3Results,
+  ReviewDecision,
+  FactorResult,
+  RedFlagResult,
+  SophisticationSignal,
+} from './types/manual-review';
 
 // Schemas
 export { JobSchema, JobStatusSchema, ProcessingStageSchema } from './schemas/job';

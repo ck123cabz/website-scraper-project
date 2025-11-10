@@ -33,7 +33,7 @@ const createTestSettings = (overrides?: Partial<ClassificationSettings>): Classi
     min_design_quality_score: 6,
   },
   layer3_rules: {
-    content_marketing_indicators: [],
+    guest_post_red_flags: [],
     seo_investment_signals: [],
     llm_temperature: 0.3,
     content_truncation_limit: 10000,

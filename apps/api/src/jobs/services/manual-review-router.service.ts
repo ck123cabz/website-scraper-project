@@ -1,163 +1,387 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { ConfidenceBand } from '@website-scraper/shared';
+import { SupabaseService } from '../../supabase/supabase.service';
+import { SettingsService } from '../../settings/settings.service';
+import type {
+  Layer1Results,
+  Layer2Results,
+  Layer3Results,
+} from '@website-scraper/shared';
 
 /**
- * Manual review router service for Layer 3 classification results
- * Story 2.4-refactored: Routes medium/low confidence results to manual review queue
+ * Manual Review Router Service
+ * Story 001-manual-review-system T005
  *
- * Routing Logic:
- * - high confidence (0.8-1.0): Auto-approve, no manual review
- * - medium confidence (0.5-0.79): Route to manual review queue
- * - low confidence (0.3-0.49): Route to manual review queue
- * - auto_reject (0-0.29): Auto-reject, no manual review
+ * Routes URLs based on confidence band actions:
+ * - auto_approve → insert to url_results with status='approved'
+ * - manual_review → enqueue to manual_review_queue (with size limit check)
+ * - reject → insert to url_results with status='rejected'
  */
 @Injectable()
 export class ManualReviewRouterService {
   private readonly logger = new Logger(ManualReviewRouterService.name);
 
-  // Track queue size in memory (could be moved to Redis/database for persistence)
-  private manualReviewQueueSize = 0;
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly settingsService: SettingsService,
+  ) {}
 
   /**
-   * Determine if a result should be routed to manual review queue
-   * Based on confidence band
+   * Route a URL based on confidence band action
    *
-   * @param confidenceBand - Calculated confidence band
-   * @param confidence - Original confidence score (for logging)
-   * @param url - URL being classified (for logging)
-   * @returns True if result requires manual review
+   * @param urlData - URL evaluation data
+   * @param layer1Results - Layer 1 domain analysis results
+   * @param layer2Results - Layer 2 rule-based check results
+   * @param layer3Results - Layer 3 LLM sophistication results
    */
-  shouldRouteToManualReview(
-    confidenceBand: ConfidenceBand,
-    confidence: number,
-    url: string,
-  ): boolean {
-    const requiresReview = confidenceBand === 'medium' || confidenceBand === 'low';
-
-    if (requiresReview) {
-      this.manualReviewQueueSize++;
-      this.logger.log(
-        `${confidenceBand.toUpperCase()} confidence (${confidence.toFixed(2)}) - Routed to manual review. ` +
-        `URL: ${url}. Queue size: ${this.manualReviewQueueSize}`,
-      );
-    } else {
-      this.logger.debug(
-        `${confidenceBand.toUpperCase()} confidence (${confidence.toFixed(2)}) - No manual review required. URL: ${url}`,
-      );
-    }
-
-    return requiresReview;
-  }
-
-  /**
-   * Mark a result as requiring manual review
-   * This method prepares the data structure for database persistence
-   *
-   * @param url - URL requiring review
-   * @param confidence - Confidence score
-   * @param confidenceBand - Confidence band
-   * @param reasoning - Classification reasoning
-   * @param sophisticationSignals - Detected signals (optional)
-   * @returns Manual review queue entry data
-   */
-  createManualReviewEntry(
-    url: string,
-    confidence: number,
-    confidenceBand: ConfidenceBand,
-    reasoning: string,
-    sophisticationSignals?: string[],
-  ): {
-    url: string;
-    confidence: number;
-    confidence_band: ConfidenceBand;
-    reasoning: string;
-    sophistication_signals?: string[];
-    manual_review_required: boolean;
-    queued_at: string;
-  } {
-    const entry = {
-      url,
-      confidence,
-      confidence_band: confidenceBand,
-      reasoning,
-      sophistication_signals: sophisticationSignals,
-      manual_review_required: true,
-      queued_at: new Date().toISOString(),
-    };
-
-    this.logger.debug(
-      `Manual review entry created for ${url}. ` +
-      `Band: ${confidenceBand}, Confidence: ${confidence.toFixed(2)}`,
+  async routeUrl(
+    urlData: {
+      url_id: string;
+      url: string;
+      job_id: string;
+      confidence_score: number;
+      confidence_band: string;
+      action: 'auto_approve' | 'manual_review' | 'reject';
+      reasoning?: string;
+      sophistication_signals?: Record<string, any>;
+    },
+    layer1Results: Layer1Results,
+    layer2Results: Layer2Results,
+    layer3Results: Layer3Results,
+  ): Promise<void> {
+    this.logger.log(
+      `Routing URL ${urlData.url_id}: band=${urlData.confidence_band}, action=${urlData.action}, score=${urlData.confidence_score}`,
     );
 
-    return entry;
+    try {
+      switch (urlData.action) {
+        case 'auto_approve':
+          await this.finalizeResult(
+            urlData.url_id,
+            urlData.job_id,
+            'approved',
+            urlData.confidence_score,
+            urlData.confidence_band,
+            'Auto-approved based on high confidence score',
+          );
+          break;
+
+        case 'reject':
+          await this.finalizeResult(
+            urlData.url_id,
+            urlData.job_id,
+            'rejected',
+            urlData.confidence_score,
+            urlData.confidence_band,
+            'Auto-rejected based on low confidence score',
+          );
+          break;
+
+        case 'manual_review':
+          await this.enqueueForReview(
+            urlData,
+            layer1Results,
+            layer2Results,
+            layer3Results,
+          );
+          break;
+
+        default:
+          this.logger.error(
+            `Unknown action "${urlData.action}" for URL ${urlData.url_id}. Defaulting to manual review.`,
+          );
+          await this.enqueueForReview(
+            urlData,
+            layer1Results,
+            layer2Results,
+            layer3Results,
+          );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to route URL ${urlData.url_id}:`,
+        error instanceof Error ? error.message : error,
+      );
+      throw error;
+    }
   }
 
   /**
-   * Get current manual review queue size
-   * @returns Number of items in manual review queue
+   * Enqueue URL for manual review with queue size limit check
    */
-  getQueueSize(): number {
-    return this.manualReviewQueueSize;
-  }
+  async enqueueForReview(
+    urlData: {
+      url_id: string;
+      url: string;
+      job_id: string;
+      confidence_score: number;
+      confidence_band: string;
+      reasoning?: string;
+      sophistication_signals?: Record<string, any>;
+    },
+    layer1Results: Layer1Results,
+    layer2Results: Layer2Results,
+    layer3Results: Layer3Results,
+  ): Promise<void> {
+    const settings = await this.settingsService.getSettings();
 
-  /**
-   * Reset queue size counter
-   * Useful for testing or after queue processing
-   */
-  resetQueueSize(): void {
-    this.logger.debug(`Resetting manual review queue size from ${this.manualReviewQueueSize} to 0`);
-    this.manualReviewQueueSize = 0;
-  }
+    // Check queue size limit if configured
+    if (settings.manual_review_settings?.queue_size_limit) {
+      const currentQueueSize = await this.countActiveQueue();
 
-  /**
-   * Get routing decision summary for logging
-   * @param confidenceBand - Confidence band
-   * @param confidence - Confidence score
-   * @returns Summary string
-   */
-  getRoutingDecisionSummary(confidenceBand: ConfidenceBand, confidence: number): string {
-    const action = this.shouldRouteToManualReview(confidenceBand, confidence, 'test-url')
-      ? 'MANUAL REVIEW'
-      : confidenceBand === 'high'
-        ? 'AUTO-APPROVE'
-        : 'AUTO-REJECT';
+      if (currentQueueSize >= settings.manual_review_settings.queue_size_limit) {
+        this.logger.warn(
+          `Queue size limit reached (${currentQueueSize}/${settings.manual_review_settings.queue_size_limit}). URL ${urlData.url_id} rejected due to overflow.`,
+        );
 
-    // Decrement queue size since we called shouldRouteToManualReview just for testing
-    if (action === 'MANUAL REVIEW') {
-      this.manualReviewQueueSize--;
+        // Insert to url_results with overflow status
+        await this.finalizeResult(
+          urlData.url_id,
+          urlData.job_id,
+          'queue_overflow',
+          urlData.confidence_score,
+          urlData.confidence_band,
+          'Manual review queue full',
+        );
+
+        // Log overflow event for activity tracking
+        await this.logActivity({
+          type: 'queue_overflow',
+          url_id: urlData.url_id,
+          queue_size: currentQueueSize,
+          limit: settings.manual_review_settings.queue_size_limit,
+        });
+
+        return; // Don't queue
+      }
     }
 
-    return `[${confidenceBand.toUpperCase()}] Confidence: ${confidence.toFixed(2)} → ${action}`;
-  }
+    // Queue has space - insert to manual_review_queue
+    const client = this.supabase.getClient();
 
-  /**
-   * Calculate manual review routing percentage
-   * Used for metrics and reporting (Story 2.4-refactored AC10)
-   *
-   * @param totalClassified - Total URLs classified
-   * @returns Percentage of URLs routed to manual review
-   */
-  calculateManualReviewPercentage(totalClassified: number): number {
-    if (totalClassified === 0) {
-      return 0;
+    const { data, error } = await client
+      .from('manual_review_queue')
+      .insert({
+        url: urlData.url,
+        job_id: urlData.job_id,
+        url_id: urlData.url_id,
+        confidence_band: urlData.confidence_band,
+        confidence_score: urlData.confidence_score,
+        reasoning: urlData.reasoning || null,
+        sophistication_signals: urlData.sophistication_signals || null,
+        layer1_results: layer1Results as any,
+        layer2_results: layer2Results as any,
+        layer3_results: layer3Results as any,
+        queued_at: new Date().toISOString(),
+        is_stale: false,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      this.logger.error(
+        `Failed to enqueue URL ${urlData.url_id} for manual review:`,
+        error,
+      );
+      throw new Error(`Failed to enqueue URL: ${error.message}`);
     }
-
-    const percentage = (this.manualReviewQueueSize / totalClassified) * 100;
-    return Math.round(percentage * 10) / 10; // Round to 1 decimal place
-  }
-
-  /**
-   * Log manual review routing metrics
-   * @param totalClassified - Total URLs classified in current batch/job
-   */
-  logRoutingMetrics(totalClassified: number): void {
-    const percentage = this.calculateManualReviewPercentage(totalClassified);
 
     this.logger.log(
-      `Manual Review Routing Metrics: ` +
-      `${this.manualReviewQueueSize}/${totalClassified} URLs (${percentage}%) routed to manual review. ` +
-      `Target: ~35% of Layer 2 survivors.`,
+      `URL ${urlData.url_id} enqueued for manual review (queue entry ID: ${data.id})`,
+    );
+
+    // Log routing decision for audit trail
+    await this.logActivity({
+      type: 'url_routed',
+      url_id: urlData.url_id,
+      band: urlData.confidence_band,
+      action: 'manual_review',
+      score: urlData.confidence_score,
+    });
+  }
+
+  /**
+   * Finalize URL result (auto-approve, reject, or overflow)
+   * Inserts to url_results table
+   */
+  private async finalizeResult(
+    urlId: string,
+    jobId: string,
+    status: 'approved' | 'rejected' | 'queue_overflow',
+    confidenceScore: number,
+    confidenceBand: string,
+    reason: string,
+  ): Promise<void> {
+    const client = this.supabase.getClient();
+
+    // Check if url_results entry already exists
+    const { data: existing } = await client
+      .from('url_results')
+      .select('id')
+      .eq('url_id', urlId)
+      .single();
+
+    if (existing) {
+      // Update existing entry
+      const { error } = await client
+        .from('url_results')
+        .update({
+          status,
+          confidence_score: confidenceScore,
+          confidence_band: confidenceBand,
+          reviewer_notes: reason,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('url_id', urlId);
+
+      if (error) {
+        this.logger.error(
+          `Failed to update url_results for URL ${urlId}:`,
+          error,
+        );
+        throw new Error(`Failed to update url_results: ${error.message}`);
+      }
+
+      this.logger.log(
+        `URL ${urlId} result updated: status=${status}, score=${confidenceScore}`,
+      );
+    } else {
+      // Insert new entry
+      const { error } = await client.from('url_results').insert({
+        url_id: urlId,
+        job_id: jobId,
+        status,
+        confidence_score: confidenceScore,
+        confidence_band: confidenceBand,
+        reviewer_notes: reason,
+      });
+
+      if (error) {
+        this.logger.error(
+          `Failed to insert url_results for URL ${urlId}:`,
+          error,
+        );
+        throw new Error(`Failed to insert url_results: ${error.message}`);
+      }
+
+      this.logger.log(
+        `URL ${urlId} finalized: status=${status}, score=${confidenceScore}`,
+      );
+    }
+
+    // Log routing decision
+    await this.logActivity({
+      type: 'url_routed',
+      url_id: urlId,
+      band: confidenceBand,
+      action: status === 'approved' ? 'auto_approve' : 'reject',
+      score: confidenceScore,
+    });
+  }
+
+  /**
+   * Count active queue items (WHERE reviewed_at IS NULL)
+   */
+  async countActiveQueue(): Promise<number> {
+    const client = this.supabase.getClient();
+
+    const { count, error } = await client
+      .from('manual_review_queue')
+      .select('id', { count: 'exact', head: true })
+      .is('reviewed_at', null);
+
+    if (error) {
+      this.logger.error('Failed to count active queue:', error);
+      return 0; // Fail open - don't block routing if count fails
+    }
+
+    return count || 0;
+  }
+
+  /**
+   * Log activity for audit trail and analytics
+   * Uses existing activity_logs table or creates simple log entry
+   */
+  private async logActivity(event: {
+    type: 'url_routed' | 'queue_overflow';
+    url_id: string;
+    band?: string;
+    action?: string;
+    score?: number;
+    queue_size?: number;
+    limit?: number;
+  }): Promise<void> {
+    try {
+      const client = this.supabase.getClient();
+
+      // Simple activity log entry
+      await client.from('activity_logs').insert({
+        event_type: event.type,
+        event_data: event,
+        created_at: new Date().toISOString(),
+      });
+
+      this.logger.debug(`Activity logged: ${event.type} for URL ${event.url_id}`);
+    } catch (error) {
+      // Don't fail routing if activity logging fails
+      this.logger.warn(
+        `Failed to log activity (non-blocking):`,
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+
+  /**
+   * Review and soft-delete a queue entry
+   * Called by ManualReviewService when user makes a decision
+   *
+   * @param queueEntryId - ID of the queue entry
+   * @param decision - User's decision (approved/rejected)
+   * @param notes - Optional reviewer notes
+   */
+  async reviewAndSoftDelete(
+    queueEntryId: string,
+    decision: 'approved' | 'rejected',
+    notes?: string,
+  ): Promise<void> {
+    const client = this.supabase.getClient();
+
+    // Get the queue entry
+    const { data: queueEntry, error: fetchError } = await client
+      .from('manual_review_queue')
+      .select('*')
+      .eq('id', queueEntryId)
+      .single();
+
+    if (fetchError || !queueEntry) {
+      throw new Error(`Queue entry ${queueEntryId} not found`);
+    }
+
+    // Insert to url_results
+    await client.from('url_results').insert({
+      url_id: queueEntry.url_id,
+      job_id: queueEntry.job_id,
+      status: decision,
+      confidence_score: queueEntry.confidence_score,
+      confidence_band: queueEntry.confidence_band,
+      reviewer_notes: notes || null,
+    });
+
+    // Soft-delete queue entry (set reviewed_at)
+    const { error: updateError } = await client
+      .from('manual_review_queue')
+      .update({
+        reviewed_at: new Date().toISOString(),
+        review_decision: decision,
+        reviewer_notes: notes || null,
+      })
+      .eq('id', queueEntryId);
+
+    if (updateError) {
+      throw new Error(`Failed to update queue entry: ${updateError.message}`);
+    }
+
+    this.logger.log(
+      `Queue entry ${queueEntryId} reviewed: decision=${decision}`,
     );
   }
 }

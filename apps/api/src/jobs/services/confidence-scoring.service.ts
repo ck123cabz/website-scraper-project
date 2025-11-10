@@ -245,4 +245,64 @@ export class ConfidenceScoringService {
       return 'suitable';
     }
   }
+
+  /**
+   * Get confidence band and action for a given score
+   * Story 001-manual-review-system T004: Returns band name and configured action
+   *
+   * @param score - Confidence score (0-1)
+   * @returns Object with band name and action from settings
+   */
+  async getConfidenceBandAction(score: number): Promise<{ band: string; action: 'auto_approve' | 'manual_review' | 'reject' }> {
+    try {
+      const settings = await this.settingsService.getSettings();
+
+      // Validate and clamp score
+      const validScore = Math.max(0, Math.min(1, typeof score === 'number' && Number.isFinite(score) ? score : 0));
+
+      if (validScore !== score) {
+        this.logger.warn(`Invalid score ${score} was clamped to ${validScore}`);
+      }
+
+      // Check if settings have confidence_bands (new structure)
+      if (settings.confidence_bands) {
+        const bands = settings.confidence_bands;
+
+        // Check each band to find matching one
+        for (const bandName of ['high', 'medium', 'low', 'auto_reject'] as const) {
+          const bandConfig = bands[bandName];
+          if (bandConfig && validScore >= bandConfig.min && validScore <= bandConfig.max) {
+            this.logger.debug(
+              `Score ${validScore} matched band '${bandName}' (${bandConfig.min}-${bandConfig.max}) with action '${bandConfig.action}'`
+            );
+            return { band: bandName, action: bandConfig.action };
+          }
+        }
+      }
+
+      // Fallback to legacy thresholds if confidence_bands not available
+      const thresholds = await this.loadThresholds();
+
+      if (validScore >= thresholds.high) {
+        return { band: 'high', action: 'auto_approve' };
+      } else if (validScore >= thresholds.medium) {
+        return { band: 'medium', action: 'manual_review' };
+      } else if (validScore >= thresholds.low) {
+        return { band: 'low', action: 'manual_review' };
+      } else {
+        return { band: 'auto_reject', action: 'reject' };
+      }
+    } catch (error) {
+      this.logger.error('Failed to get confidence band action from settings', error);
+      // Fallback to safe defaults
+      const validScore = Math.max(0, Math.min(1, score));
+      if (validScore >= 0.8) {
+        return { band: 'high', action: 'auto_approve' };
+      } else if (validScore >= 0.3) {
+        return { band: 'medium', action: 'manual_review' };
+      } else {
+        return { band: 'auto_reject', action: 'reject' };
+      }
+    }
+  }
 }

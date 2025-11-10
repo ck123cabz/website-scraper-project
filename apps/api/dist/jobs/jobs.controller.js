@@ -170,6 +170,7 @@ let JobsController = class JobsController {
                 .from('results')
                 .select('*', { count: 'exact' })
                 .eq('job_id', jobId)
+                .not('classification_result', 'is', null)
                 .order('processed_at', { ascending: false });
             if (status && status !== '') {
                 query = query.eq('status', status);

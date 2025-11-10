@@ -16,33 +16,36 @@ interface Layer3LlmTabProps {
 
 export function Layer3LlmTab({ rules, onChange, errors }: Layer3LlmTabProps) {
   // Ensure arrays exist with defaults
-  const contentMarketingIndicators = rules?.content_marketing_indicators || [];
+  const guestPostRedFlags = rules?.guest_post_red_flags || [];
   const seoInvestmentSignals = rules?.seo_investment_signals || [];
 
   return (
     <div className="space-y-6">
-      {/* Content Marketing Indicators */}
+      {/* Guest Post Red Flags */}
       <Card>
         <CardHeader>
-          <CardTitle>Content Marketing Indicators</CardTitle>
-          <CardDescription>Keywords indicating content marketing presence (one per line)</CardDescription>
+          <CardTitle>Guest Post Red Flags (Negative Indicators)</CardTitle>
+          <CardDescription>
+            Sites WITH these signals should be marked NOT suitable (low-quality link farms).
+            Enter one signal per line.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <Textarea
-            placeholder="Write for us&#10;Guest post guidelines&#10;Contributor program&#10;Author bylines with external contributors&#10;Submission guidelines"
-            value={contentMarketingIndicators.join('\n')}
+            placeholder="Explicit &quot;Write for Us&quot; or &quot;Guest Post Guidelines&quot; pages&#10;Author bylines with external contributors&#10;Contributor sections or editorial team listings&#10;Writing opportunities or submission guidelines&#10;Clear evidence of accepting external content"
+            value={guestPostRedFlags.join('\n')}
             onChange={(e) => {
               const indicators = e.target.value
                 .split('\n')
                 .map((i) => i.trim())
                 .filter((i) => i);
-              onChange({ ...rules, content_marketing_indicators: indicators });
+              onChange({ ...rules, guest_post_red_flags: indicators });
             }}
             rows={6}
             className="font-mono text-sm"
           />
           <p className="text-xs text-muted-foreground">
-            Current indicators: {contentMarketingIndicators.length}
+            Current red flags: {guestPostRedFlags.length}
           </p>
         </CardContent>
       </Card>

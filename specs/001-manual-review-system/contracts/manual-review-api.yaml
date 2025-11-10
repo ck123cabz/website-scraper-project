@@ -1,0 +1,504 @@
+openapi: 3.0.3
+info:
+  title: Manual Review API
+  description: API endpoints for managing the manual review queue
+  version: 1.0.0
+  contact:
+    name: Website Scraper API
+servers:
+  - url: http://localhost:3001/api
+    description: Local development
+  - url: https://api.production.com/api
+    description: Production
+
+paths:
+  /manual-review:
+    get:
+      summary: Fetch manual review queue
+      description: Returns paginated list of URLs in the manual review queue (reviewed_at IS NULL)
+      operationId: getManualReviewQueue
+      tags:
+        - Manual Review
+      parameters:
+        - name: page
+          in: query
+          description: Page number (1-indexed)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: is_stale
+          in: query
+          description: Filter by stale status (true = stale only, false = fresh only, omit = all)
+          required: false
+          schema:
+            type: boolean
+        - name: job_id
+          in: query
+          description: Filter by job ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: confidence_band
+          in: query
+          description: Filter by confidence band name
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Queue fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ManualReviewQueueEntry'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /manual-review/status:
+    get:
+      summary: Get queue status and metrics
+      description: Returns current queue size, stale count, and other metrics
+      operationId: getQueueStatus
+      tags:
+        - Manual Review
+      responses:
+        '200':
+          description: Queue status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_count:
+                    type: integer
+                    description: Total items in queue (reviewed_at IS NULL)
+                  stale_count:
+                    type: integer
+                    description: Number of stale items
+                  fresh_count:
+                    type: integer
+                    description: Number of fresh items (not stale)
+                  oldest_queued_at:
+                    type: string
+                    format: date-time
+                    description: Timestamp of oldest item in queue
+                  newest_queued_at:
+                    type: string
+                    format: date-time
+                    description: Timestamp of newest item in queue
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /manual-review/{id}:
+    get:
+      summary: Get detailed queue entry
+      description: Returns a single queue entry with full evaluation results
+      operationId: getQueueEntry
+      tags:
+        - Manual Review
+      parameters:
+        - name: id
+          in: path
+          description: Queue entry ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Queue entry retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManualReviewQueueEntry'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /manual-review/{id}/factors:
+    get:
+      summary: Get detailed factor breakdown
+      description: Returns comprehensive factor evaluation results from all three layers
+      operationId: getFactorBreakdown
+      tags:
+        - Manual Review
+      parameters:
+        - name: id
+          in: path
+          description: Queue entry ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Factor breakdown retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FactorBreakdown'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /manual-review/{id}/review:
+    post:
+      summary: Review a queue entry
+      description: Approve or reject a URL from the manual review queue
+      operationId: reviewQueueEntry
+      tags:
+        - Manual Review
+      parameters:
+        - name: id
+          in: path
+          description: Queue entry ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewDecisionRequest'
+      responses:
+        '200':
+          description: Review decision recorded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: URL approved successfully
+                  url_result_id:
+                    type: string
+                    format: uuid
+                    description: ID of the created url_results entry
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Queue entry already reviewed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: This URL was already reviewed
+                  reviewed_at:
+                    type: string
+                    format: date-time
+                  review_decision:
+                    type: string
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    ManualReviewQueueEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        url:
+          type: string
+          format: uri
+        job_id:
+          type: string
+          format: uuid
+        url_id:
+          type: string
+          format: uuid
+        confidence_band:
+          type: string
+          example: medium
+        confidence_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          example: 0.67
+        reasoning:
+          type: string
+          nullable: true
+          example: Moderate sophistication with some guest post indicators
+        sophistication_signals:
+          type: object
+          nullable: true
+          additionalProperties: true
+        layer1_results:
+          $ref: '#/components/schemas/Layer1Results'
+        layer2_results:
+          $ref: '#/components/schemas/Layer2Results'
+        layer3_results:
+          $ref: '#/components/schemas/Layer3Results'
+        queued_at:
+          type: string
+          format: date-time
+        reviewed_at:
+          type: string
+          format: date-time
+          nullable: true
+        review_decision:
+          type: string
+          enum: [approved, rejected]
+          nullable: true
+        reviewer_notes:
+          type: string
+          nullable: true
+        is_stale:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Layer1Results:
+      type: object
+      properties:
+        domain_age:
+          type: object
+          properties:
+            checked:
+              type: boolean
+            passed:
+              type: boolean
+            value:
+              type: integer
+              description: Age in days
+            threshold:
+              type: integer
+              description: Minimum threshold configured
+        tld_type:
+          type: object
+          properties:
+            checked:
+              type: boolean
+            passed:
+              type: boolean
+            value:
+              type: string
+              description: Actual TLD
+            red_flags:
+              type: array
+              items:
+                type: string
+        registrar_reputation:
+          type: object
+          properties:
+            checked:
+              type: boolean
+            passed:
+              type: boolean
+            value:
+              type: string
+              description: Registrar name
+            red_flags:
+              type: array
+              items:
+                type: string
+        whois_privacy:
+          type: object
+          properties:
+            checked:
+              type: boolean
+            passed:
+              type: boolean
+            enabled:
+              type: boolean
+        ssl_certificate:
+          type: object
+          properties:
+            checked:
+              type: boolean
+            passed:
+              type: boolean
+            valid:
+              type: boolean
+            issuer:
+              type: string
+
+    Layer2Results:
+      type: object
+      properties:
+        guest_post_red_flags:
+          type: object
+          properties:
+            contact_page:
+              $ref: '#/components/schemas/RedFlagResult'
+            author_bio:
+              $ref: '#/components/schemas/RedFlagResult'
+            pricing_page:
+              $ref: '#/components/schemas/RedFlagResult'
+            submit_content:
+              $ref: '#/components/schemas/RedFlagResult'
+            write_for_us:
+              $ref: '#/components/schemas/RedFlagResult'
+            guest_post_guidelines:
+              $ref: '#/components/schemas/RedFlagResult'
+        content_quality:
+          type: object
+          properties:
+            thin_content:
+              allOf:
+                - $ref: '#/components/schemas/RedFlagResult'
+                - type: object
+                  properties:
+                    word_count:
+                      type: integer
+                    threshold:
+                      type: integer
+            excessive_ads:
+              $ref: '#/components/schemas/RedFlagResult'
+            broken_links:
+              allOf:
+                - $ref: '#/components/schemas/RedFlagResult'
+                - type: object
+                  properties:
+                    count:
+                      type: integer
+
+    Layer3Results:
+      type: object
+      properties:
+        design_quality:
+          $ref: '#/components/schemas/SophisticationSignal'
+        content_originality:
+          $ref: '#/components/schemas/SophisticationSignal'
+        authority_indicators:
+          $ref: '#/components/schemas/SophisticationSignal'
+        professional_presentation:
+          $ref: '#/components/schemas/SophisticationSignal'
+
+    RedFlagResult:
+      type: object
+      properties:
+        checked:
+          type: boolean
+        detected:
+          type: boolean
+
+    SophisticationSignal:
+      type: object
+      properties:
+        score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        detected:
+          type: boolean
+        reasoning:
+          type: string
+          nullable: true
+
+    FactorBreakdown:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+        confidence_band:
+          type: string
+        confidence_score:
+          type: number
+          format: float
+        layer1:
+          $ref: '#/components/schemas/Layer1Results'
+        layer2:
+          $ref: '#/components/schemas/Layer2Results'
+        layer3:
+          $ref: '#/components/schemas/Layer3Results'
+
+    ReviewDecisionRequest:
+      type: object
+      required:
+        - decision
+      properties:
+        decision:
+          type: string
+          enum: [approved, rejected]
+        notes:
+          type: string
+          description: Optional notes for approval, recommended for rejection
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total_items:
+          type: integer
+        total_pages:
+          type: integer
+
+  responses:
+    BadRequest:
+      description: Bad request - validation error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              details:
+                type: array
+                items:
+                  type: string
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Queue entry not found
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: An unexpected error occurred

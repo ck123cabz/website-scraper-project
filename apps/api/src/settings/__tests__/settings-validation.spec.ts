@@ -291,7 +291,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
       const partialUpdate = {
         layer3_rules: {
-          content_marketing_indicators: ['Test'],
+          guest_post_red_flags: ['Test'],
           seo_investment_signals: ['schema_markup'],
           llm_temperature: 0.7,
           content_truncation_limit: 10000,
@@ -338,7 +338,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
           min_design_quality_score: 6,
         },
         layer3_rules: {
-          content_marketing_indicators: ['Test'],
+          guest_post_red_flags: ['Test'],
           seo_investment_signals: ['schema_markup'],
           llm_temperature: 0.5,
           content_truncation_limit: 10000,
@@ -928,7 +928,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const invalidUpdate = {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: -0.1,
             content_truncation_limit: 10000,
@@ -944,7 +944,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const invalidUpdate = {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: 1.1,
             content_truncation_limit: 10000,
@@ -967,7 +967,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const validUpdate = {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: 0,
             content_truncation_limit: 10000,
@@ -991,7 +991,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const validUpdate = {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: 0.5,
             content_truncation_limit: 10000,
@@ -1015,7 +1015,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const validUpdate = {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: 1,
             content_truncation_limit: 10000,
@@ -1034,7 +1034,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const invalidUpdate = {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: 0.3,
             content_truncation_limit: 999,
@@ -1050,7 +1050,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const invalidUpdate = {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: 0.3,
             content_truncation_limit: 50001,
@@ -1073,7 +1073,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const validUpdate = {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: 0.3,
             content_truncation_limit: 1000,
@@ -1097,7 +1097,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const validUpdate = {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: 0.3,
             content_truncation_limit: 10000,
@@ -1121,7 +1121,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const validUpdate = {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: 0.3,
             content_truncation_limit: 50000,
@@ -1334,7 +1334,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
       it('should fail DTO validation for llm_temperature = -0.1', async () => {
         const dto = plainToClass(UpdateSettingsDto, {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: -0.1,
             content_truncation_limit: 10000,
@@ -1350,7 +1350,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
       it('should fail DTO validation for llm_temperature = 1.1', async () => {
         const dto = plainToClass(UpdateSettingsDto, {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: 1.1,
             content_truncation_limit: 10000,
@@ -1366,7 +1366,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
       it('should pass DTO validation for llm_temperature at boundaries (0, 1)', async () => {
         const dto0 = plainToClass(UpdateSettingsDto, {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: 0,
             content_truncation_limit: 10000,
@@ -1375,7 +1375,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const dto1 = plainToClass(UpdateSettingsDto, {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: 1,
             content_truncation_limit: 10000,
@@ -1392,7 +1392,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
       it('should pass DTO validation for llm_temperature = 0.5', async () => {
         const dto = plainToClass(UpdateSettingsDto, {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: 0.5,
             content_truncation_limit: 10000,
@@ -1408,7 +1408,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
       it('should fail DTO validation for content_truncation_limit = 999', async () => {
         const dto = plainToClass(UpdateSettingsDto, {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: 0.3,
             content_truncation_limit: 999,
@@ -1424,7 +1424,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
       it('should fail DTO validation for content_truncation_limit = 50001', async () => {
         const dto = plainToClass(UpdateSettingsDto, {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: 0.3,
             content_truncation_limit: 50001,
@@ -1440,7 +1440,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
       it('should pass DTO validation for content_truncation_limit at boundaries (1000, 50000)', async () => {
         const dto1000 = plainToClass(UpdateSettingsDto, {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: 0.3,
             content_truncation_limit: 1000,
@@ -1449,7 +1449,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const dto50000 = plainToClass(UpdateSettingsDto, {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: 0.3,
             content_truncation_limit: 50000,
@@ -1466,7 +1466,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
       it('should pass DTO validation for content_truncation_limit = 10000', async () => {
         const dto = plainToClass(UpdateSettingsDto, {
           layer3_rules: {
-            content_marketing_indicators: ['blog'],
+            guest_post_red_flags: ['blog'],
             seo_investment_signals: ['schema_markup'],
             llm_temperature: 0.3,
             content_truncation_limit: 10000,
@@ -1504,7 +1504,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
     it('should provide helpful error message for invalid llm_temperature', async () => {
       const dto = plainToClass(UpdateSettingsDto, {
         layer3_rules: {
-          content_marketing_indicators: ['blog'],
+          guest_post_red_flags: ['blog'],
           seo_investment_signals: ['schema_markup'],
           llm_temperature: 2.0,
           content_truncation_limit: 10000,
@@ -1524,7 +1524,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
     it('should provide helpful error message for invalid content_truncation_limit', async () => {
       const dto = plainToClass(UpdateSettingsDto, {
         layer3_rules: {
-          content_marketing_indicators: ['blog'],
+          guest_post_red_flags: ['blog'],
           seo_investment_signals: ['schema_markup'],
           llm_temperature: 0.3,
           content_truncation_limit: 100,

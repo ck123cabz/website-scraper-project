@@ -164,7 +164,7 @@ describe('SettingsService - Integration Tests', () => {
       // Update settings
       const result = await settingsService.updateSettings({
         layer3_rules: {
-          content_marketing_indicators: ['Test'],
+          guest_post_red_flags: ['Test'],
           seo_investment_signals: ['schema_markup'],
           llm_temperature: 0.7,
           content_truncation_limit: 10000,
@@ -286,7 +286,7 @@ describe('SettingsService - Integration Tests', () => {
 
       await settingsService.updateSettings({
         layer3_rules: {
-          content_marketing_indicators: ['Test'],
+          guest_post_red_flags: ['Test'],
           seo_investment_signals: ['schema_markup'],
           llm_temperature: 0.8,
           content_truncation_limit: 10000,
@@ -578,7 +578,7 @@ describe('SettingsService - Integration Tests', () => {
       // Perform update and multiple concurrent reads
       const updatePromise = settingsService.updateSettings({
         layer3_rules: {
-          content_marketing_indicators: ['Test'],
+          guest_post_red_flags: ['Test'],
           seo_investment_signals: ['schema_markup'],
           llm_temperature: 0.3,
           content_truncation_limit: 20000,

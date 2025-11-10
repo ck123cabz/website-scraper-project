@@ -46,8 +46,8 @@ export interface Layer1Rules {
  * Controls LLM-based content classification
  */
 export interface Layer3Rules {
-  /** Content marketing indicators for LLM prompt */
-  content_marketing_indicators: string[]; // ["Write for us", "Guest post guidelines", ...]
+  /** Guest post red flags - signals that indicate low-quality link farms (sites WITH these should be marked NOT suitable) */
+  guest_post_red_flags: string[]; // ["Write for us", "Guest post guidelines", ...]
   /** SEO investment signals */
   seo_investment_signals: string[]; // ["schema_markup", "open_graph", "structured_data"]
   /** LLM temperature (0-1, default 0.3) */
@@ -109,7 +109,7 @@ export interface ClassificationSettings {
   // V1 fields (preserved for backward compatibility during migration)
   /** @deprecated Use layer1_rules instead */
   prefilter_rules?: PreFilterRuleWithEnabled[];
-  /** @deprecated Use layer3_rules.content_marketing_indicators instead */
+  /** @deprecated Use layer3_rules.guest_post_red_flags instead */
   classification_indicators?: string[];
   /** @deprecated Use layer3_rules.llm_temperature instead */
   llm_temperature?: number;

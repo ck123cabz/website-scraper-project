@@ -10,6 +10,7 @@ import type {
   BlogDataSignals,
   TechStackSignals,
   DesignQualitySignals,
+  Layer2Results,
 } from '@website-scraper/shared';
 
 /**
@@ -570,6 +571,92 @@ export class Layer2OperationalFilterService {
         contactInfoPresent: result.signals.company_pages.has_contact,
       },
       processingTimeMs: result.processingTimeMs,
+    };
+  }
+
+  /**
+   * Get structured Layer 2 evaluation results for manual review
+   * Returns detailed factor breakdown for guest post indicators and content quality
+   *
+   * @param url - URL to analyze
+   * @returns Layer2Results with all red flag and content quality checks
+   */
+  async getStructuredResults(url: string): Promise<Layer2Results> {
+    try {
+      // Run full Layer 2 filter to get all signals
+      const result = await this.filterUrl(url);
+
+      // Map Layer2Signals to Layer2Results format
+      return {
+        guest_post_red_flags: {
+          contact_page: {
+            checked: true,
+            detected: result.signals.company_pages.has_contact,
+          },
+          author_bio: {
+            checked: false, // NOT IMPLEMENTED - would need full page scraping
+            detected: false,
+          },
+          pricing_page: {
+            checked: false, // NOT IMPLEMENTED - would need full page scraping
+            detected: false,
+          },
+          submit_content: {
+            checked: false, // NOT IMPLEMENTED - would need full page scraping
+            detected: false,
+          },
+          write_for_us: {
+            checked: false, // NOT IMPLEMENTED - would need full page scraping
+            detected: false,
+          },
+          guest_post_guidelines: {
+            checked: false, // NOT IMPLEMENTED - would need full page scraping
+            detected: false,
+          },
+        },
+        content_quality: {
+          thin_content: {
+            checked: false, // NOT IMPLEMENTED - would need word count analysis
+            detected: false,
+            word_count: undefined,
+            threshold: undefined,
+          },
+          excessive_ads: {
+            checked: false, // NOT IMPLEMENTED - would need ad detection
+            detected: false,
+          },
+          broken_links: {
+            checked: false, // NOT IMPLEMENTED - would need link validation
+            detected: false,
+            count: undefined,
+          },
+        },
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Error getting structured Layer 2 results: ${errorMessage}`);
+      return this.getEmptyResults();
+    }
+  }
+
+  /**
+   * Return empty results structure when analysis cannot be performed
+   */
+  private getEmptyResults(): Layer2Results {
+    return {
+      guest_post_red_flags: {
+        contact_page: { checked: false, detected: false },
+        author_bio: { checked: false, detected: false },
+        pricing_page: { checked: false, detected: false },
+        submit_content: { checked: false, detected: false },
+        write_for_us: { checked: false, detected: false },
+        guest_post_guidelines: { checked: false, detected: false },
+      },
+      content_quality: {
+        thin_content: { checked: false, detected: false },
+        excessive_ads: { checked: false, detected: false },
+        broken_links: { checked: false, detected: false },
+      },
     };
   }
 }

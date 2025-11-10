@@ -52,7 +52,11 @@ export class SettingsController {
    */
   @Put()
   @HttpCode(HttpStatus.OK)
-  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  @UsePipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true, // CRITICAL: Enable transformation for nested DTO validation
+  }))
   async updateSettings(@Body() updateSettingsDto: UpdateSettingsDto): Promise<ClassificationSettings> {
     this.logger.log('PUT /api/settings - Updating classification settings');
     this.logger.debug(`Update payload: ${JSON.stringify({

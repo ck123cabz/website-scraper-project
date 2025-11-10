@@ -7,6 +7,7 @@ import { JobsModule } from './jobs/jobs.module';
 import { ScraperModule } from './scraper/scraper.module';
 import { WorkersModule } from './workers/workers.module';
 import { SettingsModule } from './settings/settings.module';
+import { ManualReviewModule } from './manual-review/manual-review.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { SettingsModule } from './settings/settings.module';
     JobsModule,
     ScraperModule,
     WorkersModule,
+    ManualReviewModule,
   ],
   controllers: [HealthController],
   providers: [],

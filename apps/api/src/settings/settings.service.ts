@@ -110,6 +110,11 @@ export class SettingsService {
       this.validateRegexPatterns(dto.layer1_rules.url_pattern_exclusions as PreFilterRuleDto[]);
     }
 
+    // Validate confidence bands if present (check for gaps/overlaps)
+    if (dto.confidence_bands) {
+      this.validateConfidenceBands(dto.confidence_bands);
+    }
+
     try {
       // Get current settings to extract ID
       const current = await this.getSettings();
@@ -367,7 +372,7 @@ export class SettingsService {
     };
 
     const layer3_rules: Layer3Rules = {
-      content_marketing_indicators: v1ClassificationIndicators,
+      guest_post_red_flags: v1ClassificationIndicators,
       seo_investment_signals: ['schema_markup', 'open_graph', 'structured_data'],
       llm_temperature: this.DEFAULT_TEMPERATURE,
       content_truncation_limit: this.DEFAULT_CONTENT_LIMIT,
@@ -481,6 +486,83 @@ export class SettingsService {
     }
 
     return fallback;
+  }
+
+  /**
+   * Validate confidence bands for gaps/overlaps
+   * Ensures bands cover 0.0 to 1.0 with no gaps or overlaps
+   * @throws BadRequestException if bands are invalid
+   */
+  private validateConfidenceBands(bands: any): void {
+    if (!bands || typeof bands !== 'object') {
+      return; // Let DTO validation handle missing/null
+    }
+
+    const bandNames = ['high', 'medium', 'low', 'auto_reject'];
+    const bandConfigs: Array<{ name: string; min: number; max: number }> = [];
+
+    // Extract all band configurations
+    for (const bandName of bandNames) {
+      const band = bands[bandName];
+      if (!band || typeof band.min !== 'number' || typeof band.max !== 'number') {
+        continue; // Let DTO validation handle incomplete bands
+      }
+      bandConfigs.push({
+        name: bandName,
+        min: band.min,
+        max: band.max,
+      });
+    }
+
+    // Only validate if all bands are present
+    if (bandConfigs.length !== bandNames.length) {
+      return; // Let DTO validation handle missing bands
+    }
+
+    // Sort by min value
+    bandConfigs.sort((a, b) => a.min - b.min);
+
+    // Check that coverage starts at 0.0
+    if (Math.abs(bandConfigs[0].min - 0) > 0.001) {
+      throw new BadRequestException(
+        'Confidence bands must start at 0.0. Current start: ' + bandConfigs[0].min,
+      );
+    }
+
+    // Check that coverage ends at 1.0
+    if (Math.abs(bandConfigs[bandConfigs.length - 1].max - 1.0) > 0.001) {
+      throw new BadRequestException(
+        'Confidence bands must end at 1.0. Current end: ' + bandConfigs[bandConfigs.length - 1].max,
+      );
+    }
+
+    // Check for gaps and overlaps
+    for (let i = 0; i < bandConfigs.length - 1; i++) {
+      const current = bandConfigs[i];
+      const next = bandConfigs[i + 1];
+
+      // Check for gap or overlap (allow small floating point differences up to 0.02)
+      if (Math.abs(current.max - next.min) > 0.02) {
+        throw new BadRequestException(
+          `Confidence bands have gap or overlap between ${current.name} (max: ${current.max}) and ${next.name} (min: ${next.min}). Ranges must be continuous.`,
+        );
+      }
+
+      // Ensure min < max for each band
+      if (current.min >= current.max) {
+        throw new BadRequestException(
+          `Confidence band ${current.name} has invalid range: min (${current.min}) must be less than max (${current.max})`,
+        );
+      }
+    }
+
+    // Ensure last band's min < max
+    const last = bandConfigs[bandConfigs.length - 1];
+    if (last.min >= last.max) {
+      throw new BadRequestException(
+        `Confidence band ${last.name} has invalid range: min (${last.min}) must be less than max (${last.max})`,
+      );
+    }
   }
 
   /**
