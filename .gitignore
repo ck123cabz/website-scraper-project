@@ -73,3 +73,4 @@ Pipfile.lock
 .pylintrc
 pytest.ini
 tox.ini
+.worktrees/
