@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.JobsModule = void 0;
 const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
+const schedule_1 = require("@nestjs/schedule");
 const jobs_controller_1 = require("./jobs.controller");
 const jobs_service_1 = require("./jobs.service");
 const file_parser_service_1 = require("./services/file-parser.service");
@@ -20,6 +21,7 @@ const llm_service_1 = require("./services/llm.service");
 const llm_service_mock_1 = require("./services/llm.service.mock");
 const confidence_scoring_service_1 = require("./services/confidence-scoring.service");
 const manual_review_router_service_1 = require("./services/manual-review-router.service");
+const stale_queue_marker_processor_1 = require("./processors/stale-queue-marker.processor");
 const queue_module_1 = require("../queue/queue.module");
 const settings_module_1 = require("../settings/settings.module");
 const scraper_module_1 = require("../scraper/scraper.module");
@@ -31,6 +33,7 @@ exports.JobsModule = JobsModule;
 exports.JobsModule = JobsModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            schedule_1.ScheduleModule.forRoot(),
             queue_module_1.QueueModule,
             settings_module_1.SettingsModule,
             scraper_module_1.ScraperModule,
@@ -61,6 +64,7 @@ exports.JobsModule = JobsModule = __decorate([
             layer2_operational_filter_service_1.Layer2OperationalFilterService,
             confidence_scoring_service_1.ConfidenceScoringService,
             manual_review_router_service_1.ManualReviewRouterService,
+            stale_queue_marker_processor_1.StaleQueueMarkerProcessor,
             {
                 provide: llm_service_1.LlmService,
                 useClass: process.env.USE_MOCK_SERVICES === 'true' ? llm_service_mock_1.MockLlmService : llm_service_1.LlmService,

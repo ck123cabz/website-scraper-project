@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MulterModule } from '@nestjs/platform-express';
+import { ScheduleModule } from '@nestjs/schedule';
 import { JobsController } from './jobs.controller';
 import { JobsService } from './jobs.service';
 import { FileParserService } from './services/file-parser.service';
@@ -11,6 +12,7 @@ import { LlmService } from './services/llm.service';
 import { MockLlmService } from './services/llm.service.mock';
 import { ConfidenceScoringService } from './services/confidence-scoring.service';
 import { ManualReviewRouterService } from './services/manual-review-router.service';
+import { StaleQueueMarkerProcessor } from './processors/stale-queue-marker.processor';
 import { QueueModule } from '../queue/queue.module';
 import { SettingsModule } from '../settings/settings.module';
 import { ScraperModule } from '../scraper/scraper.module';
@@ -28,6 +30,7 @@ import { extname } from 'path';
  */
 @Module({
   imports: [
+    ScheduleModule.forRoot(), // Enable @Cron decorator for scheduled jobs
     QueueModule, // Import QueueModule to access QueueService
     SettingsModule, // Import SettingsModule for database-driven settings (Story 3.0)
     ScraperModule, // Import ScraperModule for Layer 2 homepage scraping (Story 2.6)
@@ -57,6 +60,7 @@ import { extname } from 'path';
     Layer2OperationalFilterService, // Story 2.6: Layer 2 operational filtering (homepage scraping & validation)
     ConfidenceScoringService, // Story 2.4-refactored: Confidence band calculation
     ManualReviewRouterService, // Story 2.4-refactored: Manual review routing
+    StaleQueueMarkerProcessor, // Story 001-manual-review-system T030: Stale queue marking (daily cron job)
     {
       provide: LlmService,
       useClass: process.env.USE_MOCK_SERVICES === 'true' ? MockLlmService : LlmService,

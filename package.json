@@ -25,5 +25,8 @@
     "shadcn": "^3.4.0",
     "supertest": "^7.1.4",
     "turbo": "^2.0.0"
+  },
+  "dependencies": {
+    "@nestjs/schedule": "^6.0.1"
   }
 }
