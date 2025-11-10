@@ -3,7 +3,7 @@ import {
   Layer1Results,
   Layer2Results,
   Layer3Results,
-} from '@website-scraper/shared/types/manual-review';
+} from '@website-scraper/shared';
 
 /**
  * Factory function to create a ManualReviewQueueEntry with sensible defaults

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQueueEntry } from '@/hooks/useManualReviewQueue';
+import { useFactorBreakdown } from '@/hooks/useFactorBreakdown';
 import { useMutation } from '@tanstack/react-query';
 import axios from 'axios';
 
@@ -20,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { FactorBreakdown } from './FactorBreakdown';
 
 interface ReviewDialogProps {
   itemId: string;
@@ -44,6 +46,11 @@ interface ReviewDialogProps {
  */
 export function ReviewDialog({ itemId, isOpen, onClose }: ReviewDialogProps) {
   const { data: entry, isLoading: isLoadingEntry, error: entryError } = useQueueEntry(itemId);
+  const {
+    data: factors,
+    isLoading: isLoadingFactors,
+    error: factorsError,
+  } = useFactorBreakdown(itemId);
   const [decision, setDecision] = useState<'approved' | 'rejected' | null>(null);
   const [notes, setNotes] = useState('');
 
@@ -151,15 +158,29 @@ export function ReviewDialog({ itemId, isOpen, onClose }: ReviewDialogProps) {
               )}
             </div>
 
-            {/* Factor Breakdown (Minimal - full detail in phase 4) */}
-            {entry.reasoning && (
-              <div className="border-t py-4" data-testid="llm-reasoning">
-                <label className="text-sm font-medium">LLM Analysis</label>
-                <p className="text-sm text-muted-foreground mt-2 p-3 bg-muted rounded">
-                  {entry.reasoning}
-                </p>
-              </div>
-            )}
+            {/* Factor Breakdown (Phase 4: T019-T022) */}
+            <div className="border-t py-4">
+              <label className="text-sm font-medium mb-3 block">Detailed Evaluation Results</label>
+              {isLoadingFactors && (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              )}
+              {factorsError && (
+                <Alert variant="destructive" className="mb-3">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Error loading factors</AlertTitle>
+                  <AlertDescription>Failed to load detailed evaluation results</AlertDescription>
+                </Alert>
+              )}
+              {factors && !isLoadingFactors && (
+                <FactorBreakdown
+                  layer1={factors.layer1_results}
+                  layer2={factors.layer2_results}
+                  layer3={factors.layer3_results}
+                />
+              )}
+            </div>
 
             {/* Decision Buttons */}
             <div className="border-t py-4 space-y-4">

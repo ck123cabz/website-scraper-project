@@ -162,6 +162,48 @@ export class ManualReviewController {
   }
 
   /**
+   * GET /api/manual-review/:id/factors
+   * Get factor breakdown for a queue entry (Phase 4: T021)
+   *
+   * Returns all Layer 1, 2, and 3 evaluation results for displaying
+   * comprehensive factor breakdown in the review dialog.
+   *
+   * Response: Layer1Results, Layer2Results, Layer3Results
+   *
+   * @param id - Queue entry ID
+   * @returns Factor breakdown data
+   * @throws NotFoundException (404) if entry not found
+   */
+  @Get(':id/factors')
+  async getFactorBreakdown(@Param('id') id: string): Promise<{
+    layer1_results?: any;
+    layer2_results?: any;
+    layer3_results?: any;
+  }> {
+    this.logger.log(`GET /api/manual-review/${id}/factors - Fetching factor breakdown`);
+
+    try {
+      const entry = await this.manualReviewService.getQueueEntry(id);
+
+      if (!entry) {
+        this.logger.warn(`Queue entry not found for factor breakdown: ${id}`);
+        throw new NotFoundException(`Queue entry ${id} not found`);
+      }
+
+      // Return all layer results
+      return {
+        layer1_results: entry.layer1_results,
+        layer2_results: entry.layer2_results,
+        layer3_results: entry.layer3_results,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to fetch factor breakdown: ${errorMessage}`);
+      throw error;
+    }
+  }
+
+  /**
    * POST /api/manual-review/:id/review
    * Submit a review decision for a queue entry
    *
