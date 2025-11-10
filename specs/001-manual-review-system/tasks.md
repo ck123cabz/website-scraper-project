@@ -11,9 +11,9 @@
 
 ## 📊 Implementation Progress
 
-**Last Updated**: 2025-11-11 (Session 7 - MVP COMPLETE)
+**Last Updated**: 2025-11-11 (Session 8 - Phase 5 COMPLETE)
 
-**Overall Progress**: 43/82 tasks completed (52.4%)
+**Overall Progress**: 48/82 tasks completed (58.5%)
 
 ### ✅ Completed Phases
 
@@ -270,9 +270,17 @@
 - ✅ SC-002: Queue status in <1 second
 - ✅ SC-011: Factor breakdown in <3 seconds
 
+**Phase 5: User Story 2 - Confidence Band Action Routing** - 5/5 tasks (100%) ✅ COMPLETE
+- ✅ T023: Updated ManualReviewRouterService.routeUrl() to use action from ConfidenceScoringService
+- ✅ T024: Added structured logging for routing decisions (band, action, score, url_id)
+- ✅ T025: Added activity log creation for url_routed events
+- ✅ T025-TEST-A: Integration test routing 100 URLs with 100% accuracy (SC-003, SC-010 verified)
+- ✅ T025-TEST-B: Unit tests for activity log creation (6 tests passing)
+
+**Performance verified**: p90 routing latency 0.01ms (threshold <100ms)
+
 ### 🎯 Next Steps (Optional Enhancement Phases)
 
-**Phase 5**: User Story 2 - Confidence Band Action Routing (P2)
 **Phase 6**: User Story 3 - Queue Size Limiting (P3)
 **Phase 7**: User Story 4 - Stale Queue Management (P3)
 **Phase 8**: User Story 5 - Email Notifications (P4)
