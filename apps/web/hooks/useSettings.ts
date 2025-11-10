@@ -38,8 +38,11 @@ export function buildUpdatePayload(
 
 // Update settings
 async function updateSettings(settings: ClassificationSettings): Promise<ClassificationSettings> {
+  console.log('[DEBUG] updateSettings called, API_URL:', API_URL);
   const payload = buildUpdatePayload(settings);
+  console.log('[DEBUG] Payload built, making PUT request to:', `${API_URL}/api/settings`);
   const response = await axios.put<ClassificationSettings>(`${API_URL}/api/settings`, payload);
+  console.log('[DEBUG] PUT request completed, status:', response.status);
   return response.data;
 }
 

@@ -127,18 +127,33 @@ export default function SettingsPage() {
   };
 
   const handleSave = async () => {
-    if (!formData) return;
+    console.log('[DEBUG] handleSave called');
+    console.log('[DEBUG] formData exists:', !!formData);
 
-    if (!validateAllTabs()) {
+    if (!formData) {
+      console.log('[DEBUG] No formData, returning early');
+      return;
+    }
+
+    console.log('[DEBUG] Starting validation...');
+    const isValid = validateAllTabs();
+    console.log('[DEBUG] Validation result:', isValid);
+
+    if (!isValid) {
+      console.log('[DEBUG] Validation failed, switching to layer1 tab');
       setActiveTab('layer1');
       return;
     }
 
+    console.log('[DEBUG] Validation passed, calling mutateAsync...');
     try {
+      console.log('[DEBUG] About to call updateSettings.mutateAsync');
       await updateSettings.mutateAsync(formData);
+      console.log('[DEBUG] mutateAsync completed successfully');
       setHasUnsavedChanges(false);
       toast.success('Settings saved successfully for all layers');
     } catch (error) {
+      console.error('[DEBUG] Error caught in handleSave:', error);
       const message = error instanceof Error ? error.message : 'Unknown error';
       toast.error(`Failed to save settings: ${message}`);
     }
