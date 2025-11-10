@@ -1,5 +1,9 @@
 import { PreFilterRule } from './prefilter';
 import { Layer2Rules } from './layer2';
+import type { ManualReviewSettings } from './manual-review';
+
+// Re-export ManualReviewSettings from manual-review for backward compatibility
+export type { ManualReviewSettings };
 
 /**
  * Pre-filter rule with enabled flag for database storage
@@ -77,25 +81,6 @@ export interface ConfidenceBands {
   medium: ConfidenceBandConfig; // 0.5-0.79 → manual_review
   low: ConfidenceBandConfig; // 0.3-0.49 → manual_review
   auto_reject: ConfidenceBandConfig; // 0-0.29 → reject
-}
-
-/**
- * Manual Review Queue Settings
- */
-export interface ManualReviewSettings {
-  /** Maximum queue size (null = unlimited) */
-  queue_size_limit: number | null;
-  /** Auto-review timeout in days (null = disabled) */
-  auto_review_timeout_days: number | null;
-  /** Notification preferences */
-  notifications: {
-    /** Email notification threshold (send email when queue reaches this size) */
-    email_threshold: number;
-    /** Show badge on dashboard */
-    dashboard_badge: boolean;
-    /** Slack integration enabled */
-    slack_integration: boolean;
-  };
 }
 
 /**

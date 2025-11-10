@@ -1,16 +1,19 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { SettingsService } from '../../settings/settings.service';
+import { NotificationService } from '../../manual-review/services/notification.service';
 import type { Layer1Results, Layer2Results, Layer3Results } from '@website-scraper/shared';
 
 /**
  * Manual Review Router Service
- * Story 001-manual-review-system T005
+ * Story 001-manual-review-system T005, T046
  *
  * Routes URLs based on confidence band actions:
  * - auto_approve → insert to url_results with status='approved'
  * - manual_review → enqueue to manual_review_queue (with size limit check)
  * - reject → insert to url_results with status='rejected'
+ *
+ * T046: Sends Slack notifications when queue reaches configured threshold
  */
 @Injectable()
 export class ManualReviewRouterService {
@@ -19,6 +22,7 @@ export class ManualReviewRouterService {
   constructor(
     private readonly supabase: SupabaseService,
     private readonly settingsService: SettingsService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /**
@@ -171,6 +175,23 @@ export class ManualReviewRouterService {
     this.logger.log(
       `URL ${urlData.url_id} enqueued for manual review (queue entry ID: ${data.id})`,
     );
+
+    // T046: Send Slack notification if threshold reached (non-blocking)
+    // Get updated queue count and check notification settings
+    const queueCount = await this.countActiveQueue();
+    const slackWebhookUrl = settings.manual_review_settings?.notifications?.slack_webhook_url;
+    const slackThreshold = settings.manual_review_settings?.notifications?.slack_threshold ?? 10;
+
+    if (slackWebhookUrl && queueCount >= slackThreshold) {
+      // Non-blocking: don't await, catch errors
+      void this.notificationService
+        .sendSlackNotification(queueCount, slackWebhookUrl)
+        .catch((error) => {
+          this.logger.error('Failed to send Slack notification', {
+            error: error instanceof Error ? error.message : error,
+          });
+        });
+    }
 
     // Log routing decision for audit trail
     await this.logActivity({

@@ -390,8 +390,10 @@ export class SettingsService {
       auto_review_timeout_days: null,
       notifications: {
         email_threshold: 100,
+        email_recipient: 'admin@example.com',
+        slack_webhook_url: null,
+        slack_threshold: 10,
         dashboard_badge: true,
-        slack_integration: false,
       },
     };
 

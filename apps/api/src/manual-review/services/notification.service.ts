@@ -67,10 +67,7 @@ export class NotificationService {
       const webhook = new IncomingWebhook(slackWebhookUrl);
 
       // Build message with queue information
-      const baseUrl = this.configService.get<string>(
-        'APP_BASE_URL',
-        'http://localhost:3000',
-      );
+      const baseUrl = this.configService.get<string>('APP_BASE_URL', 'http://localhost:3000');
       const manualReviewUrl = `${baseUrl}/manual-review`;
       const timestamp = new Date().toISOString();
 

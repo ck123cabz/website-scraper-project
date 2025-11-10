@@ -2,21 +2,25 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ManualReviewRouterService } from '../services/manual-review-router.service';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { SettingsService } from '../../settings/settings.service';
+import { NotificationService } from '../../manual-review/services/notification.service';
 import type { Layer1Results, Layer2Results, Layer3Results } from '@website-scraper/shared';
 
 /**
  * Integration test for ManualReviewRouterService (T010-TEST-C)
- * Story 001-manual-review-system T005
+ * Story 001-manual-review-system T005, T046
  *
  * Tests the routeUrl() method which handles URL routing based on confidence band actions:
  * - auto_approve → insert to url_results
  * - manual_review → enqueue to manual_review_queue
  * - reject → insert to url_results
+ *
+ * T046: Tests Slack notification calling when threshold reached
  */
-describe('ManualReviewRouterService (T010-TEST-C Integration)', () => {
+describe('ManualReviewRouterService (T010-TEST-C, T046 Integration)', () => {
   let service: ManualReviewRouterService;
   let supabaseService: jest.Mocked<SupabaseService>;
   let settingsService: jest.Mocked<SettingsService>;
+  let notificationService: jest.Mocked<NotificationService>;
 
   const mockLayer1Results: Layer1Results = {
     domain_age: { checked: true, passed: true, value: 365 },
@@ -53,9 +57,21 @@ describe('ManualReviewRouterService (T010-TEST-C Integration)', () => {
     const supabaseServiceMock = {
       getClient: jest.fn().mockReturnValue({
         from: jest.fn().mockReturnValue({
-          insert: jest.fn().mockResolvedValue({ data: {} }),
-          update: jest.fn().mockResolvedValue({ data: {} }),
-          select: jest.fn().mockResolvedValue({ data: {} }),
+          insert: jest.fn().mockReturnValue({
+            select: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({ data: { id: 'queue-123' }, error: null }),
+            }),
+          }),
+          update: jest.fn().mockReturnValue({
+            eq: jest.fn().mockResolvedValue({ data: {}, error: null }),
+          }),
+          select: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({ data: null, error: null }),
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({ data: null, error: null }),
+            }),
+            is: jest.fn().mockResolvedValue({ data: null, error: null, count: 0 }),
+          }),
         }),
         rpc: jest.fn().mockResolvedValue({ data: {} }),
       }),
@@ -72,9 +88,19 @@ describe('ManualReviewRouterService (T010-TEST-C Integration)', () => {
         manual_review_settings: {
           queue_size_limit: 100,
           auto_review_timeout_days: 7,
-          notifications: {},
+          notifications: {
+            email_threshold: 100,
+            email_recipient: 'admin@example.com',
+            slack_webhook_url: null,
+            slack_threshold: 10,
+            dashboard_badge: true,
+          },
         },
       }),
+    };
+
+    const notificationServiceMock = {
+      sendSlackNotification: jest.fn().mockResolvedValue({ success: true }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -88,12 +114,17 @@ describe('ManualReviewRouterService (T010-TEST-C Integration)', () => {
           provide: SettingsService,
           useValue: settingsServiceMock,
         },
+        {
+          provide: NotificationService,
+          useValue: notificationServiceMock,
+        },
       ],
     }).compile();
 
     service = module.get<ManualReviewRouterService>(ManualReviewRouterService);
     supabaseService = module.get(SupabaseService);
     settingsService = module.get(SettingsService);
+    notificationService = module.get(NotificationService);
   });
 
   it('should be defined', () => {
@@ -206,6 +237,250 @@ describe('ManualReviewRouterService (T010-TEST-C Integration)', () => {
       });
 
       expect(supabaseService.getClient).toHaveBeenCalled();
+    });
+  });
+
+  describe('enqueueForReview - Slack Notifications (T046)', () => {
+    it('should call sendSlackNotification when queue count reaches threshold', async () => {
+      // Setup: Mock settings with webhook URL and threshold 5
+      const mockSettings = {
+        confidence_bands: {
+          high: { min: 0.8, max: 1.0, action: 'auto_approve' as const },
+          medium: { min: 0.5, max: 0.79, action: 'manual_review' as const },
+          low: { min: 0.3, max: 0.49, action: 'manual_review' as const },
+          auto_reject: { min: 0.0, max: 0.29, action: 'reject' as const },
+        },
+        manual_review_settings: {
+          queue_size_limit: null,
+          auto_review_timeout_days: null,
+          notifications: {
+            email_threshold: 100,
+            email_recipient: 'admin@example.com',
+            slack_webhook_url: 'https://hooks.slack.com/services/T1234/B5678/XXXX',
+            slack_threshold: 5,
+            dashboard_badge: true,
+          },
+        },
+      };
+      settingsService.getSettings.mockResolvedValue(mockSettings as any);
+
+      // Mock countActiveQueue to return queue size >= threshold
+      jest.spyOn(service, 'countActiveQueue').mockResolvedValue(5);
+
+      const urlData = {
+        url_id: 'url-slack-test',
+        url: 'https://slack-test.example.com',
+        job_id: 'job-slack-123',
+        confidence_score: 0.65,
+        confidence_band: 'medium',
+        action: 'manual_review' as const,
+      };
+
+      await service.enqueueForReview(
+        urlData,
+        mockLayer1Results,
+        mockLayer2Results,
+        mockLayer3Results,
+      );
+
+      // Verify notification was called with correct parameters
+      // Note: Due to non-blocking nature, use setTimeout or mock timing
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      expect(notificationService.sendSlackNotification).toHaveBeenCalledWith(
+        5,
+        'https://hooks.slack.com/services/T1234/B5678/XXXX',
+      );
+    });
+
+    it('should NOT call sendSlackNotification when webhook URL is not configured', async () => {
+      // Setup: Mock settings without webhook URL
+      const mockSettings = {
+        confidence_bands: {
+          high: { min: 0.8, max: 1.0, action: 'auto_approve' as const },
+          medium: { min: 0.5, max: 0.79, action: 'manual_review' as const },
+          low: { min: 0.3, max: 0.49, action: 'manual_review' as const },
+          auto_reject: { min: 0.0, max: 0.29, action: 'reject' as const },
+        },
+        manual_review_settings: {
+          queue_size_limit: null,
+          auto_review_timeout_days: null,
+          notifications: {
+            email_threshold: 100,
+            email_recipient: 'admin@example.com',
+            slack_webhook_url: null, // No webhook configured
+            slack_threshold: 5,
+            dashboard_badge: true,
+          },
+        },
+      };
+      settingsService.getSettings.mockResolvedValue(mockSettings as any);
+
+      jest.spyOn(service, 'countActiveQueue').mockResolvedValue(10);
+
+      const urlData = {
+        url_id: 'url-no-webhook',
+        url: 'https://no-webhook.example.com',
+        job_id: 'job-no-webhook',
+        confidence_score: 0.65,
+        confidence_band: 'medium',
+        action: 'manual_review' as const,
+      };
+
+      await service.enqueueForReview(
+        urlData,
+        mockLayer1Results,
+        mockLayer2Results,
+        mockLayer3Results,
+      );
+
+      // Verify notification was NOT called
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(notificationService.sendSlackNotification).not.toHaveBeenCalled();
+    });
+
+    it('should NOT call sendSlackNotification when queue count is below threshold', async () => {
+      // Setup: Mock settings with threshold 10
+      const mockSettings = {
+        confidence_bands: {
+          high: { min: 0.8, max: 1.0, action: 'auto_approve' as const },
+          medium: { min: 0.5, max: 0.79, action: 'manual_review' as const },
+          low: { min: 0.3, max: 0.49, action: 'manual_review' as const },
+          auto_reject: { min: 0.0, max: 0.29, action: 'reject' as const },
+        },
+        manual_review_settings: {
+          queue_size_limit: null,
+          auto_review_timeout_days: null,
+          notifications: {
+            email_threshold: 100,
+            email_recipient: 'admin@example.com',
+            slack_webhook_url: 'https://hooks.slack.com/services/T1234/B5678/XXXX',
+            slack_threshold: 10,
+            dashboard_badge: true,
+          },
+        },
+      };
+      settingsService.getSettings.mockResolvedValue(mockSettings as any);
+
+      // Mock countActiveQueue to return size below threshold
+      jest.spyOn(service, 'countActiveQueue').mockResolvedValue(5);
+
+      const urlData = {
+        url_id: 'url-below-threshold',
+        url: 'https://below-threshold.example.com',
+        job_id: 'job-below-123',
+        confidence_score: 0.65,
+        confidence_band: 'medium',
+        action: 'manual_review' as const,
+      };
+
+      await service.enqueueForReview(
+        urlData,
+        mockLayer1Results,
+        mockLayer2Results,
+        mockLayer3Results,
+      );
+
+      // Verify notification was NOT called
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(notificationService.sendSlackNotification).not.toHaveBeenCalled();
+    });
+
+    it('should not block queue insertion if Slack notification fails', async () => {
+      // Setup: Mock settings with webhook URL
+      const mockSettings = {
+        confidence_bands: {
+          high: { min: 0.8, max: 1.0, action: 'auto_approve' as const },
+          medium: { min: 0.5, max: 0.79, action: 'manual_review' as const },
+          low: { min: 0.3, max: 0.49, action: 'manual_review' as const },
+          auto_reject: { min: 0.0, max: 0.29, action: 'reject' as const },
+        },
+        manual_review_settings: {
+          queue_size_limit: null,
+          auto_review_timeout_days: null,
+          notifications: {
+            email_threshold: 100,
+            email_recipient: 'admin@example.com',
+            slack_webhook_url: 'https://hooks.slack.com/services/T1234/B5678/XXXX',
+            slack_threshold: 5,
+            dashboard_badge: true,
+          },
+        },
+      };
+      settingsService.getSettings.mockResolvedValue(mockSettings as any);
+
+      jest.spyOn(service, 'countActiveQueue').mockResolvedValue(10);
+
+      // Mock Slack notification to fail
+      notificationService.sendSlackNotification.mockRejectedValue(new Error('Slack API error'));
+
+      const urlData = {
+        url_id: 'url-slack-error',
+        url: 'https://slack-error.example.com',
+        job_id: 'job-slack-error',
+        confidence_score: 0.65,
+        confidence_band: 'medium',
+        action: 'manual_review' as const,
+      };
+
+      // Should not throw even if Slack notification fails
+      await expect(
+        service.enqueueForReview(urlData, mockLayer1Results, mockLayer2Results, mockLayer3Results),
+      ).resolves.not.toThrow();
+
+      // Verify the notification was attempted despite settings
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(notificationService.sendSlackNotification).toHaveBeenCalled();
+    });
+
+    it('should use default slack_threshold of 10 if not configured', async () => {
+      // Setup: Mock settings without slack_threshold (should default to 10)
+      const mockSettings = {
+        confidence_bands: {
+          high: { min: 0.8, max: 1.0, action: 'auto_approve' as const },
+          medium: { min: 0.5, max: 0.79, action: 'manual_review' as const },
+          low: { min: 0.3, max: 0.49, action: 'manual_review' as const },
+          auto_reject: { min: 0.0, max: 0.29, action: 'reject' as const },
+        },
+        manual_review_settings: {
+          queue_size_limit: null,
+          auto_review_timeout_days: null,
+          notifications: {
+            email_threshold: 100,
+            email_recipient: 'admin@example.com',
+            slack_webhook_url: 'https://hooks.slack.com/services/T1234/B5678/XXXX',
+            // slack_threshold intentionally omitted
+            dashboard_badge: true,
+          } as any,
+        },
+      };
+      settingsService.getSettings.mockResolvedValue(mockSettings as any);
+
+      // Mock countActiveQueue to return 10
+      jest.spyOn(service, 'countActiveQueue').mockResolvedValue(10);
+
+      const urlData = {
+        url_id: 'url-default-threshold',
+        url: 'https://default-threshold.example.com',
+        job_id: 'job-default-123',
+        confidence_score: 0.65,
+        confidence_band: 'medium',
+        action: 'manual_review' as const,
+      };
+
+      await service.enqueueForReview(
+        urlData,
+        mockLayer1Results,
+        mockLayer2Results,
+        mockLayer3Results,
+      );
+
+      // Should call notification because 10 >= default threshold of 10
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(notificationService.sendSlackNotification).toHaveBeenCalledWith(
+        10,
+        'https://hooks.slack.com/services/T1234/B5678/XXXX',
+      );
     });
   });
 });
