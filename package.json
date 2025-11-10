@@ -27,6 +27,7 @@
     "turbo": "^2.0.0"
   },
   "dependencies": {
-    "@nestjs/schedule": "^6.0.1"
+    "@nestjs/schedule": "^6.0.1",
+    "@slack/webhook": "^7.0.6"
   }
 }

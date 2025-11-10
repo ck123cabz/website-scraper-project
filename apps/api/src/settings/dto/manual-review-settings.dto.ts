@@ -1,4 +1,12 @@
-import { IsNumber, IsBoolean, IsOptional, Min, ValidateNested } from 'class-validator';
+import {
+  IsNumber,
+  IsBoolean,
+  IsOptional,
+  Min,
+  ValidateNested,
+  IsUrl,
+  IsEmail,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 class NotificationsDto {
@@ -8,12 +16,25 @@ class NotificationsDto {
   email_threshold?: number;
 
   @IsOptional()
+  @IsEmail({}, { message: 'Email recipient must be a valid email address' })
+  email_recipient?: string;
+
+  @IsOptional()
   @IsBoolean()
   dashboard_badge?: boolean;
 
   @IsOptional()
   @IsBoolean()
   slack_integration?: boolean;
+
+  @IsOptional()
+  @IsUrl({}, { message: 'Slack webhook URL must be a valid URL' })
+  slack_webhook_url?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1, { message: 'Slack threshold must be at least 1' })
+  slack_threshold?: number;
 }
 
 export class ManualReviewSettingsDto {

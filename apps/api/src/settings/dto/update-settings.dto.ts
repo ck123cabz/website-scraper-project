@@ -1,6 +1,7 @@
 import {
   IsArray,
   IsInt,
+  IsNumber,
   Min,
   Max,
   ValidateNested,
