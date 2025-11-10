@@ -29,7 +29,7 @@ describe('NotificationService (T047-TEST-B)', () => {
       () =>
         ({
           send: mockWebhookSend,
-        }) as any,
+        }) as unknown as InstanceType<typeof slackWebhook.IncomingWebhook>,
     );
 
     // Mock ConfigService
@@ -40,7 +40,7 @@ describe('NotificationService (T047-TEST-B)', () => {
         }
         return defaultValue;
       }),
-    } as any;
+    } as unknown as jest.Mocked<ConfigService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -177,7 +177,7 @@ describe('NotificationService (T047-TEST-B)', () => {
     it('should return error when webhook URL is null', async () => {
       const queueSize = 10;
 
-      const result = await service.sendSlackNotification(queueSize, null as any);
+      const result = await service.sendSlackNotification(queueSize, null as unknown as string);
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
