@@ -13,7 +13,7 @@
 
 **Last Updated**: 2025-11-11 (Session 8 - Phase 5 COMPLETE)
 
-**Overall Progress**: 53/82 tasks completed (64.6%)
+**Overall Progress**: 59/82 tasks completed (71.9%)
 
 ### ✅ Completed Phases
 
@@ -289,9 +289,20 @@
 
 **Build Status**: ✅ All API changes verified
 
+**Phase 6: User Story 3 - Queue Size Limiting** - 6/6 tasks (100%) ✅ COMPLETE
+- ✅ T026: Queue size limit check in ManualReviewRouterService.enqueueForReview()
+- ✅ T027: Queue overflow handling with status='queue_overflow'
+- ✅ T028: Activity log creation for queue overflow events
+- ✅ T029: Queue size validation in ManualReviewSettingsDto
+- ✅ T029-TEST-A: Integration test - validates SC-004 (queue limit enforcement, overflow rejection)
+- ✅ T029-TEST-B: Unit test - validates queue_size_limit validation rules
+
+**Tests Verified**: 11 tests passing (queue-size-limit.spec.ts + queue-size-validation.spec.ts)
+
+**Features Delivered**: Users can now set a maximum queue size. When the limit is reached, additional URLs are rejected with status='queue_overflow' and logged in the activity trail.
+
 ### 🎯 Next Steps (Optional Enhancement Phases)
 
-**Phase 6**: User Story 3 - Queue Size Limiting (P3)
 **Phase 7**: User Story 4 - Stale Queue Management (P3)
 **Phase 8**: User Story 5 - Email Notifications (P4)
 **Phase 9**: User Story 6 - Dashboard Badge & Slack (P4)
@@ -417,12 +428,12 @@
 
 ### Implementation for User Story 3
 
-- [ ] T026 [US3] Implement queue size limit check in ManualReviewRouterService.enqueueForReview() by querying countActiveQueue() before insert
-- [ ] T027 [US3] Add queue overflow handling in ManualReviewRouterService - insert to url_results with status='queue_overflow' and reason='Manual review queue full' when limit reached
-- [ ] T028 [US3] Create activity log entries for queue overflow events (type 'queue_overflow', details containing queue_size, limit, url_id) using ActivityLogService
-- [ ] T029 [US3] Add queue size validation in SettingsService to ensure queue_size_limit is positive integer or null when saving settings
-- [ ] T029-TEST-A [US3] Write integration test at apps/api/src/manual-review/__tests__/queue-size-limit.spec.ts validating SC-004: set queue_size_limit=10, process 15 URLs requiring manual review, verify exactly 10 queued, 5 rejected with status='queue_overflow', 100% enforcement accuracy, activity logs created for overflow rejections
-- [ ] T029-TEST-B [US3] Write unit test at apps/api/src/settings/__tests__/queue-size-validation.spec.ts validating queue_size_limit validation rejects negative values, zero, non-integers, accepts positive integers and null (unlimited)
+- [X] T026 [US3] Implement queue size limit check in ManualReviewRouterService.enqueueForReview() by querying countActiveQueue() before insert
+- [X] T027 [US3] Add queue overflow handling in ManualReviewRouterService - insert to url_results with status='queue_overflow' and reason='Manual review queue full' when limit reached
+- [X] T028 [US3] Create activity log entries for queue overflow events (type 'queue_overflow', details containing queue_size, limit, url_id) using ActivityLogService
+- [X] T029 [US3] Add queue size validation in SettingsService to ensure queue_size_limit is positive integer or null when saving settings
+- [X] T029-TEST-A [US3] Write integration test at apps/api/src/manual-review/__tests__/queue-size-limit.spec.ts validating SC-004: set queue_size_limit=10, process 15 URLs requiring manual review, verify exactly 10 queued, 5 rejected with status='queue_overflow', 100% enforcement accuracy, activity logs created for overflow rejections
+- [X] T029-TEST-B [US3] Write unit test at apps/api/src/settings/__tests__/queue-size-validation.spec.ts validating queue_size_limit validation rejects negative values, zero, non-integers, accepts positive integers and null (unlimited)
 
 **Checkpoint**: User Story 3 complete - Queue size limit is enforced, overflow URLs are rejected with appropriate status and logging
 
