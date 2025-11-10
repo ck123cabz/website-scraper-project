@@ -48,9 +48,7 @@ describe('Review Decision Data Persistence (T018-TEST-D)', () => {
     }).compile();
 
     service = moduleFixture.get<ManualReviewService>(ManualReviewService);
-    routerService = moduleFixture.get<ManualReviewRouterService>(
-      ManualReviewRouterService,
-    );
+    routerService = moduleFixture.get<ManualReviewRouterService>(ManualReviewRouterService);
     supabaseService = moduleFixture.get<SupabaseService>(SupabaseService);
   });
 

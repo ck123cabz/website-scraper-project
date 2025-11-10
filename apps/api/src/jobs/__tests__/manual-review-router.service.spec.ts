@@ -140,7 +140,7 @@ describe('ManualReviewRouterService (T010-TEST-C Integration)', () => {
         url_id: 'url-low',
         url: 'https://low-example.com',
         job_id: 'job-456',
-        confidence_score: 0.40,
+        confidence_score: 0.4,
         confidence_band: 'low',
         action: 'manual_review' as const,
         reasoning: 'Low confidence - pending human review',

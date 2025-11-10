@@ -63,7 +63,7 @@ export class ConfidenceScoringService {
     if (signalBoost > 0) {
       this.logger.debug(
         `Signal strength analysis: ${sophisticationSignals?.length || 0} signals detected. ` +
-        `Confidence boosted from ${clampedConfidence.toFixed(2)} to ${adjustedConfidence.toFixed(2)}`,
+          `Confidence boosted from ${clampedConfidence.toFixed(2)} to ${adjustedConfidence.toFixed(2)}`,
       );
     }
 
@@ -114,10 +114,10 @@ export class ConfidenceScoringService {
     signals.forEach((signal) => {
       const lowerSignal = signal.toLowerCase();
 
-      if (highValueSignals.some(hv => lowerSignal.includes(hv))) {
+      if (highValueSignals.some((hv) => lowerSignal.includes(hv))) {
         highValueCount++;
         qualityScore += 0.03; // High-value signals boost by 3%
-      } else if (mediumValueSignals.some(mv => lowerSignal.includes(mv))) {
+      } else if (mediumValueSignals.some((mv) => lowerSignal.includes(mv))) {
         mediumValueCount++;
         qualityScore += 0.01; // Medium-value signals boost by 1%
       }
@@ -128,7 +128,7 @@ export class ConfidenceScoringService {
 
     this.logger.debug(
       `Signal analysis: ${signals.length} total, ${highValueCount} high-value, ` +
-      `${mediumValueCount} medium-value. Boost: ${(boost * 100).toFixed(1)}%`,
+        `${mediumValueCount} medium-value. Boost: ${(boost * 100).toFixed(1)}%`,
     );
 
     return boost;
@@ -169,7 +169,6 @@ export class ConfidenceScoringService {
       );
 
       return thresholds;
-
     } catch (error) {
       this.logger.warn('Failed to load thresholds from database. Using defaults.');
       return this.DEFAULT_THRESHOLDS;
@@ -253,12 +252,17 @@ export class ConfidenceScoringService {
    * @param score - Confidence score (0-1)
    * @returns Object with band name and action from settings
    */
-  async getConfidenceBandAction(score: number): Promise<{ band: string; action: 'auto_approve' | 'manual_review' | 'reject' }> {
+  async getConfidenceBandAction(
+    score: number,
+  ): Promise<{ band: string; action: 'auto_approve' | 'manual_review' | 'reject' }> {
     try {
       const settings = await this.settingsService.getSettings();
 
       // Validate and clamp score
-      const validScore = Math.max(0, Math.min(1, typeof score === 'number' && Number.isFinite(score) ? score : 0));
+      const validScore = Math.max(
+        0,
+        Math.min(1, typeof score === 'number' && Number.isFinite(score) ? score : 0),
+      );
 
       if (validScore !== score) {
         this.logger.warn(`Invalid score ${score} was clamped to ${validScore}`);
@@ -273,7 +277,7 @@ export class ConfidenceScoringService {
           const bandConfig = bands[bandName];
           if (bandConfig && validScore >= bandConfig.min && validScore <= bandConfig.max) {
             this.logger.debug(
-              `Score ${validScore} matched band '${bandName}' (${bandConfig.min}-${bandConfig.max}) with action '${bandConfig.action}'`
+              `Score ${validScore} matched band '${bandName}' (${bandConfig.min}-${bandConfig.max}) with action '${bandConfig.action}'`,
             );
             return { band: bandName, action: bandConfig.action };
           }

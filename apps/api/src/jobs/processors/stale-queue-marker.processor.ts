@@ -35,9 +35,7 @@ export class StaleQueueMarkerProcessor {
 
       // Skip if stale marking is disabled
       if (!timeoutDays) {
-        this.logger.log(
-          'Stale marking disabled (auto_review_timeout_days not configured)',
-        );
+        this.logger.log('Stale marking disabled (auto_review_timeout_days not configured)');
         return;
       }
 
@@ -119,9 +117,7 @@ export class StaleQueueMarkerProcessor {
     for (const item of staleItems) {
       try {
         const queuedDate = new Date(item.queued_at);
-        const daysInQueue = Math.floor(
-          (Date.now() - queuedDate.getTime()) / (1000 * 60 * 60 * 24),
-        );
+        const daysInQueue = Math.floor((Date.now() - queuedDate.getTime()) / (1000 * 60 * 60 * 24));
 
         await client.from('activity_logs').insert({
           event_type: 'queue_item_stale',

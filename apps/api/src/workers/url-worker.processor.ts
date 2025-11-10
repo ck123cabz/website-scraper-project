@@ -200,7 +200,9 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
       };
     } catch (error) {
       // Layer 1 fail-open: If Layer 1 errors, log warning and PASS to Layer 2
-      this.logger.warn(`Layer 1 error for ${url}: ${error instanceof Error ? error.message : 'Unknown'}. Failing open (PASS)`);
+      this.logger.warn(
+        `Layer 1 error for ${url}: ${error instanceof Error ? error.message : 'Unknown'}. Failing open (PASS)`,
+      );
       return {
         passed: true,
         reasoning: 'PASS - Layer 1 error (fail-open strategy)',
@@ -278,8 +280,8 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
 
     this.logger.log(
       `[Job ${jobId}] Layer 3 classified ${url.slice(0, 100)} - ${classification.classification} ` +
-      `(${classification.provider}, ${classification.processingTimeMs}ms, $${classification.cost.toFixed(6)}, ` +
-      `confidence: ${classification.confidence.toFixed(2)}, band: ${band}, action: ${action})`,
+        `(${classification.provider}, ${classification.processingTimeMs}ms, $${classification.cost.toFixed(6)}, ` +
+        `confidence: ${classification.confidence.toFixed(2)}, band: ${band}, action: ${action})`,
     );
 
     return {
@@ -296,7 +298,11 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
    * Update current_layer field for real-time dashboard tracking
    * @private
    */
-  private async updateCurrentLayer(jobId: string, currentUrl: string, layer: 1 | 2 | 3): Promise<void> {
+  private async updateCurrentLayer(
+    jobId: string,
+    currentUrl: string,
+    layer: 1 | 2 | 3,
+  ): Promise<void> {
     await this.supabase
       .getClient()
       .from('jobs')
@@ -323,24 +329,27 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     const processingTimeMs = Date.now() - startTime;
 
     // UPSERT result (update if exists, insert if not) - prevents duplicates on resume
-    await this.supabase.getClient().from('results').upsert({
-      job_id: jobId,
-      url: url,
-      status: 'rejected',
-      classification_result: 'rejected_prefilter', // Legacy field
-      classification_score: null,
-      classification_reasoning: layer1Result.reasoning,
-      llm_provider: 'none',
-      llm_cost: 0,
-      processing_time_ms: processingTimeMs,
-      elimination_layer: 'layer1',
-      layer1_reasoning: layer1Result.reasoning,
-      layer1_processing_time_ms: layer1Time,
-      prefilter_passed: false,
-      prefilter_reasoning: null,
-    }, {
-      onConflict: 'job_id,url', // Update existing row with same job_id + url
-    });
+    await this.supabase.getClient().from('results').upsert(
+      {
+        job_id: jobId,
+        url: url,
+        status: 'rejected',
+        classification_result: 'rejected_prefilter', // Legacy field
+        classification_score: null,
+        classification_reasoning: layer1Result.reasoning,
+        llm_provider: 'none',
+        llm_cost: 0,
+        processing_time_ms: processingTimeMs,
+        elimination_layer: 'layer1',
+        layer1_reasoning: layer1Result.reasoning,
+        layer1_processing_time_ms: layer1Time,
+        prefilter_passed: false,
+        prefilter_reasoning: null,
+      },
+      {
+        onConflict: 'job_id,url', // Update existing row with same job_id + url
+      },
+    );
 
     // Atomic update with SQL increment
     const { data: jobMeta } = await this.supabase
@@ -409,26 +418,32 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     const processingTimeMs = Date.now() - startTime;
 
     // UPSERT result
-    await this.supabase.getClient().from('results').upsert({
-      job_id: jobId,
-      url: url,
-      status: 'rejected',
-      classification_result: 'rejected_prefilter', // Legacy field
-      classification_score: null,
-      classification_reasoning: layer2Result.reasoning,
-      llm_provider: 'none',
-      llm_cost: 0,
-      processing_time_ms: processingTimeMs,
-      elimination_layer: 'layer2',
-      layer1_reasoning: null, // Layer 1 passed
-      layer1_processing_time_ms: layer1Time,
-      layer2_processing_time_ms: layer2Time,
-      layer2_signals: layer2Result.signals || null,
-      prefilter_passed: false,
-      prefilter_reasoning: null,
-    }, {
-      onConflict: 'job_id,url',
-    });
+    await this.supabase
+      .getClient()
+      .from('results')
+      .upsert(
+        {
+          job_id: jobId,
+          url: url,
+          status: 'rejected',
+          classification_result: 'rejected_prefilter', // Legacy field
+          classification_score: null,
+          classification_reasoning: layer2Result.reasoning,
+          llm_provider: 'none',
+          llm_cost: 0,
+          processing_time_ms: processingTimeMs,
+          elimination_layer: 'layer2',
+          layer1_reasoning: null, // Layer 1 passed
+          layer1_processing_time_ms: layer1Time,
+          layer2_processing_time_ms: layer2Time,
+          layer2_signals: layer2Result.signals || null,
+          prefilter_passed: false,
+          prefilter_reasoning: null,
+        },
+        {
+          onConflict: 'job_id,url',
+        },
+      );
 
     // Atomic update
     const { data: jobMeta } = await this.supabase
@@ -499,25 +514,28 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     const processingTimeMs = Date.now() - startTime;
 
     // Store Layer 3 processing metadata in results table for all routing decisions
-    await this.supabase.getClient().from('results').upsert({
-      job_id: jobId,
-      url: url,
-      status: 'processing', // Will be updated by routeUrl() to final status
-      classification_result: layer3Result.classification.classification,
-      classification_score: layer3Result.classification.confidence,
-      classification_reasoning: layer3Result.classification.reasoning,
-      llm_provider: layer3Result.classification.provider,
-      llm_cost: layer3Result.classification.cost,
-      processing_time_ms: processingTimeMs,
-      layer1_processing_time_ms: layer1Time,
-      layer2_processing_time_ms: layer2Time,
-      layer3_processing_time_ms: layer3Time,
-      confidence_band: layer3Result.confidenceBand,
-      prefilter_passed: true, // Legacy field
-      prefilter_reasoning: null,
-    }, {
-      onConflict: 'job_id,url',
-    });
+    await this.supabase.getClient().from('results').upsert(
+      {
+        job_id: jobId,
+        url: url,
+        status: 'processing', // Will be updated by routeUrl() to final status
+        classification_result: layer3Result.classification.classification,
+        classification_score: layer3Result.classification.confidence,
+        classification_reasoning: layer3Result.classification.reasoning,
+        llm_provider: layer3Result.classification.provider,
+        llm_cost: layer3Result.classification.cost,
+        processing_time_ms: processingTimeMs,
+        layer1_processing_time_ms: layer1Time,
+        layer2_processing_time_ms: layer2Time,
+        layer3_processing_time_ms: layer3Time,
+        confidence_band: layer3Result.confidenceBand,
+        prefilter_passed: true, // Legacy field
+        prefilter_reasoning: null,
+      },
+      {
+        onConflict: 'job_id,url',
+      },
+    );
 
     // Route URL based on confidence band action (T009: Confidence Band Action Routing)
     await this.manualReviewRouter.routeUrl(
@@ -673,22 +691,25 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     await this.supabase
       .getClient()
       .from('results')
-      .upsert({
-        job_id: jobId,
-        url: url,
-        status: 'failed',
-        classification_result: null,
-        classification_score: null,
-        classification_reasoning: null,
-        llm_provider: 'none',
-        llm_cost: 0,
-        processing_time_ms: processingTimeMs,
-        prefilter_passed: false,
-        prefilter_reasoning: `Failed: ${sanitizedError}`,
-        error_message: sanitizedError,
-      }, {
-        onConflict: 'job_id,url',
-      });
+      .upsert(
+        {
+          job_id: jobId,
+          url: url,
+          status: 'failed',
+          classification_result: null,
+          classification_score: null,
+          classification_reasoning: null,
+          llm_provider: 'none',
+          llm_cost: 0,
+          processing_time_ms: processingTimeMs,
+          prefilter_passed: false,
+          prefilter_reasoning: `Failed: ${sanitizedError}`,
+          error_message: sanitizedError,
+        },
+        {
+          onConflict: 'job_id,url',
+        },
+      );
 
     // Atomic update
     const { data: jobMeta } = await this.supabase
@@ -763,16 +784,16 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
 
     this.logger.log(
       `[Job ${jobId}] COMPLETED - ${job.successful_urls}/${job.total_urls} successful (${successRate.toFixed(1)}%), ` +
-      `Layer1: ${job.layer1_eliminated_count || 0} eliminated, Layer2: ${job.layer2_eliminated_count || 0} eliminated, ` +
-      `$${job.total_cost?.toFixed(6) || '0.00'} total cost, $${job.estimated_savings?.toFixed(6) || '0.00'} saved`,
+        `Layer1: ${job.layer1_eliminated_count || 0} eliminated, Layer2: ${job.layer2_eliminated_count || 0} eliminated, ` +
+        `$${job.total_cost?.toFixed(6) || '0.00'} total cost, $${job.estimated_savings?.toFixed(6) || '0.00'} saved`,
     );
 
     await this.insertActivityLog(
       jobId,
       'success',
       `Job completed: ${job.successful_urls}/${job.total_urls} successful, ` +
-      `Layer1: ${job.layer1_eliminated_count || 0} eliminated, Layer2: ${job.layer2_eliminated_count || 0} eliminated, ` +
-      `$${job.total_cost?.toFixed(6) || '0.00'} total cost, $${job.estimated_savings?.toFixed(6) || '0.00'} savings`,
+        `Layer1: ${job.layer1_eliminated_count || 0} eliminated, Layer2: ${job.layer2_eliminated_count || 0} eliminated, ` +
+        `$${job.total_cost?.toFixed(6) || '0.00'} total cost, $${job.estimated_savings?.toFixed(6) || '0.00'} savings`,
       {
         successRate: successRate.toFixed(2),
         avgCostPerUrl: avgCostPerUrl.toFixed(6),

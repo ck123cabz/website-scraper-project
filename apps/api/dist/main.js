@@ -80,7 +80,7 @@ async function bootstrap() {
         origin: (origin, callback) => {
             if (!origin)
                 return callback(null, true);
-            if (allowedOrigins.some(allowed => origin.startsWith(allowed))) {
+            if (allowedOrigins.some((allowed) => origin.startsWith(allowed))) {
                 callback(null, true);
             }
             else {

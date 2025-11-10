@@ -1,4 +1,13 @@
-import { IsArray, IsNumber, IsString, IsBoolean, Min, Max, ValidateNested, IsOptional } from 'class-validator';
+import {
+  IsArray,
+  IsNumber,
+  IsString,
+  IsBoolean,
+  Min,
+  Max,
+  ValidateNested,
+  IsOptional,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 class TldFiltersDto {

@@ -74,7 +74,9 @@ export class Layer2OperationalFilterService {
       const scrapeResult = await this.scraperService.fetchUrl(url);
 
       if (!scrapeResult.success || !scrapeResult.content) {
-        this.logger.warn(`Scraping failed for ${url.slice(0, 100)}: ${scrapeResult.error || 'Unknown error'}`);
+        this.logger.warn(
+          `Scraping failed for ${url.slice(0, 100)}: ${scrapeResult.error || 'Unknown error'}`,
+        );
         return this.createPassThroughResult(
           `PASS Layer 2 - Scraping failed (${scrapeResult.error}), defaulting to next layer`,
           startTime,
@@ -132,11 +134,15 @@ export class Layer2OperationalFilterService {
 
       if (layer2Rules && typeof layer2Rules === 'object') {
         return {
-          blog_freshness_days: layer2Rules.blog_freshness_days ?? this.DEFAULT_RULES.blog_freshness_days,
-          required_pages_count: layer2Rules.required_pages_count ?? this.DEFAULT_RULES.required_pages_count,
-          min_tech_stack_tools: layer2Rules.min_tech_stack_tools ?? this.DEFAULT_RULES.min_tech_stack_tools,
+          blog_freshness_days:
+            layer2Rules.blog_freshness_days ?? this.DEFAULT_RULES.blog_freshness_days,
+          required_pages_count:
+            layer2Rules.required_pages_count ?? this.DEFAULT_RULES.required_pages_count,
+          min_tech_stack_tools:
+            layer2Rules.min_tech_stack_tools ?? this.DEFAULT_RULES.min_tech_stack_tools,
           tech_stack_tools: layer2Rules.tech_stack_tools ?? this.DEFAULT_RULES.tech_stack_tools,
-          min_design_quality_score: layer2Rules.min_design_quality_score ?? this.DEFAULT_RULES.min_design_quality_score,
+          min_design_quality_score:
+            layer2Rules.min_design_quality_score ?? this.DEFAULT_RULES.min_design_quality_score,
         };
       }
     } catch (error) {
@@ -236,7 +242,7 @@ export class Layer2OperationalFilterService {
     }
 
     // Extract blog post dates
-    const postDates = this.extractBlogPostDates($, html);
+    const postDates = this.extractBlogPostDates($);
 
     if (postDates.length === 0) {
       return {
@@ -268,9 +274,7 @@ export class Layer2OperationalFilterService {
     const blogKeywords = ['blog', 'news', 'articles', 'insights', 'resources', 'latest posts'];
 
     // Check navigation links
-    const navText = $('nav, header, [class*="menu"], [class*="nav"]')
-      .text()
-      .toLowerCase();
+    const navText = $('nav, header, [class*="menu"], [class*="nav"]').text().toLowerCase();
 
     // Check section headings
     const headings = $('h1, h2, h3, h4')
@@ -293,7 +297,7 @@ export class Layer2OperationalFilterService {
    * Extract blog post publish dates from HTML
    * Parses common date formats and time tags
    */
-  private extractBlogPostDates($: any, html: string): Date[] {
+  private extractBlogPostDates($: any): Date[] {
     const dates: Date[] = [];
 
     // Extract dates from <time> tags
@@ -331,7 +335,20 @@ export class Layer2OperationalFilterService {
       }
 
       // Try common formats: "Jan 15, 2024", "15 January 2024", etc.
-      const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+      const monthNames = [
+        'jan',
+        'feb',
+        'mar',
+        'apr',
+        'may',
+        'jun',
+        'jul',
+        'aug',
+        'sep',
+        'oct',
+        'nov',
+        'dec',
+      ];
       const lower = dateStr.toLowerCase();
 
       for (let i = 0; i < monthNames.length; i++) {
@@ -357,9 +374,11 @@ export class Layer2OperationalFilterService {
     const detectedTools: string[] = [];
 
     // Google Analytics
-    if (html.includes('google-analytics.com/ga.js') ||
-        html.includes('googletagmanager.com/gtag/js') ||
-        html.match(/ga\(['"]create/)) {
+    if (
+      html.includes('google-analytics.com/ga.js') ||
+      html.includes('googletagmanager.com/gtag/js') ||
+      html.match(/ga\(['"]create/)
+    ) {
       detectedTools.push('Google Analytics');
     }
 
@@ -369,9 +388,11 @@ export class Layer2OperationalFilterService {
     }
 
     // HubSpot
-    if (html.includes('js.hs-scripts.com') ||
-        html.includes('forms.hubspot.com') ||
-        html.match(/hbspt\./)) {
+    if (
+      html.includes('js.hs-scripts.com') ||
+      html.includes('forms.hubspot.com') ||
+      html.match(/hbspt\./)
+    ) {
       detectedTools.push('HubSpot');
     }
 
@@ -442,7 +463,11 @@ export class Layer2OperationalFilterService {
     }
 
     // Modern features (lazy loading, srcset, picture tags)
-    if ($('img[loading="lazy"]').length > 0 || $('img[srcset]').length > 0 || $('picture').length > 0) {
+    if (
+      $('img[loading="lazy"]').length > 0 ||
+      $('img[srcset]').length > 0 ||
+      $('picture').length > 0
+    ) {
       score += 1;
     }
 
@@ -542,9 +567,19 @@ export class Layer2OperationalFilterService {
       reasoning,
       signals: {
         company_pages: { has_about: false, has_team: false, has_contact: false, count: 0 },
-        blog_data: { has_blog: false, last_post_date: null, days_since_last_post: null, passes_freshness: false },
+        blog_data: {
+          has_blog: false,
+          last_post_date: null,
+          days_since_last_post: null,
+          passes_freshness: false,
+        },
         tech_stack: { tools_detected: [], count: 0 },
-        design_quality: { score: 0, has_modern_framework: false, is_responsive: false, has_professional_imagery: false },
+        design_quality: {
+          score: 0,
+          has_modern_framework: false,
+          is_responsive: false,
+          has_professional_imagery: false,
+        },
       },
       processingTimeMs: Date.now() - startTime,
     };
@@ -556,8 +591,10 @@ export class Layer2OperationalFilterService {
    *
    * @deprecated Use filterUrl() instead
    */
-  async validateOperational(url: string, content: any): Promise<any> {
-    this.logger.debug(`[DEPRECATED] validateOperational called for ${url.slice(0, 100)} - redirecting to filterUrl()`);
+  async validateOperational(url: string): Promise<any> {
+    this.logger.debug(
+      `[DEPRECATED] validateOperational called for ${url.slice(0, 100)} - redirecting to filterUrl()`,
+    );
     const result = await this.filterUrl(url);
 
     return {

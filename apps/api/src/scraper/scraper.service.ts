@@ -80,7 +80,6 @@ export class ScraperService {
 
       // Handle non-200 status codes
       if (response.status !== 200) {
-        const errorCode = this.getErrorCode(response.status);
         const errorMessage = `ScrapingBee returned status ${response.status}`;
         const responseBody =
           typeof response.data === 'string'

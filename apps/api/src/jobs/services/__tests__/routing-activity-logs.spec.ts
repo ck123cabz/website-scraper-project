@@ -2,11 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ManualReviewRouterService } from '../manual-review-router.service';
 import { SupabaseService } from '../../../supabase/supabase.service';
 import { SettingsService } from '../../../settings/settings.service';
-import type {
-  Layer1Results,
-  Layer2Results,
-  Layer3Results,
-} from '@website-scraper/shared';
+import type { Layer1Results, Layer2Results, Layer3Results } from '@website-scraper/shared';
 
 /**
  * Test Suite: Routing Activity Logs (Phase 5 - User Story 2)
@@ -87,13 +83,9 @@ describe('Routing Activity Logs - T025-TEST-B', () => {
                   return Promise.resolve({ data: null, error: null });
                 }),
               }),
-              single: jest.fn().mockReturnValue(
-                Promise.resolve({ data: null, error: null }),
-              ),
+              single: jest.fn().mockReturnValue(Promise.resolve({ data: null, error: null })),
             }),
-            is: jest.fn().mockReturnValue(
-              Promise.resolve({ count: 0, error: null }),
-            ),
+            is: jest.fn().mockReturnValue(Promise.resolve({ count: 0, error: null })),
           }),
           insert: jest.fn().mockReturnValue({
             select: jest.fn().mockReturnValue({
@@ -110,9 +102,7 @@ describe('Routing Activity Logs - T025-TEST-B', () => {
             }),
           }),
           update: jest.fn().mockReturnValue({
-            eq: jest.fn().mockReturnValue(
-              Promise.resolve({ data: null, error: null }),
-            ),
+            eq: jest.fn().mockReturnValue(Promise.resolve({ data: null, error: null })),
           }),
         };
       }),
@@ -172,18 +162,12 @@ describe('Routing Activity Logs - T025-TEST-B', () => {
     };
 
     // Act
-    await service.routeUrl(
-      urlData,
-      mockLayer1Results,
-      mockLayer2Results,
-      mockLayer3Results,
-    );
+    await service.routeUrl(urlData, mockLayer1Results, mockLayer2Results, mockLayer3Results);
 
     // Assert: Activity log entries should exist
     const autoApproveLogs = mockActivityLogs.filter(
       (log) =>
-        log.event_data?.action === 'auto_approve' &&
-        log.event_data?.url_id === 'auto-approve-url',
+        log.event_data?.action === 'auto_approve' && log.event_data?.url_id === 'auto-approve-url',
     );
 
     expect(autoApproveLogs.length).toBeGreaterThan(0);
@@ -216,12 +200,7 @@ describe('Routing Activity Logs - T025-TEST-B', () => {
     };
 
     // Act
-    await service.routeUrl(
-      urlData,
-      mockLayer1Results,
-      mockLayer2Results,
-      mockLayer3Results,
-    );
+    await service.routeUrl(urlData, mockLayer1Results, mockLayer2Results, mockLayer3Results);
 
     // Assert: Activity log entries should exist for routing
     const manualReviewLogs = mockActivityLogs.filter(
@@ -260,18 +239,11 @@ describe('Routing Activity Logs - T025-TEST-B', () => {
     };
 
     // Act
-    await service.routeUrl(
-      urlData,
-      mockLayer1Results,
-      mockLayer2Results,
-      mockLayer3Results,
-    );
+    await service.routeUrl(urlData, mockLayer1Results, mockLayer2Results, mockLayer3Results);
 
     // Assert: Activity log entry should exist
     const rejectLogs = mockActivityLogs.filter(
-      (log) =>
-        log.event_data?.action === 'reject' &&
-        log.event_data?.url_id === 'reject-url',
+      (log) => log.event_data?.action === 'reject' && log.event_data?.url_id === 'reject-url',
     );
 
     expect(rejectLogs.length).toBeGreaterThan(0);
@@ -303,18 +275,12 @@ describe('Routing Activity Logs - T025-TEST-B', () => {
     };
 
     // Act
-    await service.routeUrl(
-      urlData,
-      mockLayer1Results,
-      mockLayer2Results,
-      mockLayer3Results,
-    );
+    await service.routeUrl(urlData, mockLayer1Results, mockLayer2Results, mockLayer3Results);
 
     // Assert: Activity log entry should exist for manual review routing
     const manualReviewLogs = mockActivityLogs.filter(
       (log) =>
-        log.event_data?.action === 'manual_review' &&
-        log.event_data?.url_id === 'audit-test-url',
+        log.event_data?.action === 'manual_review' && log.event_data?.url_id === 'audit-test-url',
     );
 
     expect(manualReviewLogs.length).toBeGreaterThan(0);
@@ -337,12 +303,7 @@ describe('Routing Activity Logs - T025-TEST-B', () => {
     };
 
     // Act
-    await service.routeUrl(
-      urlData,
-      mockLayer1Results,
-      mockLayer2Results,
-      mockLayer3Results,
-    );
+    await service.routeUrl(urlData, mockLayer1Results, mockLayer2Results, mockLayer3Results);
 
     // Assert: All logs should have timestamps
     mockActivityLogs.forEach((log) => {
@@ -390,12 +351,7 @@ describe('Routing Activity Logs - T025-TEST-B', () => {
 
     // Act: Route all URLs
     for (const url of urlsToRoute) {
-      await service.routeUrl(
-        url,
-        mockLayer1Results,
-        mockLayer2Results,
-        mockLayer3Results,
-      );
+      await service.routeUrl(url, mockLayer1Results, mockLayer2Results, mockLayer3Results);
     }
 
     // Assert: Each URL should generate at least one log entry
@@ -403,9 +359,7 @@ describe('Routing Activity Logs - T025-TEST-B', () => {
     expect(newLogs).toBeGreaterThanOrEqual(urlsToRoute.length);
 
     // Verify we have logs for each URL
-    const uniqueUrls = new Set(
-      mockActivityLogs.map((log) => log.event_data?.url_id),
-    );
+    const uniqueUrls = new Set(mockActivityLogs.map((log) => log.event_data?.url_id));
     expect(uniqueUrls.size).toBeGreaterThanOrEqual(urlsToRoute.length);
   });
 });

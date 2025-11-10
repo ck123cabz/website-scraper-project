@@ -5,8 +5,6 @@ import { ScraperService } from '../../scraper/scraper.service';
 import { Layer1DomainAnalysisService } from '../../jobs/services/layer1-domain-analysis.service';
 import { Layer2OperationalFilterService } from '../../jobs/services/layer2-operational-filter.service';
 import { LlmService } from '../../jobs/services/llm.service';
-import { ConfidenceScoringService } from '../../jobs/services/confidence-scoring.service';
-import { ManualReviewRouterService } from '../../jobs/services/manual-review-router.service';
 import type { Job } from 'bullmq';
 
 /**
@@ -15,13 +13,10 @@ import type { Job } from 'bullmq';
  */
 describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
   let processor: UrlWorkerProcessor;
-  let supabaseService: jest.Mocked<SupabaseService>;
   let scraperService: jest.Mocked<ScraperService>;
   let layer1AnalysisService: jest.Mocked<Layer1DomainAnalysisService>;
   let layer2FilterService: jest.Mocked<Layer2OperationalFilterService>;
   let llmService: jest.Mocked<LlmService>;
-  let confidenceScoringService: jest.Mocked<ConfidenceScoringService>;
-  let manualReviewRouterService: jest.Mocked<ManualReviewRouterService>;
 
   // Mock Supabase client
   const mockSupabaseClient = {
@@ -86,13 +81,14 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
     }).compile();
 
     processor = module.get<UrlWorkerProcessor>(UrlWorkerProcessor);
-    supabaseService = module.get(SupabaseService) as jest.Mocked<SupabaseService>;
     scraperService = module.get(ScraperService) as jest.Mocked<ScraperService>;
-    layer1AnalysisService = module.get(Layer1DomainAnalysisService) as jest.Mocked<Layer1DomainAnalysisService>;
-    layer2FilterService = module.get(Layer2OperationalFilterService) as jest.Mocked<Layer2OperationalFilterService>;
+    layer1AnalysisService = module.get(
+      Layer1DomainAnalysisService,
+    ) as jest.Mocked<Layer1DomainAnalysisService>;
+    layer2FilterService = module.get(
+      Layer2OperationalFilterService,
+    ) as jest.Mocked<Layer2OperationalFilterService>;
     llmService = module.get(LlmService) as jest.Mocked<LlmService>;
-    confidenceScoringService = module.get(ConfidenceScoringService) as jest.Mocked<ConfidenceScoringService>;
-    manualReviewRouterService = module.get(ManualReviewRouterService) as jest.Mocked<ManualReviewRouterService>;
 
     jest.clearAllMocks();
   });
@@ -138,9 +134,19 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
         reasoning: 'PASS - Operational signals valid',
         signals: {
           company_pages: { has_about: true, has_team: true, has_contact: true, count: 3 },
-          blog_data: { has_blog: true, last_post_date: '2025-10-01', days_since_last_post: 15, passes_freshness: true },
+          blog_data: {
+            has_blog: true,
+            last_post_date: '2025-10-01',
+            days_since_last_post: 15,
+            passes_freshness: true,
+          },
           tech_stack: { tools_detected: ['Google Analytics', 'HubSpot'], count: 2 },
-          design_quality: { score: 8, has_modern_framework: true, is_responsive: true, has_professional_imagery: true },
+          design_quality: {
+            score: 8,
+            has_modern_framework: true,
+            is_responsive: true,
+            has_professional_imagery: true,
+          },
         },
         processingTimeMs: 100,
       });
@@ -330,9 +336,19 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
         reasoning: 'REJECT - No company page found',
         signals: {
           company_pages: { has_about: false, has_team: false, has_contact: false, count: 0 },
-          blog_data: { has_blog: false, last_post_date: null, days_since_last_post: null, passes_freshness: false },
+          blog_data: {
+            has_blog: false,
+            last_post_date: null,
+            days_since_last_post: null,
+            passes_freshness: false,
+          },
           tech_stack: { tools_detected: [], count: 0 },
-          design_quality: { score: 3, has_modern_framework: false, is_responsive: false, has_professional_imagery: false },
+          design_quality: {
+            score: 3,
+            has_modern_framework: false,
+            is_responsive: false,
+            has_professional_imagery: false,
+          },
         },
         processingTimeMs: 100,
       });

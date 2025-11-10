@@ -125,20 +125,24 @@ export class SettingsService {
 
       // V1 fields (if provided)
       if (dto.prefilter_rules !== undefined) updatePayload.prefilter_rules = dto.prefilter_rules;
-      if (dto.classification_indicators !== undefined) updatePayload.classification_indicators = dto.classification_indicators;
+      if (dto.classification_indicators !== undefined)
+        updatePayload.classification_indicators = dto.classification_indicators;
       if (dto.llm_temperature !== undefined) updatePayload.llm_temperature = dto.llm_temperature;
-      if (dto.confidence_threshold !== undefined) updatePayload.confidence_threshold = dto.confidence_threshold;
-      if (dto.content_truncation_limit !== undefined) updatePayload.content_truncation_limit = dto.content_truncation_limit;
+      if (dto.confidence_threshold !== undefined)
+        updatePayload.confidence_threshold = dto.confidence_threshold;
+      if (dto.content_truncation_limit !== undefined)
+        updatePayload.content_truncation_limit = dto.content_truncation_limit;
 
       // 3-Tier Architecture fields (if provided)
       if (dto.layer1_rules !== undefined) updatePayload.layer1_rules = dto.layer1_rules;
       if (dto.layer2_rules !== undefined) updatePayload.layer2_rules = dto.layer2_rules;
       if (dto.layer3_rules !== undefined) updatePayload.layer3_rules = dto.layer3_rules;
       if (dto.confidence_bands !== undefined) updatePayload.confidence_bands = dto.confidence_bands;
-      if (dto.manual_review_settings !== undefined) updatePayload.manual_review_settings = dto.manual_review_settings;
+      if (dto.manual_review_settings !== undefined)
+        updatePayload.manual_review_settings = dto.manual_review_settings;
 
       // Update settings in database
-      const { data, error} = await supabase
+      const { data, error } = await supabase
         .from('classification_settings')
         .update(updatePayload)
         .eq('id', current.id)
@@ -200,11 +204,7 @@ export class SettingsService {
       let response: { data: any; error: { message: string } | null };
 
       if (current.id === 'default') {
-        response = await supabase
-          .from('classification_settings')
-          .insert(payload)
-          .select()
-          .single();
+        response = await supabase.from('classification_settings').insert(payload).select().single();
       } else {
         response = await supabase
           .from('classification_settings')
@@ -434,35 +434,49 @@ export class SettingsService {
         ? data.classification_indicators
         : defaults.classification_indicators,
       llm_temperature: this.toNumber(data?.llm_temperature, defaults.llm_temperature!),
-      confidence_threshold: this.toNumber(data?.confidence_threshold, defaults.confidence_threshold!),
+      confidence_threshold: this.toNumber(
+        data?.confidence_threshold,
+        defaults.confidence_threshold!,
+      ),
       content_truncation_limit: Math.round(
         this.toNumber(data?.content_truncation_limit, defaults.content_truncation_limit!),
       ),
-      confidence_threshold_high: this.toNumber(data?.confidence_threshold_high, defaults.confidence_threshold_high!),
-      confidence_threshold_medium: this.toNumber(data?.confidence_threshold_medium, defaults.confidence_threshold_medium!),
-      confidence_threshold_low: this.toNumber(data?.confidence_threshold_low, defaults.confidence_threshold_low!),
+      confidence_threshold_high: this.toNumber(
+        data?.confidence_threshold_high,
+        defaults.confidence_threshold_high!,
+      ),
+      confidence_threshold_medium: this.toNumber(
+        data?.confidence_threshold_medium,
+        defaults.confidence_threshold_medium!,
+      ),
+      confidence_threshold_low: this.toNumber(
+        data?.confidence_threshold_low,
+        defaults.confidence_threshold_low!,
+      ),
 
       // 3-Tier Architecture fields (Story 3.0)
-      layer1_rules: data?.layer1_rules && typeof data.layer1_rules === 'object'
-        ? data.layer1_rules
-        : defaults.layer1_rules,
-      layer2_rules: data?.layer2_rules && typeof data.layer2_rules === 'object'
-        ? data.layer2_rules
-        : defaults.layer2_rules,
-      layer3_rules: data?.layer3_rules && typeof data.layer3_rules === 'object'
-        ? data.layer3_rules
-        : defaults.layer3_rules,
-      confidence_bands: data?.confidence_bands && typeof data.confidence_bands === 'object'
-        ? data.confidence_bands
-        : defaults.confidence_bands,
-      manual_review_settings: data?.manual_review_settings && typeof data.manual_review_settings === 'object'
-        ? data.manual_review_settings
-        : defaults.manual_review_settings,
+      layer1_rules:
+        data?.layer1_rules && typeof data.layer1_rules === 'object'
+          ? data.layer1_rules
+          : defaults.layer1_rules,
+      layer2_rules:
+        data?.layer2_rules && typeof data.layer2_rules === 'object'
+          ? data.layer2_rules
+          : defaults.layer2_rules,
+      layer3_rules:
+        data?.layer3_rules && typeof data.layer3_rules === 'object'
+          ? data.layer3_rules
+          : defaults.layer3_rules,
+      confidence_bands:
+        data?.confidence_bands && typeof data.confidence_bands === 'object'
+          ? data.confidence_bands
+          : defaults.confidence_bands,
+      manual_review_settings:
+        data?.manual_review_settings && typeof data.manual_review_settings === 'object'
+          ? data.manual_review_settings
+          : defaults.manual_review_settings,
 
-      updated_at:
-        typeof data?.updated_at === 'string'
-          ? data.updated_at
-          : defaults.updated_at,
+      updated_at: typeof data?.updated_at === 'string' ? data.updated_at : defaults.updated_at,
     };
   }
 

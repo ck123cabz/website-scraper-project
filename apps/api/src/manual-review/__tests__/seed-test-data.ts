@@ -35,12 +35,7 @@ export class TestDataSeeder {
     lowCount?: number;
     staleCount?: number;
   }): Promise<string> {
-    const {
-      highCount = 5,
-      mediumCount = 10,
-      lowCount = 5,
-      staleCount = 2,
-    } = options || {};
+    const { highCount = 5, mediumCount = 10, lowCount = 5, staleCount = 2 } = options || {};
 
     this.logger.log(
       `Seeding test job: ${highCount} high, ${mediumCount} medium, ${lowCount} low, ${staleCount} stale`,
@@ -118,10 +113,7 @@ export class TestDataSeeder {
   /**
    * Create a stale test URL (queued 8+ days ago)
    */
-  private async createStaleTestUrl(
-    jobId: string,
-    index: number,
-  ): Promise<void> {
+  private async createStaleTestUrl(jobId: string, index: number): Promise<void> {
     const url = `https://example-stale-${index}.com/test-page`;
 
     // Create URL entity
@@ -288,9 +280,7 @@ export class TestDataSeeder {
  * Standalone function for use in test setup/teardown
  * Creates and returns a configured seeder instance
  */
-export async function createTestDataSeeder(
-  dataSource: any,
-): Promise<TestDataSeeder> {
+export async function createTestDataSeeder(dataSource: any): Promise<TestDataSeeder> {
   const jobRepository = dataSource.getRepository('Job');
   const urlRepository = dataSource.getRepository('Url');
   const queueRepository = dataSource.getRepository('ManualReviewQueue');
@@ -301,7 +291,10 @@ export async function createTestDataSeeder(
 /**
  * Helper function to seed test data in beforeAll hooks
  */
-export async function setupTestData(dataSource: any, size: 'minimal' | 'standard' | 'large' = 'standard'): Promise<string> {
+export async function setupTestData(
+  dataSource: any,
+  size: 'minimal' | 'standard' | 'large' = 'standard',
+): Promise<string> {
   const seeder = await createTestDataSeeder(dataSource);
 
   if (size === 'minimal') {

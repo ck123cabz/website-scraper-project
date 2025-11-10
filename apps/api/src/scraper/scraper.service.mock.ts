@@ -292,7 +292,7 @@ export class MockScraperService {
    * Extract content from HTML (same implementation as real service)
    * This method is kept identical to maintain compatibility
    */
-  extractContent(html: string): ContentExtractionResult {
+  extractContent(): ContentExtractionResult {
     // For mock service, we pre-populate title/meta in mockResponses
     // This method is kept for API compatibility but not used
     return {

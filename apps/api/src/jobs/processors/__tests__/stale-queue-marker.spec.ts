@@ -69,24 +69,12 @@ describe('Stale Queue Marker Processor - T035-TEST-A', () => {
 
       const mockClient: any = {
         from: jest.fn((table) => ({
-          select: jest
-            .fn()
-            .mockReturnThis(),
-          is: jest
-            .fn()
-            .mockReturnThis(),
-          eq: jest
-            .fn()
-            .mockReturnThis(),
-          lt: jest
-            .fn()
-            .mockResolvedValue({ data: staleItems, error: null }),
-          update: jest
-            .fn()
-            .mockReturnThis(),
-          insert: jest
-            .fn()
-            .mockResolvedValue({ error: null }),
+          select: jest.fn().mockReturnThis(),
+          is: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          lt: jest.fn().mockResolvedValue({ data: staleItems, error: null }),
+          update: jest.fn().mockReturnThis(),
+          insert: jest.fn().mockResolvedValue({ error: null }),
         })),
       };
 
@@ -134,18 +122,10 @@ describe('Stale Queue Marker Processor - T035-TEST-A', () => {
 
       const mockClient: any = {
         from: jest.fn((table) => ({
-          select: jest
-            .fn()
-            .mockReturnThis(),
-          is: jest
-            .fn()
-            .mockReturnThis(),
-          eq: jest
-            .fn()
-            .mockReturnThis(),
-          lt: jest
-            .fn()
-            .mockResolvedValue({ data: [], error: null }),
+          select: jest.fn().mockReturnThis(),
+          is: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          lt: jest.fn().mockResolvedValue({ data: [], error: null }),
         })),
       };
 
@@ -181,30 +161,16 @@ describe('Stale Queue Marker Processor - T035-TEST-A', () => {
         from: jest.fn((table) => {
           if (table === 'activity_logs') {
             return {
-              insert: jest
-                .fn()
-                .mockRejectedValue(new Error('Activity log failed')),
+              insert: jest.fn().mockRejectedValue(new Error('Activity log failed')),
             };
           }
           return {
-            select: jest
-              .fn()
-              .mockReturnThis(),
-            is: jest
-              .fn()
-              .mockReturnThis(),
-            eq: jest
-              .fn()
-              .mockReturnThis(),
-            lt: jest
-              .fn()
-              .mockResolvedValue({ data: staleItems, error: null }),
-            update: jest
-              .fn()
-              .mockReturnThis(),
-            insert: jest
-              .fn()
-              .mockResolvedValue({ error: null }),
+            select: jest.fn().mockReturnThis(),
+            is: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            lt: jest.fn().mockResolvedValue({ data: staleItems, error: null }),
+            update: jest.fn().mockReturnThis(),
+            insert: jest.fn().mockResolvedValue({ error: null }),
           };
         }),
       };
@@ -230,24 +196,12 @@ describe('Stale Queue Marker Processor - T035-TEST-A', () => {
 
       const mockClient: any = {
         from: jest.fn((table) => ({
-          select: jest
-            .fn()
-            .mockReturnThis(),
-          is: jest
-            .fn()
-            .mockReturnThis(),
-          eq: jest
-            .fn()
-            .mockReturnThis(),
-          lt: jest
-            .fn()
-            .mockResolvedValue({ data: [], error: null }),
-          update: jest
-            .fn()
-            .mockReturnThis(),
-          insert: jest
-            .fn()
-            .mockResolvedValue({ error: null }),
+          select: jest.fn().mockReturnThis(),
+          is: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          lt: jest.fn().mockResolvedValue({ data: [], error: null }),
+          update: jest.fn().mockReturnThis(),
+          insert: jest.fn().mockResolvedValue({ error: null }),
         })),
       };
 

@@ -1,11 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { SettingsService } from '../../settings/settings.service';
-import type {
-  Layer1Results,
-  Layer2Results,
-  Layer3Results,
-} from '@website-scraper/shared';
+import type { Layer1Results, Layer2Results, Layer3Results } from '@website-scraper/shared';
 
 /**
  * Manual Review Router Service
@@ -77,24 +73,14 @@ export class ManualReviewRouterService {
           break;
 
         case 'manual_review':
-          await this.enqueueForReview(
-            urlData,
-            layer1Results,
-            layer2Results,
-            layer3Results,
-          );
+          await this.enqueueForReview(urlData, layer1Results, layer2Results, layer3Results);
           break;
 
         default:
           this.logger.error(
             `Unknown action "${urlData.action}" for URL ${urlData.url_id}. Defaulting to manual review.`,
           );
-          await this.enqueueForReview(
-            urlData,
-            layer1Results,
-            layer2Results,
-            layer3Results,
-          );
+          await this.enqueueForReview(urlData, layer1Results, layer2Results, layer3Results);
       }
     } catch (error) {
       this.logger.error(
@@ -178,10 +164,7 @@ export class ManualReviewRouterService {
       .single();
 
     if (error) {
-      this.logger.error(
-        `Failed to enqueue URL ${urlData.url_id} for manual review:`,
-        error,
-      );
+      this.logger.error(`Failed to enqueue URL ${urlData.url_id} for manual review:`, error);
       throw new Error(`Failed to enqueue URL: ${error.message}`);
     }
 
@@ -234,16 +217,11 @@ export class ManualReviewRouterService {
         .eq('url_id', urlId);
 
       if (error) {
-        this.logger.error(
-          `Failed to update url_results for URL ${urlId}:`,
-          error,
-        );
+        this.logger.error(`Failed to update url_results for URL ${urlId}:`, error);
         throw new Error(`Failed to update url_results: ${error.message}`);
       }
 
-      this.logger.log(
-        `URL ${urlId} result updated: status=${status}, score=${confidenceScore}`,
-      );
+      this.logger.log(`URL ${urlId} result updated: status=${status}, score=${confidenceScore}`);
     } else {
       // Insert new entry
       const { error } = await client.from('url_results').insert({
@@ -256,16 +234,11 @@ export class ManualReviewRouterService {
       });
 
       if (error) {
-        this.logger.error(
-          `Failed to insert url_results for URL ${urlId}:`,
-          error,
-        );
+        this.logger.error(`Failed to insert url_results for URL ${urlId}:`, error);
         throw new Error(`Failed to insert url_results: ${error.message}`);
       }
 
-      this.logger.log(
-        `URL ${urlId} finalized: status=${status}, score=${confidenceScore}`,
-      );
+      this.logger.log(`URL ${urlId} finalized: status=${status}, score=${confidenceScore}`);
     }
 
     // Log routing decision
@@ -343,14 +316,16 @@ export class ManualReviewRouterService {
    * @param notes - Optional reviewer notes
    */
   async reviewAndSoftDelete(
-    queueEntryIdOrData: string | {
-      queue_entry_id: string;
-      url_id: string;
-      job_id: string;
-      decision: 'approved' | 'rejected';
-      notes?: string;
-      confidence_band?: string;
-    },
+    queueEntryIdOrData:
+      | string
+      | {
+          queue_entry_id: string;
+          url_id: string;
+          job_id: string;
+          decision: 'approved' | 'rejected';
+          notes?: string;
+          confidence_band?: string;
+        },
     decision?: 'approved' | 'rejected',
     notes?: string,
   ): Promise<void> {
@@ -417,8 +392,6 @@ export class ManualReviewRouterService {
       score: queueEntry.confidence_score,
     });
 
-    this.logger.log(
-      `Queue entry ${queueEntryId} reviewed: decision=${finalDecision}`,
-    );
+    this.logger.log(`Queue entry ${queueEntryId} reviewed: decision=${finalDecision}`);
   }
 }

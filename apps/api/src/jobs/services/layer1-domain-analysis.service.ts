@@ -59,7 +59,9 @@ export class Layer1DomainAnalysisService implements OnModuleInit {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Failed to load Layer 1 rules from database: ${errorMessage}. Falling back to file.`);
+      this.logger.error(
+        `Failed to load Layer 1 rules from database: ${errorMessage}. Falling back to file.`,
+      );
       this.loadRulesFromFile();
     }
   }
@@ -250,7 +252,9 @@ export class Layer1DomainAnalysisService implements OnModuleInit {
       // All checks passed
       const processingTime = Date.now() - startTime;
       if (processingTime > 50) {
-        this.logger.warn(`Slow Layer 1 analysis: ${processingTime}ms for URL: ${url.slice(0, 100)}`);
+        this.logger.warn(
+          `Slow Layer 1 analysis: ${processingTime}ms for URL: ${url.slice(0, 100)}`,
+        );
       }
 
       return {
@@ -309,7 +313,11 @@ export class Layer1DomainAnalysisService implements OnModuleInit {
     const lowerHostname = hostname.toLowerCase();
 
     // Check blog platform domains (exact hostname match)
-    if (this.rules.tld_filtering.blog_platform_domains.some((domain) => lowerHostname === domain || lowerHostname.endsWith('.' + domain))) {
+    if (
+      this.rules.tld_filtering.blog_platform_domains.some(
+        (domain) => lowerHostname === domain || lowerHostname.endsWith('.' + domain),
+      )
+    ) {
       return {
         passed: false,
         reasoning: `REJECT Layer 1 - Blog platform domain (${hostname})`,
@@ -545,7 +553,9 @@ export class Layer1DomainAnalysisService implements OnModuleInit {
    * Get total cost savings
    */
   getTotalSavings(eliminatedCount: number): number {
-    return this.calculateScrapingSavings(eliminatedCount) + this.calculateLLMSavings(eliminatedCount);
+    return (
+      this.calculateScrapingSavings(eliminatedCount) + this.calculateLLMSavings(eliminatedCount)
+    );
   }
 
   /**
@@ -575,8 +585,6 @@ export class Layer1DomainAnalysisService implements OnModuleInit {
       } catch {
         return this.getEmptyResults('Invalid URL format');
       }
-
-      const lowerHostname = hostname.toLowerCase();
 
       // Domain Age - NOT IMPLEMENTED YET
       // Current service doesn't check domain age, mark as unchecked
@@ -633,7 +641,10 @@ export class Layer1DomainAnalysisService implements OnModuleInit {
   /**
    * Evaluate TLD type for structured results
    */
-  private evaluateTLD(hostname: string, tld: string): {
+  private evaluateTLD(
+    hostname: string,
+    tld: string,
+  ): {
     checked: boolean;
     passed: boolean;
     value?: string;
@@ -645,7 +656,7 @@ export class Layer1DomainAnalysisService implements OnModuleInit {
 
     // Check blog platform domains
     const blogPlatformMatch = this.rules!.tld_filtering.blog_platform_domains.find(
-      (domain) => lowerHostname === domain || lowerHostname.endsWith('.' + domain)
+      (domain) => lowerHostname === domain || lowerHostname.endsWith('.' + domain),
     );
     if (blogPlatformMatch) {
       redFlags.push(`blog_platform:${blogPlatformMatch}`);
@@ -659,7 +670,7 @@ export class Layer1DomainAnalysisService implements OnModuleInit {
 
     // Check non-commercial TLDs
     const nonCommercialMatch = this.rules!.tld_filtering.non_commercial.find((t) =>
-      lowerTld.endsWith(t)
+      lowerTld.endsWith(t),
     );
     if (nonCommercialMatch) {
       redFlags.push(`non_commercial:${nonCommercialMatch}`);
@@ -673,7 +684,7 @@ export class Layer1DomainAnalysisService implements OnModuleInit {
 
     // Check personal blog TLDs
     const personalBlogMatch = this.rules!.tld_filtering.personal_blog.find((t) =>
-      lowerTld.endsWith(t)
+      lowerTld.endsWith(t),
     );
     if (personalBlogMatch) {
       redFlags.push(`personal_blog:${personalBlogMatch}`);
@@ -686,9 +697,7 @@ export class Layer1DomainAnalysisService implements OnModuleInit {
     }
 
     // Check if commercial TLD
-    const isCommercial = this.rules!.tld_filtering.commercial.some((t) =>
-      lowerTld.endsWith(t)
-    );
+    const isCommercial = this.rules!.tld_filtering.commercial.some((t) => lowerTld.endsWith(t));
 
     return {
       checked: true,

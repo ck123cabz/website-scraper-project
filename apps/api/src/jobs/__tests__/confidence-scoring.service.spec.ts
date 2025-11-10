@@ -4,7 +4,9 @@ import { SettingsService } from '../../settings/settings.service';
 import type { ClassificationSettings } from '@website-scraper/shared';
 
 // Helper to create valid test settings with all required fields
-const createTestSettings = (overrides?: Partial<ClassificationSettings>): ClassificationSettings => ({
+const createTestSettings = (
+  overrides?: Partial<ClassificationSettings>,
+): ClassificationSettings => ({
   id: 'default',
   // V1 fields
   llm_temperature: 0.3,
@@ -171,12 +173,14 @@ describe('ConfidenceScoringService', () => {
 
     it('should load custom confidence thresholds from database settings (Task 7.3)', async () => {
       // Mock settings service to return custom thresholds
-      settingsService.getSettings.mockResolvedValue(createTestSettings({
-        id: 'test-settings-id',
-        confidence_threshold_high: 0.9, // Custom: raised from 0.8
-        confidence_threshold_medium: 0.6, // Custom: raised from 0.5
-        confidence_threshold_low: 0.4, // Custom: raised from 0.3
-      }));
+      settingsService.getSettings.mockResolvedValue(
+        createTestSettings({
+          id: 'test-settings-id',
+          confidence_threshold_high: 0.9, // Custom: raised from 0.8
+          confidence_threshold_medium: 0.6, // Custom: raised from 0.5
+          confidence_threshold_low: 0.4, // Custom: raised from 0.3
+        }),
+      );
 
       // Test with confidence 0.85 - should be "medium" with custom thresholds (< 0.9)
       const band1 = await service.calculateConfidenceBand(0.85);
@@ -212,14 +216,16 @@ describe('ConfidenceScoringService', () => {
 
     it('should handle string-encoded thresholds from Supabase (Task 7.2)', async () => {
       // Mock settings service to return string-encoded numerics (Supabase DECIMAL behavior)
-      settingsService.getSettings.mockResolvedValue(createTestSettings({
-        id: 'test-settings-id',
-        llm_temperature: '0.3' as any,
-        confidence_threshold: '0' as any,
-        confidence_threshold_high: '0.85' as any, // String-encoded
-        confidence_threshold_medium: '0.55' as any,
-        confidence_threshold_low: '0.35' as any,
-      }));
+      settingsService.getSettings.mockResolvedValue(
+        createTestSettings({
+          id: 'test-settings-id',
+          llm_temperature: '0.3' as any,
+          confidence_threshold: '0' as any,
+          confidence_threshold_high: '0.85' as any, // String-encoded
+          confidence_threshold_medium: '0.55' as any,
+          confidence_threshold_low: '0.35' as any,
+        }),
+      );
 
       // Should parse strings correctly and use as thresholds
       const band1 = await service.calculateConfidenceBand(0.86);

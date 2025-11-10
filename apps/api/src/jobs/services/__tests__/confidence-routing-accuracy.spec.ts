@@ -2,11 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ManualReviewRouterService } from '../manual-review-router.service';
 import { SupabaseService } from '../../../supabase/supabase.service';
 import { SettingsService } from '../../../settings/settings.service';
-import type {
-  Layer1Results,
-  Layer2Results,
-  Layer3Results,
-} from '@website-scraper/shared';
+import type { Layer1Results, Layer2Results, Layer3Results } from '@website-scraper/shared';
 
 /**
  * Test Suite: Confidence Routing Accuracy (Phase 5 - User Story 2)
@@ -137,9 +133,9 @@ describe('Confidence Routing Accuracy - T025-TEST-A', () => {
           provide: SettingsService,
           useValue: {
             getSettings: jest.fn().mockResolvedValue(mockSettings),
-            getManualReviewSettings: jest.fn().mockResolvedValue(
-              mockSettings.manual_review_settings,
-            ),
+            getManualReviewSettings: jest
+              .fn()
+              .mockResolvedValue(mockSettings.manual_review_settings),
           },
         },
       ],
@@ -229,12 +225,7 @@ describe('Confidence Routing Accuracy - T025-TEST-A', () => {
 
     for (const urlData of urlsToRoute) {
       const itemStartTime = performance.now();
-      await service.routeUrl(
-        urlData,
-        mockLayer1Results,
-        mockLayer2Results,
-        mockLayer3Results,
-      );
+      await service.routeUrl(urlData, mockLayer1Results, mockLayer2Results, mockLayer3Results);
       const itemDuration = performance.now() - itemStartTime;
       durations.push(itemDuration);
     }
@@ -333,12 +324,7 @@ describe('Confidence Routing Accuracy - T025-TEST-A', () => {
 
     // Act: Route all test URLs
     for (const url of testUrls) {
-      await service.routeUrl(
-        url,
-        mockLayer1Results,
-        mockLayer2Results,
-        mockLayer3Results,
-      );
+      await service.routeUrl(url, mockLayer1Results, mockLayer2Results, mockLayer3Results);
     }
 
     // Assert: All URLs processed (audit trail would be in activity_logs)

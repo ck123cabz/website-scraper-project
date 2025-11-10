@@ -12,7 +12,10 @@ export class Layer3RulesDto {
   seo_investment_signals?: string[];
 
   @IsOptional()
-  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'LLM temperature must be a number with max 2 decimal places' })
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    { message: 'LLM temperature must be a number with max 2 decimal places' },
+  )
   @Min(0, { message: 'LLM temperature must be between 0 and 1' })
   @Max(1, { message: 'LLM temperature must be between 0 and 1' })
   llm_temperature?: number;

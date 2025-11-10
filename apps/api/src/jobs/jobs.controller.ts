@@ -239,7 +239,8 @@ export class JobsController {
       const offset = (pageNum - 1) * limitNum;
 
       // Build query
-      let query = this.supabase.getClient()
+      let query = this.supabase
+        .getClient()
         .from('results')
         .select('*', { count: 'exact' })
         .eq('job_id', jobId)
@@ -301,7 +302,8 @@ export class JobsController {
   ) {
     try {
       // Build query
-      let query = this.supabase.getClient()
+      let query = this.supabase
+        .getClient()
         .from('results')
         .select('*')
         .eq('job_id', jobId)
@@ -335,7 +337,8 @@ export class JobsController {
       }
 
       // Get job name for filename
-      const { data: job } = await this.supabase.getClient()
+      const { data: job } = await this.supabase
+        .getClient()
         .from('jobs')
         .select('name')
         .eq('id', jobId)

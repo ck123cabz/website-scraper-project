@@ -417,7 +417,9 @@ describe('SettingsService - Integration Tests', () => {
       };
 
       await expect(settingsService.updateSettings(update)).rejects.toThrow(BadRequestException);
-      await expect(settingsService.updateSettings(update)).rejects.toThrow(/Database update failed/i);
+      await expect(settingsService.updateSettings(update)).rejects.toThrow(
+        /Database update failed/i,
+      );
     });
 
     it('should cache defaults when database fails with null data', async () => {
@@ -453,7 +455,8 @@ describe('SettingsService - Integration Tests', () => {
       expect(result.id).toBe('default');
       // Compare everything except updated_at (which will differ due to timing)
       const { updated_at, ...resultWithoutTimestamp } = result;
-      const { updated_at: expectedUpdatedAt, ...expectedWithoutTimestamp } = settingsService.getDefaultSettings();
+      const { updated_at: expectedUpdatedAt, ...expectedWithoutTimestamp } =
+        settingsService.getDefaultSettings();
 
       expect(resultWithoutTimestamp).toEqual(expectedWithoutTimestamp);
       expect(updated_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/); // Valid ISO date string
@@ -520,7 +523,7 @@ describe('SettingsService - Integration Tests', () => {
       const beforeTimestamp = before.updated_at;
 
       // Small delay to ensure different timestamp
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Update
       const updatedSettings = {
@@ -737,7 +740,9 @@ describe('SettingsService - Integration Tests', () => {
         },
       };
 
-      await expect(settingsService.updateSettings(invalidBands)).rejects.toThrow(BadRequestException);
+      await expect(settingsService.updateSettings(invalidBands)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should maintain default settings structure completeness', () => {

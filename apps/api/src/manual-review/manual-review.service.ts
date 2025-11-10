@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { ManualReviewQueueEntry } from '@website-scraper/shared';
-import { PostgrestError } from '@supabase/supabase-js';
 
 /**
  * ManualReviewService (Phase 3: T011)
@@ -38,12 +37,14 @@ export class ManualReviewService {
    * @returns Paginated queue items with total count
    * @throws Error if database query fails
    */
-  async getQueue(options: {
-    page?: number;
-    limit?: number;
-    is_stale?: boolean;
-    confidence_band?: string;
-  } = {}): Promise<{
+  async getQueue(
+    options: {
+      page?: number;
+      limit?: number;
+      is_stale?: boolean;
+      confidence_band?: string;
+    } = {},
+  ): Promise<{
     items: ManualReviewQueueEntry[];
     total: number;
     page: number;
@@ -91,7 +92,9 @@ export class ManualReviewService {
         limit,
       };
     } catch (error) {
-      this.logger.error(`Queue retrieval error: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Queue retrieval error: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -164,7 +167,9 @@ export class ManualReviewService {
         oldest_queued_at: oldestData && oldestData[0] ? oldestData[0].queued_at : null,
       };
     } catch (error) {
-      this.logger.error(`Queue status retrieval error: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Queue status retrieval error: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }

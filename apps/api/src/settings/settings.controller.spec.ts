@@ -208,7 +208,7 @@ describe('SettingsController - Validation Tests', () => {
 
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      const layer1Errors = errors.find(e => e.property === 'layer1_rules');
+      const layer1Errors = errors.find((e) => e.property === 'layer1_rules');
       expect(layer1Errors).toBeDefined();
     });
 
@@ -228,7 +228,7 @@ describe('SettingsController - Validation Tests', () => {
 
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      const layer1Errors = errors.find(e => e.property === 'layer1_rules');
+      const layer1Errors = errors.find((e) => e.property === 'layer1_rules');
       expect(layer1Errors).toBeDefined();
     });
 
@@ -268,7 +268,7 @@ describe('SettingsController - Validation Tests', () => {
 
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      const layer2Errors = errors.find(e => e.property === 'layer2_rules');
+      const layer2Errors = errors.find((e) => e.property === 'layer2_rules');
       expect(layer2Errors).toBeDefined();
     });
 
@@ -288,7 +288,7 @@ describe('SettingsController - Validation Tests', () => {
 
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      const layer2Errors = errors.find(e => e.property === 'layer2_rules');
+      const layer2Errors = errors.find((e) => e.property === 'layer2_rules');
       expect(layer2Errors).toBeDefined();
     });
 
@@ -308,7 +308,7 @@ describe('SettingsController - Validation Tests', () => {
 
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      const layer2Errors = errors.find(e => e.property === 'layer2_rules');
+      const layer2Errors = errors.find((e) => e.property === 'layer2_rules');
       expect(layer2Errors).toBeDefined();
     });
 
@@ -328,7 +328,7 @@ describe('SettingsController - Validation Tests', () => {
 
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      const layer2Errors = errors.find(e => e.property === 'layer2_rules');
+      const layer2Errors = errors.find((e) => e.property === 'layer2_rules');
       expect(layer2Errors).toBeDefined();
     });
 
@@ -364,7 +364,7 @@ describe('SettingsController - Validation Tests', () => {
 
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      const layer3Errors = errors.find(e => e.property === 'layer3_rules');
+      const layer3Errors = errors.find((e) => e.property === 'layer3_rules');
       expect(layer3Errors).toBeDefined();
     });
 
@@ -380,7 +380,7 @@ describe('SettingsController - Validation Tests', () => {
 
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      const layer3Errors = errors.find(e => e.property === 'layer3_rules');
+      const layer3Errors = errors.find((e) => e.property === 'layer3_rules');
       expect(layer3Errors).toBeDefined();
     });
 
@@ -396,7 +396,7 @@ describe('SettingsController - Validation Tests', () => {
 
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      const layer3Errors = errors.find(e => e.property === 'layer3_rules');
+      const layer3Errors = errors.find((e) => e.property === 'layer3_rules');
       expect(layer3Errors).toBeDefined();
     });
 
@@ -412,7 +412,7 @@ describe('SettingsController - Validation Tests', () => {
 
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      const layer3Errors = errors.find(e => e.property === 'layer3_rules');
+      const layer3Errors = errors.find((e) => e.property === 'layer3_rules');
       expect(layer3Errors).toBeDefined();
     });
 
@@ -460,7 +460,7 @@ describe('SettingsController - Validation Tests', () => {
 
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      const confidenceBandsErrors = errors.find(e => e.property === 'confidence_bands');
+      const confidenceBandsErrors = errors.find((e) => e.property === 'confidence_bands');
       expect(confidenceBandsErrors).toBeDefined();
     });
 

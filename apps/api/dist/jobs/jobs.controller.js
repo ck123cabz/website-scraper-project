@@ -166,7 +166,8 @@ let JobsController = class JobsController {
             const pageNum = parseInt(page, 10) || 1;
             const limitNum = Math.min(parseInt(limit, 10) || 50, 1000);
             const offset = (pageNum - 1) * limitNum;
-            let query = this.supabase.getClient()
+            let query = this.supabase
+                .getClient()
                 .from('results')
                 .select('*', { count: 'exact' })
                 .eq('job_id', jobId)
@@ -208,7 +209,8 @@ let JobsController = class JobsController {
     }
     async exportJobResults(jobId, format = 'csv', status = '', classification = '', search = '', res) {
         try {
-            let query = this.supabase.getClient()
+            let query = this.supabase
+                .getClient()
                 .from('results')
                 .select('*')
                 .eq('job_id', jobId)
@@ -232,7 +234,8 @@ let JobsController = class JobsController {
                     error: 'No results found to export',
                 }, common_1.HttpStatus.NOT_FOUND);
             }
-            const { data: job } = await this.supabase.getClient()
+            const { data: job } = await this.supabase
+                .getClient()
                 .from('jobs')
                 .select('name')
                 .eq('id', jobId)

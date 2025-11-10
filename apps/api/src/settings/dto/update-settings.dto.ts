@@ -1,6 +1,5 @@
 import {
   IsArray,
-  IsNumber,
   IsInt,
   Min,
   Max,
@@ -10,17 +9,8 @@ import {
   IsNotEmpty,
   ArrayMinSize,
   IsOptional,
-  IsObject,
-  IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import type {
-  Layer1Rules,
-  Layer2Rules,
-  Layer3Rules,
-  ConfidenceBands,
-  ManualReviewSettings,
-} from '@website-scraper/shared';
 import { Layer1RulesDto } from './layer1-rules.dto';
 import { Layer2RulesDto } from './layer2-rules.dto';
 import { Layer3RulesDto } from './layer3-rules.dto';

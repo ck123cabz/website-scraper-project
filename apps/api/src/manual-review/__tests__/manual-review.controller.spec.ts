@@ -73,9 +73,8 @@ describe('ManualReviewController (T018-TEST-A)', () => {
 
     controller = moduleFixture.get<ManualReviewController>(ManualReviewController);
     manualReviewService = moduleFixture.get<ManualReviewService>(ManualReviewService);
-    manualReviewRouterService = moduleFixture.get<ManualReviewRouterService>(
-      ManualReviewRouterService,
-    );
+    manualReviewRouterService =
+      moduleFixture.get<ManualReviewRouterService>(ManualReviewRouterService);
   });
 
   afterAll(async () => {
@@ -98,9 +97,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
       });
 
       // Act
-      const response = await request(app.getHttpServer())
-        .get('/api/manual-review')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/api/manual-review').expect(200);
 
       // Assert
       expect(response.body.items).toHaveLength(2);
@@ -170,10 +167,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
 
     it('should support is_stale filter', async () => {
       // Arrange
-      const staleItems = [
-        createStaleQueueEntry(8),
-        createStaleQueueEntry(10),
-      ];
+      const staleItems = [createStaleQueueEntry(8), createStaleQueueEntry(10)];
 
       jest.spyOn(manualReviewService, 'getQueue').mockResolvedValue({
         items: staleItems,
@@ -200,9 +194,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
 
     it('should support confidence_band filter', async () => {
       // Arrange
-      const mediumBandItems = [
-        createMockQueueEntry({ confidence_band: 'medium' }),
-      ];
+      const mediumBandItems = [createMockQueueEntry({ confidence_band: 'medium' })];
 
       jest.spyOn(manualReviewService, 'getQueue').mockResolvedValue({
         items: mediumBandItems,
@@ -229,9 +221,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
 
     it('should support combined filters', async () => {
       // Arrange
-      const filteredItems = [
-        createStaleQueueEntry(8, { confidence_band: 'low' }),
-      ];
+      const filteredItems = [createStaleQueueEntry(8, { confidence_band: 'low' })];
 
       jest.spyOn(manualReviewService, 'getQueue').mockResolvedValue({
         items: filteredItems,
@@ -266,9 +256,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
       });
 
       // Act
-      const response = await request(app.getHttpServer())
-        .get('/api/manual-review')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/api/manual-review').expect(200);
 
       // Assert
       expect(response.body.items).toEqual([]);
@@ -354,9 +342,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
       // Arrange
       const queueEntry = createMockQueueEntry();
 
-      jest
-        .spyOn(manualReviewService, 'getQueueEntry')
-        .mockResolvedValue(queueEntry);
+      jest.spyOn(manualReviewService, 'getQueueEntry').mockResolvedValue(queueEntry);
 
       // Act
       const response = await request(app.getHttpServer())
@@ -377,9 +363,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
       // Arrange
       const nonExistentId = '00000000-0000-0000-0000-000000000000';
 
-      jest
-        .spyOn(manualReviewService, 'getQueueEntry')
-        .mockResolvedValue(null);
+      jest.spyOn(manualReviewService, 'getQueueEntry').mockResolvedValue(null);
 
       // Act & Assert
       const response = await request(app.getHttpServer())
@@ -393,9 +377,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
       // Arrange
       const queueEntry = createHighConfidenceQueueEntry();
 
-      jest
-        .spyOn(manualReviewService, 'getQueueEntry')
-        .mockResolvedValue(queueEntry);
+      jest.spyOn(manualReviewService, 'getQueueEntry').mockResolvedValue(queueEntry);
 
       // Act
       const response = await request(app.getHttpServer())
@@ -426,9 +408,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
       // Arrange
       const queueEntry = createHighConfidenceQueueEntry();
 
-      jest
-        .spyOn(manualReviewService, 'getQueueEntry')
-        .mockResolvedValue(queueEntry);
+      jest.spyOn(manualReviewService, 'getQueueEntry').mockResolvedValue(queueEntry);
 
       // Act
       const response = await request(app.getHttpServer())
@@ -446,9 +426,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
       // Arrange
       const queueEntry = createHighConfidenceQueueEntry();
 
-      jest
-        .spyOn(manualReviewService, 'getQueueEntry')
-        .mockResolvedValue(queueEntry);
+      jest.spyOn(manualReviewService, 'getQueueEntry').mockResolvedValue(queueEntry);
 
       // Act
       const response = await request(app.getHttpServer())
@@ -467,9 +445,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
       // Arrange
       const queueEntry = createHighConfidenceQueueEntry();
 
-      jest
-        .spyOn(manualReviewService, 'getQueueEntry')
-        .mockResolvedValue(queueEntry);
+      jest.spyOn(manualReviewService, 'getQueueEntry').mockResolvedValue(queueEntry);
 
       // Act
       const response = await request(app.getHttpServer())
@@ -485,9 +461,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
       // Arrange
       const queueEntry = createHighConfidenceQueueEntry();
 
-      jest
-        .spyOn(manualReviewService, 'getQueueEntry')
-        .mockResolvedValue(queueEntry);
+      jest.spyOn(manualReviewService, 'getQueueEntry').mockResolvedValue(queueEntry);
 
       // Act
       const response = await request(app.getHttpServer())
@@ -505,9 +479,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
       // Arrange
       const nonExistentId = '00000000-0000-0000-0000-000000000000';
 
-      jest
-        .spyOn(manualReviewService, 'getQueueEntry')
-        .mockResolvedValue(null);
+      jest.spyOn(manualReviewService, 'getQueueEntry').mockResolvedValue(null);
 
       // Act & Assert
       const response = await request(app.getHttpServer())
@@ -521,9 +493,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
       // Arrange
       const queueEntry = createHighConfidenceQueueEntry();
 
-      jest
-        .spyOn(manualReviewService, 'getQueueEntry')
-        .mockResolvedValue(queueEntry);
+      jest.spyOn(manualReviewService, 'getQueueEntry').mockResolvedValue(queueEntry);
 
       // Act
       const startTime = Date.now();
@@ -550,17 +520,11 @@ describe('ManualReviewController (T018-TEST-A)', () => {
         id: queueEntry.id,
       });
 
-      jest
-        .spyOn(manualReviewService, 'getQueueEntry')
-        .mockResolvedValueOnce(queueEntry);
+      jest.spyOn(manualReviewService, 'getQueueEntry').mockResolvedValueOnce(queueEntry);
 
-      jest
-        .spyOn(manualReviewService, 'reviewEntry')
-        .mockResolvedValue(updatedEntry);
+      jest.spyOn(manualReviewService, 'reviewEntry').mockResolvedValue(updatedEntry);
 
-      jest
-        .spyOn(manualReviewRouterService, 'reviewAndSoftDelete')
-        .mockResolvedValue(undefined);
+      jest.spyOn(manualReviewRouterService, 'reviewAndSoftDelete').mockResolvedValue(undefined);
 
       // Act
       const response = await request(app.getHttpServer())
@@ -591,17 +555,11 @@ describe('ManualReviewController (T018-TEST-A)', () => {
         reviewer_notes: 'Clear guest post indicators',
       });
 
-      jest
-        .spyOn(manualReviewService, 'getQueueEntry')
-        .mockResolvedValueOnce(queueEntry);
+      jest.spyOn(manualReviewService, 'getQueueEntry').mockResolvedValueOnce(queueEntry);
 
-      jest
-        .spyOn(manualReviewService, 'reviewEntry')
-        .mockResolvedValue(updatedEntry);
+      jest.spyOn(manualReviewService, 'reviewEntry').mockResolvedValue(updatedEntry);
 
-      jest
-        .spyOn(manualReviewRouterService, 'reviewAndSoftDelete')
-        .mockResolvedValue(undefined);
+      jest.spyOn(manualReviewRouterService, 'reviewAndSoftDelete').mockResolvedValue(undefined);
 
       // Act
       const response = await request(app.getHttpServer())
@@ -611,9 +569,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
 
       // Assert
       expect(response.body.queue_entry.review_decision).toBe('rejected');
-      expect(response.body.queue_entry.reviewer_notes).toBe(
-        'Clear guest post indicators',
-      );
+      expect(response.body.queue_entry.reviewer_notes).toBe('Clear guest post indicators');
     });
 
     it('should accept rejection without notes', async () => {
@@ -625,17 +581,11 @@ describe('ManualReviewController (T018-TEST-A)', () => {
         reviewer_notes: null,
       });
 
-      jest
-        .spyOn(manualReviewService, 'getQueueEntry')
-        .mockResolvedValueOnce(queueEntry);
+      jest.spyOn(manualReviewService, 'getQueueEntry').mockResolvedValueOnce(queueEntry);
 
-      jest
-        .spyOn(manualReviewService, 'reviewEntry')
-        .mockResolvedValue(updatedEntry);
+      jest.spyOn(manualReviewService, 'reviewEntry').mockResolvedValue(updatedEntry);
 
-      jest
-        .spyOn(manualReviewRouterService, 'reviewAndSoftDelete')
-        .mockResolvedValue(undefined);
+      jest.spyOn(manualReviewRouterService, 'reviewAndSoftDelete').mockResolvedValue(undefined);
 
       // Act
       const response = await request(app.getHttpServer())
@@ -659,7 +609,9 @@ describe('ManualReviewController (T018-TEST-A)', () => {
         .expect(400);
 
       // Should contain error about decision field validation
-      expect(Array.isArray(response.body.message) || typeof response.body.message === 'string').toBe(true);
+      expect(
+        Array.isArray(response.body.message) || typeof response.body.message === 'string',
+      ).toBe(true);
     });
 
     it('should reject missing decision field', async () => {
@@ -694,9 +646,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
       // Arrange
       const nonExistentId = '00000000-0000-0000-0000-000000000000';
 
-      jest
-        .spyOn(manualReviewService, 'getQueueEntry')
-        .mockResolvedValueOnce(null);
+      jest.spyOn(manualReviewService, 'getQueueEntry').mockResolvedValueOnce(null);
 
       // Act & Assert
       const response = await request(app.getHttpServer())
@@ -715,17 +665,11 @@ describe('ManualReviewController (T018-TEST-A)', () => {
         id: queueEntry.id,
       });
 
-      jest
-        .spyOn(manualReviewService, 'getQueueEntry')
-        .mockResolvedValueOnce(queueEntry);
+      jest.spyOn(manualReviewService, 'getQueueEntry').mockResolvedValueOnce(queueEntry);
 
-      jest
-        .spyOn(manualReviewService, 'reviewEntry')
-        .mockResolvedValue(updatedEntry);
+      jest.spyOn(manualReviewService, 'reviewEntry').mockResolvedValue(updatedEntry);
 
-      jest
-        .spyOn(manualReviewRouterService, 'reviewAndSoftDelete')
-        .mockResolvedValue(undefined);
+      jest.spyOn(manualReviewRouterService, 'reviewAndSoftDelete').mockResolvedValue(undefined);
 
       // Act
       await request(app.getHttpServer())
@@ -759,9 +703,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
         .mockRejectedValue(new Error('Database connection failed'));
 
       // Act & Assert
-      const response = await request(app.getHttpServer())
-        .get('/api/manual-review')
-        .expect(500);
+      const response = await request(app.getHttpServer()).get('/api/manual-review').expect(500);
 
       expect(response.body.message).toBeDefined();
     });
@@ -770,9 +712,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
       // Arrange
       const queueEntry = createMockQueueEntry();
 
-      jest
-        .spyOn(manualReviewService, 'getQueueEntry')
-        .mockResolvedValueOnce(queueEntry);
+      jest.spyOn(manualReviewService, 'getQueueEntry').mockResolvedValueOnce(queueEntry);
 
       jest
         .spyOn(manualReviewService, 'reviewEntry')
@@ -823,9 +763,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
 
       // Act
       const startTime = Date.now();
-      await request(app.getHttpServer())
-        .get('/api/manual-review')
-        .expect(200);
+      await request(app.getHttpServer()).get('/api/manual-review').expect(200);
 
       const duration = Date.now() - startTime;
 
@@ -844,9 +782,7 @@ describe('ManualReviewController (T018-TEST-A)', () => {
 
       // Act
       const startTime = Date.now();
-      await request(app.getHttpServer())
-        .get('/api/manual-review/status')
-        .expect(200);
+      await request(app.getHttpServer()).get('/api/manual-review/status').expect(200);
 
       const duration = Date.now() - startTime;
 
@@ -858,15 +794,11 @@ describe('ManualReviewController (T018-TEST-A)', () => {
       // Arrange
       const queueEntry = createMockQueueEntry();
 
-      jest
-        .spyOn(manualReviewService, 'getQueueEntry')
-        .mockResolvedValue(queueEntry);
+      jest.spyOn(manualReviewService, 'getQueueEntry').mockResolvedValue(queueEntry);
 
       // Act
       const startTime = Date.now();
-      await request(app.getHttpServer())
-        .get(`/api/manual-review/${queueEntry.id}`)
-        .expect(200);
+      await request(app.getHttpServer()).get(`/api/manual-review/${queueEntry.id}`).expect(200);
 
       const duration = Date.now() - startTime;
 
@@ -878,17 +810,13 @@ describe('ManualReviewController (T018-TEST-A)', () => {
       // Arrange
       const queueEntry = createMockQueueEntry();
 
-      jest
-        .spyOn(manualReviewService, 'getQueueEntry')
-        .mockResolvedValueOnce(queueEntry);
+      jest.spyOn(manualReviewService, 'getQueueEntry').mockResolvedValueOnce(queueEntry);
 
       jest
         .spyOn(manualReviewService, 'reviewEntry')
         .mockResolvedValue(createReviewedQueueEntry('approved'));
 
-      jest
-        .spyOn(manualReviewRouterService, 'reviewAndSoftDelete')
-        .mockResolvedValue(undefined);
+      jest.spyOn(manualReviewRouterService, 'reviewAndSoftDelete').mockResolvedValue(undefined);
 
       // Act
       const startTime = Date.now();

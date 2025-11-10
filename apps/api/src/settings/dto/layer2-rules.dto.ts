@@ -1,4 +1,4 @@
-import { IsNumber, IsInt, IsArray, IsString, Min, Max, ValidateNested, IsOptional } from 'class-validator';
+import { IsInt, IsArray, IsString, Min, Max, ValidateNested, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class TechStackToolsDto {

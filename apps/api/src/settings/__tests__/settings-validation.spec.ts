@@ -1149,7 +1149,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const errors = await validate(dto);
         expect(errors.length).toBeGreaterThan(0);
-        const layer2Errors = errors.find(e => e.property === 'layer2_rules');
+        const layer2Errors = errors.find((e) => e.property === 'layer2_rules');
         expect(layer2Errors).toBeDefined();
         expect(JSON.stringify(layer2Errors)).toMatch(/blog.*freshness.*days/i);
       });
@@ -1167,7 +1167,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const errors = await validate(dto);
         expect(errors.length).toBeGreaterThan(0);
-        const layer2Errors = errors.find(e => e.property === 'layer2_rules');
+        const layer2Errors = errors.find((e) => e.property === 'layer2_rules');
         expect(layer2Errors).toBeDefined();
       });
 
@@ -1214,7 +1214,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const errors = await validate(dto);
         expect(errors.length).toBeGreaterThan(0);
-        const layer2Errors = errors.find(e => e.property === 'layer2_rules');
+        const layer2Errors = errors.find((e) => e.property === 'layer2_rules');
         expect(layer2Errors).toBeDefined();
       });
 
@@ -1231,7 +1231,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const errors = await validate(dto);
         expect(errors.length).toBeGreaterThan(0);
-        const layer2Errors = errors.find(e => e.property === 'layer2_rules');
+        const layer2Errors = errors.find((e) => e.property === 'layer2_rules');
         expect(layer2Errors).toBeDefined();
       });
 
@@ -1278,7 +1278,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const errors = await validate(dto);
         expect(errors.length).toBeGreaterThan(0);
-        const layer2Errors = errors.find(e => e.property === 'layer2_rules');
+        const layer2Errors = errors.find((e) => e.property === 'layer2_rules');
         expect(layer2Errors).toBeDefined();
       });
 
@@ -1295,7 +1295,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const errors = await validate(dto);
         expect(errors.length).toBeGreaterThan(0);
-        const layer2Errors = errors.find(e => e.property === 'layer2_rules');
+        const layer2Errors = errors.find((e) => e.property === 'layer2_rules');
         expect(layer2Errors).toBeDefined();
       });
 
@@ -1343,7 +1343,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const errors = await validate(dto);
         expect(errors.length).toBeGreaterThan(0);
-        const layer3Errors = errors.find(e => e.property === 'layer3_rules');
+        const layer3Errors = errors.find((e) => e.property === 'layer3_rules');
         expect(layer3Errors).toBeDefined();
       });
 
@@ -1359,7 +1359,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const errors = await validate(dto);
         expect(errors.length).toBeGreaterThan(0);
-        const layer3Errors = errors.find(e => e.property === 'layer3_rules');
+        const layer3Errors = errors.find((e) => e.property === 'layer3_rules');
         expect(layer3Errors).toBeDefined();
       });
 
@@ -1417,7 +1417,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const errors = await validate(dto);
         expect(errors.length).toBeGreaterThan(0);
-        const layer3Errors = errors.find(e => e.property === 'layer3_rules');
+        const layer3Errors = errors.find((e) => e.property === 'layer3_rules');
         expect(layer3Errors).toBeDefined();
       });
 
@@ -1433,7 +1433,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
         const errors = await validate(dto);
         expect(errors.length).toBeGreaterThan(0);
-        const layer3Errors = errors.find(e => e.property === 'layer3_rules');
+        const layer3Errors = errors.find((e) => e.property === 'layer3_rules');
         expect(layer3Errors).toBeDefined();
       });
 
@@ -1493,7 +1493,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      const layer2Errors = errors.find(e => e.property === 'layer2_rules');
+      const layer2Errors = errors.find((e) => e.property === 'layer2_rules');
       expect(layer2Errors).toBeDefined();
 
       // Verify error message mentions the valid range
@@ -1513,7 +1513,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      const layer3Errors = errors.find(e => e.property === 'layer3_rules');
+      const layer3Errors = errors.find((e) => e.property === 'layer3_rules');
       expect(layer3Errors).toBeDefined();
 
       // Verify error message mentions the valid range
@@ -1533,7 +1533,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      const layer3Errors = errors.find(e => e.property === 'layer3_rules');
+      const layer3Errors = errors.find((e) => e.property === 'layer3_rules');
       expect(layer3Errors).toBeDefined();
 
       // Verify error message mentions the valid range

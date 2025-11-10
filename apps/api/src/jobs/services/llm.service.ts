@@ -73,19 +73,23 @@ export class LlmService {
   private async getClassificationPrompt(url: string, content: string): Promise<string> {
     try {
       const settings = await this.settingsService.getSettings();
-      
+
       // Use layer3_rules structure, fallback to V1 fields for backward compatibility
       const layer3Rules = settings.layer3_rules;
       const contentLimit = layer3Rules?.content_truncation_limit
         ? this.asNumber(layer3Rules.content_truncation_limit, this.DEFAULT_CONTENT_LIMIT)
         : this.asNumber(settings.content_truncation_limit, this.DEFAULT_CONTENT_LIMIT);
 
-      const guestPostRedFlags = layer3Rules?.guest_post_red_flags
-        || settings.classification_indicators
-        || this.DEFAULT_INDICATORS;
-      
-      const seoInvestmentSignals = layer3Rules?.seo_investment_signals 
-        || ['schema_markup', 'open_graph', 'structured_data'];
+      const guestPostRedFlags =
+        layer3Rules?.guest_post_red_flags ||
+        settings.classification_indicators ||
+        this.DEFAULT_INDICATORS;
+
+      const seoInvestmentSignals = layer3Rules?.seo_investment_signals || [
+        'schema_markup',
+        'open_graph',
+        'structured_data',
+      ];
 
       const isFromDatabase = settings.id !== 'default';
       if (!isFromDatabase) {
@@ -103,9 +107,7 @@ export class LlmService {
       const isTruncated = content.length > contentLimit;
 
       // Build dynamic indicators list from settings
-      const indicatorsList = guestPostRedFlags
-        .map((indicator) => `- ${indicator}`)
-        .join('\n');
+      const indicatorsList = guestPostRedFlags.map((indicator) => `- ${indicator}`).join('\n');
 
       const seoSignalsList = seoInvestmentSignals
         .map((signal) => `- ${signal.replace(/_/g, ' ')}`)
@@ -154,7 +156,6 @@ Respond ONLY with valid JSON in this exact format:
 - Medium confidence (0.5-0.79): Some signals present, but ambiguous or conflicting evidence
 - Low confidence (0.3-0.49): Weak signals, limited evidence, unclear intent
 - Auto-reject (0-0.29): No relevant signals, clear mismatch, or negative indicators`;
-
     } catch (error) {
       this.logger.warn('Failed to load settings for prompt. Using defaults.');
 
@@ -168,9 +169,9 @@ Respond ONLY with valid JSON in this exact format:
         );
       }
 
-      const indicatorsList = this.DEFAULT_INDICATORS
-        .map((indicator) => `- ${indicator}`)
-        .join('\n');
+      const indicatorsList = this.DEFAULT_INDICATORS.map((indicator) => `- ${indicator}`).join(
+        '\n',
+      );
 
       return `You are an AI assistant that analyzes website content to determine if the site is suitable for high-quality guest post outreach. Focus on content marketing sophistication and SEO investment as POSITIVE indicators, while treating explicit guest post solicitation as RED FLAGS.
 
@@ -432,9 +433,10 @@ Respond ONLY with valid JSON in this exact format:
     let temperature = this.DEFAULT_TEMPERATURE;
     try {
       const settings = await this.settingsService.getSettings();
-      temperature = settings.layer3_rules?.llm_temperature !== undefined
-        ? this.asNumber(settings.layer3_rules.llm_temperature, this.DEFAULT_TEMPERATURE)
-        : this.asNumber(settings.llm_temperature, this.DEFAULT_TEMPERATURE);
+      temperature =
+        settings.layer3_rules?.llm_temperature !== undefined
+          ? this.asNumber(settings.layer3_rules.llm_temperature, this.DEFAULT_TEMPERATURE)
+          : this.asNumber(settings.llm_temperature, this.DEFAULT_TEMPERATURE);
     } catch (error) {
       this.logger.debug('Failed to load temperature setting. Using default.');
     }
@@ -499,9 +501,10 @@ Respond ONLY with valid JSON in this exact format:
     let temperature = this.DEFAULT_TEMPERATURE;
     try {
       const settings = await this.settingsService.getSettings();
-      temperature = settings.layer3_rules?.llm_temperature !== undefined
-        ? this.asNumber(settings.layer3_rules.llm_temperature, this.DEFAULT_TEMPERATURE)
-        : this.asNumber(settings.llm_temperature, this.DEFAULT_TEMPERATURE);
+      temperature =
+        settings.layer3_rules?.llm_temperature !== undefined
+          ? this.asNumber(settings.layer3_rules.llm_temperature, this.DEFAULT_TEMPERATURE)
+          : this.asNumber(settings.llm_temperature, this.DEFAULT_TEMPERATURE);
       this.logger.debug(`Using temperature: ${temperature} for GPT classification`);
     } catch (error) {
       this.logger.debug('Failed to load temperature setting. Using default.');
@@ -614,9 +617,7 @@ Respond ONLY with valid JSON in this exact format:
       // This field is optional but if present must be an array
       if (parsed.sophistication_signals !== undefined) {
         if (!Array.isArray(parsed.sophistication_signals)) {
-          this.logger.warn(
-            'Invalid sophistication_signals field (not an array). Ignoring field.',
-          );
+          this.logger.warn('Invalid sophistication_signals field (not an array). Ignoring field.');
           delete parsed.sophistication_signals;
         } else if (!parsed.sophistication_signals.every((s: unknown) => typeof s === 'string')) {
           this.logger.warn(

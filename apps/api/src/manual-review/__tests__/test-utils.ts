@@ -43,9 +43,7 @@ export function createMockQueueEntry(
 /**
  * Factory function for Layer 1 domain analysis test data
  */
-export function createMockLayer1Results(
-  overrides: Partial<Layer1Results> = {},
-): Layer1Results {
+export function createMockLayer1Results(overrides: Partial<Layer1Results> = {}): Layer1Results {
   return {
     domain_age: {
       checked: true,
@@ -86,9 +84,7 @@ export function createMockLayer1Results(
 /**
  * Factory function for Layer 2 rule-based checks test data
  */
-export function createMockLayer2Results(
-  overrides: Partial<Layer2Results> = {},
-): Layer2Results {
+export function createMockLayer2Results(overrides: Partial<Layer2Results> = {}): Layer2Results {
   return {
     guest_post_red_flags: {
       contact_page: { checked: true, detected: true },
@@ -116,9 +112,7 @@ export function createMockLayer2Results(
 /**
  * Factory function for Layer 3 LLM sophistication signals test data
  */
-export function createMockLayer3Results(
-  overrides: Partial<Layer3Results> = {},
-): Layer3Results {
+export function createMockLayer3Results(overrides: Partial<Layer3Results> = {}): Layer3Results {
   return {
     design_quality: {
       score: 0.7,
@@ -231,9 +225,7 @@ export function createReviewedQueueEntry(
   return createMockQueueEntry({
     reviewed_at: new Date(),
     review_decision: decision,
-    reviewer_notes: decision === 'approved'
-      ? 'Looks legitimate'
-      : 'Clear guest post site',
+    reviewer_notes: decision === 'approved' ? 'Looks legitimate' : 'Clear guest post site',
     ...overrides,
   });
 }

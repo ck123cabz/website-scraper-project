@@ -29,10 +29,7 @@ let HealthController = class HealthController {
         const uptime = (Date.now() - this.startTime) / 1000;
         let databaseStatus = 'unknown';
         try {
-            const { data, error } = await this.supabaseService.getClient()
-                .from('jobs')
-                .select('id')
-                .limit(1);
+            const { error } = await this.supabaseService.getClient().from('jobs').select('id').limit(1);
             databaseStatus = error ? 'error' : 'connected';
         }
         catch (error) {

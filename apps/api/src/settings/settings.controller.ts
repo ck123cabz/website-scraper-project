@@ -35,7 +35,9 @@ export class SettingsController {
 
     try {
       const settings = await this.settingsService.getSettings();
-      this.logger.log(`Settings retrieved successfully (source: ${settings.id === 'default' ? 'defaults' : 'database'})`);
+      this.logger.log(
+        `Settings retrieved successfully (source: ${settings.id === 'default' ? 'defaults' : 'database'})`,
+      );
       return settings;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -52,23 +54,29 @@ export class SettingsController {
    */
   @Put()
   @HttpCode(HttpStatus.OK)
-  @UsePipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true, // CRITICAL: Enable transformation for nested DTO validation
-  }))
-  async updateSettings(@Body() updateSettingsDto: UpdateSettingsDto): Promise<ClassificationSettings> {
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true, // CRITICAL: Enable transformation for nested DTO validation
+    }),
+  )
+  async updateSettings(
+    @Body() updateSettingsDto: UpdateSettingsDto,
+  ): Promise<ClassificationSettings> {
     this.logger.log('PUT /api/settings - Updating classification settings');
-    this.logger.debug(`Update payload: ${JSON.stringify({
-      ruleCount: updateSettingsDto.prefilter_rules?.length,
-      indicatorCount: updateSettingsDto.classification_indicators?.length,
-      temperature: updateSettingsDto.llm_temperature,
-      threshold: updateSettingsDto.confidence_threshold,
-      limit: updateSettingsDto.content_truncation_limit,
-      hasLayer1: !!updateSettingsDto.layer1_rules,
-      hasLayer2: !!updateSettingsDto.layer2_rules,
-      hasLayer3: !!updateSettingsDto.layer3_rules,
-    })}`);
+    this.logger.debug(
+      `Update payload: ${JSON.stringify({
+        ruleCount: updateSettingsDto.prefilter_rules?.length,
+        indicatorCount: updateSettingsDto.classification_indicators?.length,
+        temperature: updateSettingsDto.llm_temperature,
+        threshold: updateSettingsDto.confidence_threshold,
+        limit: updateSettingsDto.content_truncation_limit,
+        hasLayer1: !!updateSettingsDto.layer1_rules,
+        hasLayer2: !!updateSettingsDto.layer2_rules,
+        hasLayer3: !!updateSettingsDto.layer3_rules,
+      })}`,
+    );
 
     try {
       const updatedSettings = await this.settingsService.updateSettings(updateSettingsDto);

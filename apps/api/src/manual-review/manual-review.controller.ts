@@ -119,9 +119,7 @@ export class ManualReviewController {
 
     try {
       const status = await this.manualReviewService.getQueueStatus();
-      this.logger.debug(
-        `Queue status: active=${status.active_count}, stale=${status.stale_count}`,
-      );
+      this.logger.debug(`Queue status: active=${status.active_count}, stale=${status.stale_count}`);
       return status;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -272,9 +270,7 @@ export class ManualReviewController {
         confidence_band: queueEntry.confidence_band,
       });
 
-      this.logger.log(
-        `Review decision processed: ${id} (${reviewDecisionDto.decision})`,
-      );
+      this.logger.log(`Review decision processed: ${id} (${reviewDecisionDto.decision})`);
 
       return {
         queue_entry: updatedEntry,
