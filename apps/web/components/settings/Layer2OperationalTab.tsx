@@ -16,6 +16,9 @@ interface Layer2OperationalTabProps {
 }
 
 export function Layer2OperationalTab({ rules, onChange, errors }: Layer2OperationalTabProps) {
+  // Ensure tech_stack_tools exists with defaults
+  const techStackTools = rules?.tech_stack_tools || { analytics: [], marketing: [] };
+  
   const [expandedSections, setExpandedSections] = React.useState<Set<string>>(
     new Set(['analytics', 'marketing'])
   );
@@ -154,7 +157,7 @@ export function Layer2OperationalTab({ rules, onChange, errors }: Layer2Operatio
             </button>
             {expandedSections.has('analytics') && (
               <div className="border-t p-3 space-y-2">
-                {rules.tech_stack_tools.analytics.map((tool, index) => (
+                {techStackTools.analytics.map((tool, index) => (
                   <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
                     <span className="text-sm">{tool}</span>
                     <Button
@@ -205,7 +208,7 @@ export function Layer2OperationalTab({ rules, onChange, errors }: Layer2Operatio
             </button>
             {expandedSections.has('marketing') && (
               <div className="border-t p-3 space-y-2">
-                {rules.tech_stack_tools.marketing.map((tool, index) => (
+                {techStackTools.marketing.map((tool, index) => (
                   <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
                     <span className="text-sm">{tool}</span>
                     <Button

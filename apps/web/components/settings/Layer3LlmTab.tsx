@@ -15,6 +15,10 @@ interface Layer3LlmTabProps {
 }
 
 export function Layer3LlmTab({ rules, onChange, errors }: Layer3LlmTabProps) {
+  // Ensure arrays exist with defaults
+  const contentMarketingIndicators = rules?.content_marketing_indicators || [];
+  const seoInvestmentSignals = rules?.seo_investment_signals || [];
+
   return (
     <div className="space-y-6">
       {/* Content Marketing Indicators */}
@@ -26,7 +30,7 @@ export function Layer3LlmTab({ rules, onChange, errors }: Layer3LlmTabProps) {
         <CardContent className="space-y-3">
           <Textarea
             placeholder="Write for us&#10;Guest post guidelines&#10;Contributor program&#10;Author bylines with external contributors&#10;Submission guidelines"
-            value={rules.content_marketing_indicators.join('\n')}
+            value={contentMarketingIndicators.join('\n')}
             onChange={(e) => {
               const indicators = e.target.value
                 .split('\n')
@@ -38,7 +42,7 @@ export function Layer3LlmTab({ rules, onChange, errors }: Layer3LlmTabProps) {
             className="font-mono text-sm"
           />
           <p className="text-xs text-muted-foreground">
-            Current indicators: {rules.content_marketing_indicators.length}
+            Current indicators: {contentMarketingIndicators.length}
           </p>
         </CardContent>
       </Card>
@@ -55,9 +59,9 @@ export function Layer3LlmTab({ rules, onChange, errors }: Layer3LlmTabProps) {
               <div key={signal} className="flex items-center space-x-2">
                 <Checkbox
                   id={`seo-${signal}`}
-                  checked={rules.seo_investment_signals.includes(signal)}
+                  checked={seoInvestmentSignals.includes(signal)}
                   onCheckedChange={(checked) => {
-                    const updated = [...rules.seo_investment_signals];
+                    const updated = [...seoInvestmentSignals];
                     if (checked) {
                       updated.push(signal);
                     } else {
