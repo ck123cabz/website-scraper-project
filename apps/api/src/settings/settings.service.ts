@@ -362,14 +362,18 @@ export class SettingsService {
     };
 
     const layer2_rules: Layer2Rules = {
-      blog_freshness_days: 90,
-      required_pages_count: 2,
-      min_tech_stack_tools: 2,
-      tech_stack_tools: {
-        analytics: ['google-analytics', 'mixpanel', 'amplitude'],
-        marketing: ['hubspot', 'marketo', 'activecampaign', 'mailchimp'],
+      publication_score_threshold: 0.65,
+      product_keywords: {
+        commercial: ['pricing', 'buy', 'demo', 'plans', 'free trial', 'get started'],
+        features: ['features', 'capabilities', 'solutions', 'product'],
+        cta: ['sign up', 'start free', 'book a call', 'request demo'],
       },
-      min_design_quality_score: 6,
+      business_nav_keywords: ['product', 'pricing', 'solutions', 'about', 'careers', 'customers', 'contact'],
+      content_nav_keywords: ['articles', 'blog', 'news', 'topics', 'categories', 'archives', 'authors'],
+      min_business_nav_percentage: 0.3,
+      ad_network_patterns: ['googlesyndication', 'adsense', 'doubleclick', 'media.net'],
+      affiliate_patterns: ['amazon', 'affiliate', 'aff=', 'ref=', 'amzn'],
+      payment_provider_patterns: ['stripe', 'paypal', 'braintree', 'square'],
     };
 
     const layer3_rules: Layer3Rules = {

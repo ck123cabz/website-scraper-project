@@ -6,10 +6,6 @@ import type {
   Layer2FilterResult,
   Layer2Signals,
   Layer2Rules,
-  CompanyPageSignals,
-  BlogDataSignals,
-  TechStackSignals,
-  DesignQualitySignals,
   Layer2Results,
 } from '@website-scraper/shared';
 
@@ -30,14 +26,18 @@ import type {
 export class Layer2OperationalFilterService {
   private readonly logger = new Logger(Layer2OperationalFilterService.name);
   private readonly DEFAULT_RULES: Layer2Rules = {
-    blog_freshness_days: 90,
-    required_pages_count: 2,
-    min_tech_stack_tools: 2,
-    tech_stack_tools: {
-      analytics: ['google-analytics', 'mixpanel', 'amplitude'],
-      marketing: ['hubspot', 'marketo', 'activecampaign', 'mailchimp'],
+    publication_score_threshold: 0.65,
+    product_keywords: {
+      commercial: ['pricing', 'buy', 'demo', 'plans', 'free trial', 'get started'],
+      features: ['features', 'capabilities', 'solutions', 'product'],
+      cta: ['sign up', 'start free', 'book a call', 'request demo'],
     },
-    min_design_quality_score: 6,
+    business_nav_keywords: ['product', 'pricing', 'solutions', 'about', 'careers', 'customers', 'contact'],
+    content_nav_keywords: ['articles', 'blog', 'news', 'topics', 'categories', 'archives', 'authors'],
+    min_business_nav_percentage: 0.3,
+    ad_network_patterns: ['googlesyndication', 'adsense', 'doubleclick', 'media.net'],
+    affiliate_patterns: ['amazon', 'affiliate', 'aff=', 'ref=', 'amzn'],
+    payment_provider_patterns: ['stripe', 'paypal', 'braintree', 'square'],
   };
 
   constructor(
@@ -86,31 +86,14 @@ export class Layer2OperationalFilterService {
       const html = scrapeResult.content;
       const $ = cheerio.load(html);
 
-      // Detect all Layer 2 signals
-      const companyPages = this.detectCompanyPages($, html);
-      const blogData = this.detectBlogData($, html, rules.blog_freshness_days);
-      const techStack = this.detectTechStack($, html);
-      const designQuality = this.assessDesignQuality($, html);
-
-      const signals: Layer2Signals = {
-        company_pages: companyPages,
-        blog_data: blogData,
-        tech_stack: techStack,
-        design_quality: designQuality,
-      };
-
-      // Evaluate pass/fail criteria
-      const decision = this.evaluateSignals(signals, rules);
+      // TODO: Implement new publication detection logic (Tasks 3-7)
+      // Temporarily return pass-through result
       const processingTimeMs = Date.now() - startTime;
 
-      this.logger.log(
-        `Layer 2 result for ${url.slice(0, 100)}: ${decision.passed ? 'PASS' : 'REJECT'} (${processingTimeMs}ms)`,
-      );
-
       return {
-        passed: decision.passed,
-        reasoning: decision.reasoning,
-        signals,
+        passed: true,
+        reasoning: 'PASS Layer 2 - Legacy implementation temporarily disabled during refactor',
+        signals: this.createEmptySignals(),
         processingTimeMs,
       };
     } catch (error) {
@@ -134,15 +117,16 @@ export class Layer2OperationalFilterService {
 
       if (layer2Rules && typeof layer2Rules === 'object') {
         return {
-          blog_freshness_days:
-            layer2Rules.blog_freshness_days ?? this.DEFAULT_RULES.blog_freshness_days,
-          required_pages_count:
-            layer2Rules.required_pages_count ?? this.DEFAULT_RULES.required_pages_count,
-          min_tech_stack_tools:
-            layer2Rules.min_tech_stack_tools ?? this.DEFAULT_RULES.min_tech_stack_tools,
-          tech_stack_tools: layer2Rules.tech_stack_tools ?? this.DEFAULT_RULES.tech_stack_tools,
-          min_design_quality_score:
-            layer2Rules.min_design_quality_score ?? this.DEFAULT_RULES.min_design_quality_score,
+          publication_score_threshold:
+            layer2Rules.publication_score_threshold ?? this.DEFAULT_RULES.publication_score_threshold,
+          product_keywords: layer2Rules.product_keywords ?? this.DEFAULT_RULES.product_keywords,
+          business_nav_keywords: layer2Rules.business_nav_keywords ?? this.DEFAULT_RULES.business_nav_keywords,
+          content_nav_keywords: layer2Rules.content_nav_keywords ?? this.DEFAULT_RULES.content_nav_keywords,
+          min_business_nav_percentage:
+            layer2Rules.min_business_nav_percentage ?? this.DEFAULT_RULES.min_business_nav_percentage,
+          ad_network_patterns: layer2Rules.ad_network_patterns ?? this.DEFAULT_RULES.ad_network_patterns,
+          affiliate_patterns: layer2Rules.affiliate_patterns ?? this.DEFAULT_RULES.affiliate_patterns,
+          payment_provider_patterns: layer2Rules.payment_provider_patterns ?? this.DEFAULT_RULES.payment_provider_patterns,
         };
       }
     } catch (error) {
@@ -155,8 +139,9 @@ export class Layer2OperationalFilterService {
   /**
    * Detect company infrastructure pages (About, Team, Contact)
    * Minimum 2 of 3 required to pass
+   * TODO: Remove or refactor in future tasks
    */
-  private detectCompanyPages($: any, html: string): CompanyPageSignals {
+  private detectCompanyPages($: any, html: string): any {
     const lowerHtml = html.toLowerCase();
 
     // Detect About page
@@ -225,8 +210,9 @@ export class Layer2OperationalFilterService {
   /**
    * Detect blog section and validate freshness
    * Requires at least 1 post within threshold (default: 90 days)
+   * TODO: Remove or refactor in future tasks
    */
-  private detectBlogData($: any, html: string, thresholdDays: number): BlogDataSignals {
+  private detectBlogData($: any, html: string, thresholdDays: number): any {
     const lowerHtml = html.toLowerCase();
 
     // Detect blog section
@@ -369,8 +355,9 @@ export class Layer2OperationalFilterService {
   /**
    * Detect professional tech stack tools
    * Minimum 2 tools required (analytics + marketing platforms)
+   * TODO: Remove or refactor in future tasks
    */
-  private detectTechStack($: any, html: string): TechStackSignals {
+  private detectTechStack($: any, html: string): any {
     const detectedTools: string[] = [];
 
     // Google Analytics
@@ -425,8 +412,9 @@ export class Layer2OperationalFilterService {
   /**
    * Assess professional design quality indicators
    * Scores on 1-10 scale based on modern frameworks, responsive design, imagery
+   * TODO: Remove or refactor in future tasks
    */
-  private assessDesignQuality($: any, html: string): DesignQualitySignals {
+  private assessDesignQuality($: any, html: string): any {
     let score = 5; // Base score
 
     // Modern CSS framework detection
@@ -480,80 +468,124 @@ export class Layer2OperationalFilterService {
   }
 
   /**
+   * Detect product/service offering from homepage
+   * Scans for commercial keywords, pricing mentions, CTAs, and payment providers
+   */
+  private detectProductOffering(
+    $: any,
+    html: string,
+    rules: Layer2Rules,
+  ): {
+    has_product_offering: boolean;
+    product_confidence: number;
+    detected_product_keywords: string[];
+  } {
+    const lowerHtml = html.toLowerCase();
+    const bodyText = $('body').text().toLowerCase();
+    const detectedKeywords: string[] = [];
+    let score = 0;
+    let signalCount = 0;
+
+    // Check commercial keywords
+    const commercialKeywords = rules.product_keywords.commercial;
+    const commercialMatches = commercialKeywords.filter(kw => bodyText.includes(kw.toLowerCase()));
+    if (commercialMatches.length > 0) {
+      score += Math.min(commercialMatches.length * 0.25, 0.5);
+      signalCount++;
+      detectedKeywords.push(...commercialMatches);
+    }
+
+    // Check feature keywords
+    const featureKeywords = rules.product_keywords.features;
+    const featureMatches = featureKeywords.filter(kw => bodyText.includes(kw.toLowerCase()));
+    if (featureMatches.length > 0) {
+      score += Math.min(featureMatches.length * 0.2, 0.4);
+      signalCount++;
+      detectedKeywords.push(...featureMatches);
+    }
+
+    // Check CTA keywords
+    const ctaKeywords = rules.product_keywords.cta;
+    const ctaMatches = ctaKeywords.filter(kw => bodyText.includes(kw.toLowerCase()));
+    if (ctaMatches.length > 0) {
+      score += Math.min(ctaMatches.length * 0.2, 0.4);
+      signalCount++;
+      detectedKeywords.push(...ctaMatches);
+    }
+
+    // Check for price mentions ($XX, pricing tables)
+    const pricePatterns = [/\$\d+/, /\d+\/month/, /\d+\/year/, /<table[^>]*pricing/i];
+    const hasPricing = pricePatterns.some(pattern => pattern.test(html));
+    if (hasPricing) {
+      score += 0.35;
+      signalCount++;
+      detectedKeywords.push('pricing_pattern');
+    }
+
+    // Check for payment provider scripts
+    const paymentProviders = rules.payment_provider_patterns;
+    const hasPaymentProvider = paymentProviders.some(provider =>
+      lowerHtml.includes(provider.toLowerCase())
+    );
+    if (hasPaymentProvider) {
+      score += 0.6;
+      signalCount++;
+      detectedKeywords.push('payment_provider');
+    }
+
+    // Normalize score to 0-1 range
+    const confidence = signalCount > 0 ? Math.min(score, 1.0) : 0;
+
+    return {
+      has_product_offering: confidence >= 0.5,
+      product_confidence: confidence,
+      detected_product_keywords: detectedKeywords,
+    };
+  }
+
+  /**
    * Evaluate all signals against Layer 2 pass/fail criteria
-   * Scoring system: Must pass at least 2 of 4 criteria
-   *
-   * REFACTORED: Changed from strict ALL-must-pass to flexible scoring
-   * Rationale: Homepage scraping cannot reliably detect blog post dates
-   * (blog dates typically appear on /blog page, not homepage)
+   * TODO: Will be replaced with new publication detection logic in Task 7
    */
   private evaluateSignals(
     signals: Layer2Signals,
     rules: Layer2Rules,
   ): { passed: boolean; reasoning: string } {
-    const failures: string[] = [];
-    const passes: string[] = [];
-    let passCount = 0;
-
-    // Check company pages (minimum 2 of 3)
-    if (signals.company_pages.count >= rules.required_pages_count) {
-      passes.push(`Company pages (${signals.company_pages.count}/3)`);
-      passCount++;
-    } else {
-      failures.push(
-        `Missing required pages (${signals.company_pages.count}/${rules.required_pages_count} found)`,
-      );
-    }
-
-    // Check blog freshness (optional - difficult to detect from homepage)
-    if (signals.blog_data.passes_freshness) {
-      passes.push('Fresh blog detected');
-      passCount++;
-    } else {
-      if (!signals.blog_data.has_blog) {
-        failures.push('No blog section detected');
-      } else if (signals.blog_data.days_since_last_post === null) {
-        failures.push('Blog dates not found on homepage');
-      } else {
-        failures.push(
-          `Blog not fresh (${signals.blog_data.days_since_last_post} days since last post)`,
-        );
-      }
-    }
-
-    // Check tech stack
-    if (signals.tech_stack.count >= rules.min_tech_stack_tools) {
-      passes.push(`Professional tech stack (${signals.tech_stack.count} tools)`);
-      passCount++;
-    } else {
-      failures.push(
-        `Insufficient tech stack (${signals.tech_stack.count}/${rules.min_tech_stack_tools} tools detected)`,
-      );
-    }
-
-    // Check design quality
-    if (signals.design_quality.score >= rules.min_design_quality_score) {
-      passes.push(`Design quality (${signals.design_quality.score}/10)`);
-      passCount++;
-    } else {
-      failures.push(
-        `Low design quality (score: ${signals.design_quality.score}/${rules.min_design_quality_score})`,
-      );
-    }
-
-    // Final decision: Must pass at least 2 of 4 criteria
-    const REQUIRED_PASS_COUNT = 2;
-
-    if (passCount >= REQUIRED_PASS_COUNT) {
-      return {
-        passed: true,
-        reasoning: `PASS Layer 2 - ${passes.join(', ')} (${passCount}/4 criteria met)`,
-      };
-    }
-
+    // Temporarily stubbed during refactor
     return {
-      passed: false,
-      reasoning: `REJECT Layer 2 - Only ${passCount}/${REQUIRED_PASS_COUNT} required criteria met. Failures: ${failures.join('; ')}`,
+      passed: true,
+      reasoning: 'PASS Layer 2 - Evaluation temporarily disabled during refactor',
+    };
+  }
+
+  /**
+   * Create empty signals object for pass-through cases
+   */
+  private createEmptySignals(): Layer2Signals {
+    return {
+      has_product_offering: false,
+      product_confidence: 0,
+      detected_product_keywords: [],
+      homepage_is_blog: false,
+      layout_type: 'mixed',
+      layout_confidence: 0,
+      has_business_nav: false,
+      business_nav_percentage: 0,
+      nav_items_classified: {
+        business: [],
+        content: [],
+        other: [],
+      },
+      monetization_type: 'unknown',
+      ad_networks_detected: [],
+      affiliate_patterns_detected: [],
+      publication_score: 0,
+      module_scores: {
+        product_offering: 0,
+        layout: 0,
+        navigation: 0,
+        monetization: 0,
+      },
     };
   }
 
@@ -565,22 +597,7 @@ export class Layer2OperationalFilterService {
     return {
       passed: true,
       reasoning,
-      signals: {
-        company_pages: { has_about: false, has_team: false, has_contact: false, count: 0 },
-        blog_data: {
-          has_blog: false,
-          last_post_date: null,
-          days_since_last_post: null,
-          passes_freshness: false,
-        },
-        tech_stack: { tools_detected: [], count: 0 },
-        design_quality: {
-          score: 0,
-          has_modern_framework: false,
-          is_responsive: false,
-          has_professional_imagery: false,
-        },
-      },
+      signals: this.createEmptySignals(),
       processingTimeMs: Date.now() - startTime,
     };
   }
@@ -601,11 +618,11 @@ export class Layer2OperationalFilterService {
       passed: result.passed,
       reasoning: result.reasoning,
       signals: {
-        companyPageFound: result.signals.company_pages.count >= 2,
-        blogFreshnessScore: result.signals.blog_data.passes_freshness ? 1 : 0,
-        techStack: result.signals.tech_stack.tools_detected,
-        lastBlogPostDate: result.signals.blog_data.last_post_date,
-        contactInfoPresent: result.signals.company_pages.has_contact,
+        companyPageFound: false,
+        blogFreshnessScore: 0,
+        techStack: [],
+        lastBlogPostDate: null,
+        contactInfoPresent: false,
       },
       processingTimeMs: result.processingTimeMs,
     };
@@ -620,55 +637,8 @@ export class Layer2OperationalFilterService {
    */
   async getStructuredResults(url: string): Promise<Layer2Results> {
     try {
-      // Run full Layer 2 filter to get all signals
-      const result = await this.filterUrl(url);
-
-      // Map Layer2Signals to Layer2Results format
-      return {
-        guest_post_red_flags: {
-          contact_page: {
-            checked: true,
-            detected: result.signals.company_pages.has_contact,
-          },
-          author_bio: {
-            checked: false, // NOT IMPLEMENTED - would need full page scraping
-            detected: false,
-          },
-          pricing_page: {
-            checked: false, // NOT IMPLEMENTED - would need full page scraping
-            detected: false,
-          },
-          submit_content: {
-            checked: false, // NOT IMPLEMENTED - would need full page scraping
-            detected: false,
-          },
-          write_for_us: {
-            checked: false, // NOT IMPLEMENTED - would need full page scraping
-            detected: false,
-          },
-          guest_post_guidelines: {
-            checked: false, // NOT IMPLEMENTED - would need full page scraping
-            detected: false,
-          },
-        },
-        content_quality: {
-          thin_content: {
-            checked: false, // NOT IMPLEMENTED - would need word count analysis
-            detected: false,
-            word_count: undefined,
-            threshold: undefined,
-          },
-          excessive_ads: {
-            checked: false, // NOT IMPLEMENTED - would need ad detection
-            detected: false,
-          },
-          broken_links: {
-            checked: false, // NOT IMPLEMENTED - would need link validation
-            detected: false,
-            count: undefined,
-          },
-        },
-      };
+      // TODO: Update this in Task 7 when refactor is complete
+      return this.getEmptyResults();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Error getting structured Layer 2 results: ${errorMessage}`);
