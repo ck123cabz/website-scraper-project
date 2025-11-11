@@ -27,6 +27,8 @@ export interface Layer1Rules {
     commercial: string[]; // [".com", ".io", ".co", ".ai"]
     non_commercial: string[]; // [".org", ".gov", ".edu"]
     personal: string[]; // [".me", ".blog", ".xyz"]
+    /** User-added custom TLDs (e.g., [".crypto", ".web3"]). Defaults to [] if not provided. */
+    custom?: string[];
   };
   /** Industry keywords for domain classification */
   industry_keywords: string[]; // ["SaaS", "consulting", "software", ...]
