@@ -87,10 +87,7 @@ export class NotificationService {
         const webhook = new IncomingWebhook(slackWebhookUrl);
 
         // Build message with queue information
-        const baseUrl = this.configService.get<string>(
-          'APP_BASE_URL',
-          'http://localhost:3000',
-        );
+        const baseUrl = this.configService.get<string>('APP_BASE_URL', 'http://localhost:3000');
         const manualReviewUrl = `${baseUrl}/manual-review`;
         const timestamp = new Date().toISOString();
 
@@ -170,8 +167,7 @@ export class NotificationService {
     }
 
     // All retries exhausted or non-retryable error occurred
-    const errorMessage =
-      lastError instanceof Error ? lastError.message : String(lastError);
+    const errorMessage = lastError instanceof Error ? lastError.message : String(lastError);
     this.logger.error(`Failed to send Slack notification: ${errorMessage}`, {
       queueSize,
       stack: lastError instanceof Error ? lastError.stack : undefined,

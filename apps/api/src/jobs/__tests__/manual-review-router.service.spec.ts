@@ -54,12 +54,56 @@ describe('ManualReviewRouterService (T010-TEST-C, T046 Integration)', () => {
   };
 
   beforeEach(async () => {
-    const supabaseServiceMock = {
-      getClient: jest.fn().mockReturnValue({
-        from: jest.fn().mockReturnValue({
+    const mockSupabaseClient = {
+      from: jest.fn((table) => {
+        // Return different mocks based on the table name
+        if (table === 'manual_review_queue') {
+          return {
+            insert: jest.fn().mockReturnValue({
+              select: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({
+                  data: { id: 'queue-123' },
+                  error: null,
+                }),
+              }),
+            }),
+            update: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ data: {}, error: null }),
+            }),
+            select: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: {
+                  id: 'queue-id-123',
+                  url_id: 'url-review-123',
+                  job_id: 'job-789',
+                  confidence_score: 0.65,
+                  confidence_band: 'medium',
+                },
+                error: null,
+              }),
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({
+                  data: {
+                    id: 'queue-id-123',
+                    url_id: 'url-review-123',
+                    job_id: 'job-789',
+                  },
+                  error: null,
+                }),
+              }),
+              is: jest.fn().mockReturnValue(Promise.resolve({ count: 0, error: null })),
+            }),
+          };
+        }
+
+        // Default mock for other tables
+        return {
           insert: jest.fn().mockReturnValue({
             select: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({ data: { id: 'queue-123' }, error: null }),
+              single: jest.fn().mockResolvedValue({
+                data: { id: 'default-id' },
+                error: null,
+              }),
             }),
           }),
           update: jest.fn().mockReturnValue({
@@ -70,11 +114,15 @@ describe('ManualReviewRouterService (T010-TEST-C, T046 Integration)', () => {
             eq: jest.fn().mockReturnValue({
               single: jest.fn().mockResolvedValue({ data: null, error: null }),
             }),
-            is: jest.fn().mockResolvedValue({ data: null, error: null, count: 0 }),
+            is: jest.fn().mockReturnValue(Promise.resolve({ count: 0, error: null })),
           }),
-        }),
-        rpc: jest.fn().mockResolvedValue({ data: {} }),
+        };
       }),
+      rpc: jest.fn().mockResolvedValue({ data: {} }),
+    };
+
+    const supabaseServiceMock = {
+      getClient: jest.fn().mockReturnValue(mockSupabaseClient),
     };
 
     const settingsServiceMock = {
@@ -203,14 +251,15 @@ describe('ManualReviewRouterService (T010-TEST-C, T046 Integration)', () => {
     it('should count active queue items', async () => {
       const mockClient = {
         from: jest.fn().mockReturnValue({
-          select: jest.fn().mockResolvedValue({
-            data: [{ count: 5 }],
-            error: null,
+          select: jest.fn().mockReturnValue({
+            is: jest.fn().mockReturnValue(Promise.resolve({ count: 5, error: null })),
           }),
         }),
       };
 
-      supabaseService.getClient.mockReturnValue(mockClient as any);
+      supabaseService.getClient.mockReturnValue(
+        mockClient as unknown as ReturnType<typeof supabaseService.getClient>,
+      );
 
       const count = await service.countActiveQueue();
       // Result will be 0 or mock data depending on implementation
@@ -262,7 +311,9 @@ describe('ManualReviewRouterService (T010-TEST-C, T046 Integration)', () => {
           },
         },
       };
-      settingsService.getSettings.mockResolvedValue(mockSettings as any);
+      settingsService.getSettings.mockResolvedValue(
+        mockSettings as Awaited<ReturnType<typeof settingsService.getSettings>>,
+      );
 
       // Mock countActiveQueue to return queue size >= threshold
       jest.spyOn(service, 'countActiveQueue').mockResolvedValue(5);
@@ -314,7 +365,9 @@ describe('ManualReviewRouterService (T010-TEST-C, T046 Integration)', () => {
           },
         },
       };
-      settingsService.getSettings.mockResolvedValue(mockSettings as any);
+      settingsService.getSettings.mockResolvedValue(
+        mockSettings as Awaited<ReturnType<typeof settingsService.getSettings>>,
+      );
 
       jest.spyOn(service, 'countActiveQueue').mockResolvedValue(10);
 
@@ -360,7 +413,9 @@ describe('ManualReviewRouterService (T010-TEST-C, T046 Integration)', () => {
           },
         },
       };
-      settingsService.getSettings.mockResolvedValue(mockSettings as any);
+      settingsService.getSettings.mockResolvedValue(
+        mockSettings as Awaited<ReturnType<typeof settingsService.getSettings>>,
+      );
 
       // Mock countActiveQueue to return size below threshold
       jest.spyOn(service, 'countActiveQueue').mockResolvedValue(5);
@@ -407,7 +462,9 @@ describe('ManualReviewRouterService (T010-TEST-C, T046 Integration)', () => {
           },
         },
       };
-      settingsService.getSettings.mockResolvedValue(mockSettings as any);
+      settingsService.getSettings.mockResolvedValue(
+        mockSettings as Awaited<ReturnType<typeof settingsService.getSettings>>,
+      );
 
       jest.spyOn(service, 'countActiveQueue').mockResolvedValue(10);
 
@@ -451,10 +508,12 @@ describe('ManualReviewRouterService (T010-TEST-C, T046 Integration)', () => {
             slack_webhook_url: 'https://hooks.slack.com/services/T1234/B5678/XXXX',
             // slack_threshold intentionally omitted
             dashboard_badge: true,
-          } as any,
+          },
         },
       };
-      settingsService.getSettings.mockResolvedValue(mockSettings as any);
+      settingsService.getSettings.mockResolvedValue(
+        mockSettings as Awaited<ReturnType<typeof settingsService.getSettings>>,
+      );
 
       // Mock countActiveQueue to return 10
       jest.spyOn(service, 'countActiveQueue').mockResolvedValue(10);

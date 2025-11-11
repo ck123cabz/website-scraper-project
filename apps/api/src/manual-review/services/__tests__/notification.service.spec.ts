@@ -302,9 +302,7 @@ describe('NotificationService (T047-TEST-B, T048-TEST-C, T049-TEST-D)', () => {
       const webhookUrl = 'https://hooks.slack.com/services/T1234/B5678/XXXX';
       const queueSize = 10;
 
-      mockWebhookSend.mockRejectedValueOnce(
-        new Error('HTTP 401: Unauthorized'),
-      );
+      mockWebhookSend.mockRejectedValueOnce(new Error('HTTP 401: Unauthorized'));
 
       const result = await service.sendSlackNotification(queueSize, webhookUrl);
 
@@ -318,9 +316,7 @@ describe('NotificationService (T047-TEST-B, T048-TEST-C, T049-TEST-D)', () => {
       const webhookUrl = 'https://hooks.slack.com/services/T1234/B5678/XXXX';
       const queueSize = 10;
 
-      mockWebhookSend.mockRejectedValueOnce(
-        new Error('Invalid webhook URL format'),
-      );
+      mockWebhookSend.mockRejectedValueOnce(new Error('Invalid webhook URL format'));
 
       const result = await service.sendSlackNotification(queueSize, webhookUrl);
 
@@ -373,9 +369,7 @@ describe('NotificationService (T047-TEST-B, T048-TEST-C, T049-TEST-D)', () => {
       const webhookUrl = 'https://hooks.slack.com/services/T1234/B5678/XXXX';
       const queueSize = 10;
 
-      mockWebhookSend.mockRejectedValueOnce(
-        new Error('HTTP 404: Not Found'),
-      );
+      mockWebhookSend.mockRejectedValueOnce(new Error('HTTP 404: Not Found'));
 
       const result = await service.sendSlackNotification(queueSize, webhookUrl);
 
@@ -387,9 +381,7 @@ describe('NotificationService (T047-TEST-B, T048-TEST-C, T049-TEST-D)', () => {
       const webhookUrl = 'https://hooks.slack.com/services/T1234/B5678/XXXX';
       const queueSize = 10;
 
-      mockWebhookSend.mockRejectedValueOnce(
-        new Error('HTTP 429: Too Many Requests'),
-      );
+      mockWebhookSend.mockRejectedValueOnce(new Error('HTTP 429: Too Many Requests'));
 
       const result = await service.sendSlackNotification(queueSize, webhookUrl);
 
