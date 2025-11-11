@@ -354,6 +354,7 @@ export class SettingsService {
         commercial: ['.com', '.io', '.co', '.ai'],
         non_commercial: ['.org', '.gov', '.edu'],
         personal: ['.me', '.blog', '.xyz'],
+        custom: [],
       },
       industry_keywords: ['SaaS', 'consulting', 'software', 'platform', 'marketing', 'agency'],
       url_pattern_exclusions: v1PrefilterRules,
