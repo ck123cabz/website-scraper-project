@@ -242,6 +242,35 @@ describe('SettingsService', () => {
 
       await expect(service.updateSettings(validDto)).rejects.toThrow(BadRequestException);
     });
+
+    it('should preserve custom TLDs on update', async () => {
+      const dtoWithCustomTlds: UpdateSettingsDto = {
+        ...validDto,
+        layer1_rules: {
+          tld_filters: {
+            commercial: ['.com'],
+            non_commercial: ['.org'],
+            personal: ['.me'],
+            custom: ['.crypto', '.web3'],
+          },
+        },
+      };
+
+      const updatedSettings = {
+        ...mockSettings,
+        ...dtoWithCustomTlds,
+      };
+
+      mockSupabaseClient.single
+        .mockResolvedValueOnce({ data: mockSettings, error: null })
+        .mockResolvedValueOnce({ data: updatedSettings, error: null });
+
+      const result = await service.updateSettings(dtoWithCustomTlds);
+
+      expect(result.layer1_rules).toBeDefined();
+      expect(result.layer1_rules!.tld_filters).toBeDefined();
+      expect(result.layer1_rules!.tld_filters!.custom).toEqual(['.crypto', '.web3']);
+    });
   });
 
   describe('resetToDefaults', () => {
