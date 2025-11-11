@@ -20,6 +20,61 @@ interface Layer1DomainTabProps {
 export function Layer1DomainTab({ rules, onChange, errors }: Layer1DomainTabProps) {
   const [newPattern, setNewPattern] = React.useState('');
 
+  // ============================================================================
+  // TLD Management Helper Functions
+  // NOTE: These helpers will be used in the next task when the UI is refactored
+  // to support unified TLD list with custom TLD management.
+  // ============================================================================
+
+  /**
+   * Helper to determine if a TLD is checked (included in any array)
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const isCheckedTld = React.useCallback((tld: string): boolean => {
+    return [
+      ...rules.tld_filters.commercial,
+      ...rules.tld_filters.non_commercial,
+      ...rules.tld_filters.personal,
+      ...(rules.tld_filters.custom || []),
+    ].includes(tld);
+  }, [rules.tld_filters]);
+
+  /**
+   * Helper to identify if a TLD is custom vs predefined
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const isCustomTld = React.useCallback((tld: string): boolean => {
+    return (rules.tld_filters.custom || []).includes(tld);
+  }, [rules.tld_filters.custom]);
+
+  /**
+   * Merge all TLD arrays into unified list with metadata
+   * Returns alphabetically sorted list with isCustom and isChecked flags
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const allTlds = React.useMemo(() => {
+    const predefined = [
+      ...rules.tld_filters.commercial,
+      ...rules.tld_filters.non_commercial,
+      ...rules.tld_filters.personal,
+    ];
+    const custom = rules.tld_filters.custom || [];
+
+    // Create unified set to eliminate duplicates, then map to objects with metadata
+    const uniqueTlds = Array.from(new Set([...predefined, ...custom]));
+    return uniqueTlds
+      .sort()
+      .map(tld => ({
+        value: tld,
+        isCustom: custom.includes(tld),
+        isChecked: isCheckedTld(tld),
+      }));
+  }, [rules.tld_filters, isCheckedTld]);
+
+  // ============================================================================
+  // Existing Handlers
+  // ============================================================================
+
   const handleTldToggle = (category: 'commercial' | 'non_commercial' | 'personal', tld: string) => {
     const updated = { ...rules };
     const index = updated.tld_filters[category].indexOf(tld);
