@@ -320,6 +320,14 @@ describe('SettingsService', () => {
       expect(categories).toContain('forum');
       expect(categories).toContain('aggregator');
     });
+
+    it('should include custom: [] in layer1_rules tld_filters', () => {
+      const defaults = service.getDefaultSettings();
+
+      expect(defaults.layer1_rules).toBeDefined();
+      expect(defaults.layer1_rules!.tld_filters).toBeDefined();
+      expect(defaults.layer1_rules!.tld_filters!.custom).toEqual([]);
+    });
   });
 
   describe('invalidateCache', () => {
