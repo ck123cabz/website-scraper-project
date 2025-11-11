@@ -25,6 +25,11 @@ class TldFiltersDto {
   @IsArray()
   @IsString({ each: true })
   personal?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  custom?: string[];
 }
 
 class UrlPatternExclusionDto {
