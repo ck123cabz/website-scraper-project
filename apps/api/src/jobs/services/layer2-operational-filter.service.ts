@@ -632,6 +632,66 @@ export class Layer2OperationalFilterService {
   }
 
   /**
+   * Parse navigation to classify business vs content focus
+   */
+  private parseNavigation(
+    $: any,
+    html: string,
+    rules: Layer2Rules,
+  ): {
+    has_business_nav: boolean;
+    business_nav_percentage: number;
+    nav_items_classified: {
+      business: string[];
+      content: string[];
+      other: string[];
+    };
+  } {
+    const businessKeywords = rules.business_nav_keywords.map(k => k.toLowerCase());
+    const contentKeywords = rules.content_nav_keywords.map(k => k.toLowerCase());
+
+    const classified = {
+      business: [] as string[],
+      content: [] as string[],
+      other: [] as string[],
+    };
+
+    // Extract navigation links
+    const navLinks = $('nav a, header a, [role="navigation"] a');
+
+    if (navLinks.length === 0) {
+      return {
+        has_business_nav: false,
+        business_nav_percentage: 0,
+        nav_items_classified: classified,
+      };
+    }
+
+    navLinks.each((_: any, el: any) => {
+      const text = $(el).text().trim().toLowerCase();
+      const href = $(el).attr('href') || '';
+      const combinedText = `${text} ${href}`.toLowerCase();
+
+      if (businessKeywords.some(kw => combinedText.includes(kw))) {
+        classified.business.push(text);
+      } else if (contentKeywords.some(kw => combinedText.includes(kw))) {
+        classified.content.push(text);
+      } else {
+        classified.other.push(text);
+      }
+    });
+
+    const totalClassified = classified.business.length + classified.content.length + classified.other.length;
+    const businessPercentage = totalClassified > 0 ? classified.business.length / totalClassified : 0;
+
+    return {
+      has_business_nav: businessPercentage >= rules.min_business_nav_percentage,
+      business_nav_percentage: businessPercentage,
+      nav_items_classified: classified,
+    };
+  }
+
+  /**
    * Evaluate all signals against Layer 2 pass/fail criteria
    * TODO: Will be replaced with new publication detection logic in Task 7
    */
