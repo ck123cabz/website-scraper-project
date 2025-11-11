@@ -144,81 +144,201 @@ export function FactorBreakdown({
         </Card>
       )}
 
-      {/* Layer 2: Guest Post Red Flags & Content Quality */}
+      {/* Layer 2: Publication Detection or Legacy Red Flags */}
       {layer2 && (
         <Card data-testid="layer2-section">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Layer 2: Red Flags & Content Quality</CardTitle>
-            <CardDescription>Guest post indicators and content evaluation</CardDescription>
+            <CardTitle className="text-base">
+              {'publication_score' in layer2
+                ? 'Layer 2: Publication Detection'
+                : 'Layer 2: Red Flags & Content Quality'}
+            </CardTitle>
+            <CardDescription>
+              {'publication_score' in layer2
+                ? 'Company vs publication analysis'
+                : 'Guest post indicators and content evaluation'}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Guest Post Red Flags */}
-            <div>
-              <h4 className="font-medium text-sm mb-2">Guest Post Indicators</h4>
-              <div className="space-y-2">
-                {layer2.guest_post_red_flags && (
-                  <>
-                    <FactorCheckItem
-                      label="Contact Page"
-                      detected={layer2.guest_post_red_flags.contact_page.detected}
+            {/* New Structure: Publication Detection */}
+            {'publication_score' in layer2 ? (
+              <div className="space-y-3">
+                {/* Publication Score */}
+                <div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Publication Score</span>
+                    <span
+                      className={`font-semibold ${
+                        layer2.publication_score >= 0.65 ? 'text-red-600' : 'text-green-600'
+                      }`}
+                    >
+                      {(layer2.publication_score * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                    <div
+                      className={`h-2 rounded-full ${
+                        layer2.publication_score >= 0.65 ? 'bg-red-500' : 'bg-green-500'
+                      }`}
+                      style={{ width: `${layer2.publication_score * 100}%` }}
                     />
-                    <FactorCheckItem
-                      label="Author Bio"
-                      detected={layer2.guest_post_red_flags.author_bio.detected}
-                    />
-                    <FactorCheckItem
-                      label="Pricing Page"
-                      detected={layer2.guest_post_red_flags.pricing_page.detected}
-                    />
-                    <FactorCheckItem
-                      label="Submit Content"
-                      detected={layer2.guest_post_red_flags.submit_content.detected}
-                    />
-                    <FactorCheckItem
-                      label="Write For Us"
-                      detected={layer2.guest_post_red_flags.write_for_us.detected}
-                    />
-                    <FactorCheckItem
-                      label="Guest Post Guidelines"
-                      detected={layer2.guest_post_red_flags.guest_post_guidelines.detected}
-                    />
-                  </>
-                )}
-              </div>
-            </div>
+                  </div>
+                </div>
 
-            {/* Content Quality */}
-            <div>
-              <h4 className="font-medium text-sm mb-2">Content Quality</h4>
-              <div className="space-y-2">
-                {layer2.content_quality && (
-                  <>
-                    <FactorCheckItem
-                      label="Thin Content"
-                      detected={layer2.content_quality.thin_content.detected}
-                      details={
-                        layer2.content_quality.thin_content.word_count
-                          ? `${layer2.content_quality.thin_content.word_count} words`
-                          : undefined
-                      }
-                    />
-                    <FactorCheckItem
-                      label="Excessive Ads"
-                      detected={layer2.content_quality.excessive_ads.detected}
-                    />
-                    <FactorCheckItem
-                      label="Broken Links"
-                      detected={layer2.content_quality.broken_links.detected}
-                      details={
-                        layer2.content_quality.broken_links.count
-                          ? `${layer2.content_quality.broken_links.count} links`
-                          : undefined
-                      }
-                    />
-                  </>
+                {/* Module Scores */}
+                {layer2.module_scores && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground uppercase font-semibold">
+                      Module Breakdown
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-muted p-2 rounded">
+                        <div className="text-xs text-muted-foreground">Product Offering</div>
+                        <div className="text-sm font-semibold">
+                          {(layer2.module_scores.product_offering * 100).toFixed(0)}%
+                        </div>
+                      </div>
+
+                      <div className="bg-muted p-2 rounded">
+                        <div className="text-xs text-muted-foreground">Layout Analysis</div>
+                        <div className="text-sm font-semibold">
+                          {(layer2.module_scores.layout * 100).toFixed(0)}%
+                        </div>
+                      </div>
+
+                      <div className="bg-muted p-2 rounded">
+                        <div className="text-xs text-muted-foreground">Navigation</div>
+                        <div className="text-sm font-semibold">
+                          {(layer2.module_scores.navigation * 100).toFixed(0)}%
+                        </div>
+                      </div>
+
+                      <div className="bg-muted p-2 rounded">
+                        <div className="text-xs text-muted-foreground">Monetization</div>
+                        <div className="text-sm font-semibold">
+                          {(layer2.module_scores.monetization * 100).toFixed(0)}%
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
+
+                {/* Detection Details */}
+                <div className="text-xs space-y-1">
+                  {layer2.has_product_offering !== undefined && (
+                    <div>
+                      <span className="text-muted-foreground">Product Offering:</span>{' '}
+                      <span
+                        className={layer2.has_product_offering ? 'text-green-600' : 'text-red-600'}
+                      >
+                        {layer2.has_product_offering ? 'Detected' : 'Not Found'}
+                      </span>
+                    </div>
+                  )}
+
+                  {layer2.layout_type && (
+                    <div>
+                      <span className="text-muted-foreground">Layout Type:</span>{' '}
+                      <span className="font-medium">{layer2.layout_type}</span>
+                    </div>
+                  )}
+
+                  {layer2.has_business_nav !== undefined && (
+                    <div>
+                      <span className="text-muted-foreground">Business Nav:</span>{' '}
+                      <span
+                        className={layer2.has_business_nav ? 'text-green-600' : 'text-red-600'}
+                      >
+                        {layer2.has_business_nav ? 'Present' : 'Absent'}
+                      </span>
+                      {layer2.business_nav_percentage !== undefined && (
+                        <span className="text-muted-foreground ml-1">
+                          ({(layer2.business_nav_percentage * 100).toFixed(0)}%)
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {layer2.monetization_type && (
+                    <div>
+                      <span className="text-muted-foreground">Monetization:</span>{' '}
+                      <span className="font-medium">{layer2.monetization_type}</span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Old Structure: Guest Post Red Flags & Content Quality */}
+                <div>
+                  <h4 className="font-medium text-sm mb-2">Guest Post Indicators</h4>
+                  <div className="space-y-2">
+                    {layer2.guest_post_red_flags && (
+                      <>
+                        <FactorCheckItem
+                          label="Contact Page"
+                          detected={layer2.guest_post_red_flags.contact_page.detected}
+                        />
+                        <FactorCheckItem
+                          label="Author Bio"
+                          detected={layer2.guest_post_red_flags.author_bio.detected}
+                        />
+                        <FactorCheckItem
+                          label="Pricing Page"
+                          detected={layer2.guest_post_red_flags.pricing_page.detected}
+                        />
+                        <FactorCheckItem
+                          label="Submit Content"
+                          detected={layer2.guest_post_red_flags.submit_content.detected}
+                        />
+                        <FactorCheckItem
+                          label="Write For Us"
+                          detected={layer2.guest_post_red_flags.write_for_us.detected}
+                        />
+                        <FactorCheckItem
+                          label="Guest Post Guidelines"
+                          detected={layer2.guest_post_red_flags.guest_post_guidelines.detected}
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Content Quality */}
+                <div>
+                  <h4 className="font-medium text-sm mb-2">Content Quality</h4>
+                  <div className="space-y-2">
+                    {layer2.content_quality && (
+                      <>
+                        <FactorCheckItem
+                          label="Thin Content"
+                          detected={layer2.content_quality.thin_content.detected}
+                          details={
+                            layer2.content_quality.thin_content.word_count
+                              ? `${layer2.content_quality.thin_content.word_count} words`
+                              : undefined
+                          }
+                        />
+                        <FactorCheckItem
+                          label="Excessive Ads"
+                          detected={layer2.content_quality.excessive_ads.detected}
+                        />
+                        <FactorCheckItem
+                          label="Broken Links"
+                          detected={layer2.content_quality.broken_links.detected}
+                          details={
+                            layer2.content_quality.broken_links.count
+                              ? `${layer2.content_quality.broken_links.count} links`
+                              : undefined
+                          }
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       )}
