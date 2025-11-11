@@ -49,7 +49,13 @@ const createTestSettings = (
   manual_review_settings: {
     queue_size_limit: null,
     auto_review_timeout_days: null,
-    notifications: { email_threshold: 100, dashboard_badge: true, slack_integration: false },
+    notifications: {
+      email_threshold: 100,
+      email_recipient: 'test@example.com',
+      slack_webhook_url: null,
+      slack_threshold: 100,
+      dashboard_badge: true,
+    },
   },
   updated_at: new Date().toISOString(),
   ...overrides,

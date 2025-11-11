@@ -1,0 +1,58 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - heading "Manual Review Queue" [level=1] [ref=e5]
+        - paragraph [ref=e6]: Review and approve/reject URLs requiring manual verification
+      - generic [ref=e7]:
+        - button "Refresh" [ref=e8] [cursor=pointer]:
+          - img
+          - text: Refresh
+        - link "Back to Dashboard" [ref=e9] [cursor=pointer]:
+          - /url: /dashboard
+          - button "Back to Dashboard" [ref=e10]
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - paragraph [ref=e14]: Total Items
+        - paragraph [ref=e15]: "0"
+      - generic [ref=e16]:
+        - paragraph [ref=e17]: Current Page
+        - paragraph [ref=e18]: "1"
+      - generic [ref=e19]:
+        - paragraph [ref=e20]: Items Per Page
+        - paragraph [ref=e21]: "20"
+      - generic [ref=e22]:
+        - paragraph [ref=e23]: Filter Status
+        - paragraph [ref=e24]: No filters
+    - generic [ref=e25]:
+      - heading "Filters" [level=2] [ref=e27]:
+        - img [ref=e28]
+        - text: Filters
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - generic [ref=e32]: Stale Status
+          - combobox [ref=e33]:
+            - option "All Items" [selected]
+            - option "Active Only"
+            - option "Stale Items Only"
+        - generic [ref=e34]:
+          - generic [ref=e35]: Confidence Band
+          - combobox [ref=e36]:
+            - option "All Bands" [selected]
+            - option "High"
+            - option "Medium"
+            - option "Low"
+            - option "Auto Reject"
+    - generic [ref=e37]:
+      - img [ref=e38]
+      - heading "Queue is empty" [level=3] [ref=e41]
+      - paragraph [ref=e42]: All URLs have been reviewed. Check back when new items are queued.
+  - generic [ref=e43]:
+    - img [ref=e45]
+    - button "Open Tanstack query devtools" [ref=e93] [cursor=pointer]:
+      - img [ref=e94]
+  - alert [ref=e142]
+```

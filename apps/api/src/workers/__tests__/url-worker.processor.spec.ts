@@ -5,6 +5,8 @@ import { ScraperService } from '../../scraper/scraper.service';
 import { Layer1DomainAnalysisService } from '../../jobs/services/layer1-domain-analysis.service';
 import { Layer2OperationalFilterService } from '../../jobs/services/layer2-operational-filter.service';
 import { LlmService } from '../../jobs/services/llm.service';
+import { ConfidenceScoringService } from '../../jobs/services/confidence-scoring.service';
+import { ManualReviewRouterService } from '../../jobs/services/manual-review-router.service';
 import type { Job } from 'bullmq';
 
 /**
