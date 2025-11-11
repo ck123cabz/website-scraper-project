@@ -19,17 +19,16 @@ interface Layer1DomainTabProps {
 
 export function Layer1DomainTab({ rules, onChange, errors }: Layer1DomainTabProps) {
   const [newPattern, setNewPattern] = React.useState('');
+  const [newTld, setNewTld] = React.useState('');
+  const [tldError, setTldError] = React.useState('');
 
   // ============================================================================
   // TLD Management Helper Functions
-  // NOTE: These helpers will be used in the next task when the UI is refactored
-  // to support unified TLD list with custom TLD management.
   // ============================================================================
 
   /**
    * Helper to determine if a TLD is checked (included in any array)
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const isCheckedTld = React.useCallback((tld: string): boolean => {
     return [
       ...rules.tld_filters.commercial,
@@ -42,7 +41,6 @@ export function Layer1DomainTab({ rules, onChange, errors }: Layer1DomainTabProp
   /**
    * Helper to identify if a TLD is custom vs predefined
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const isCustomTld = React.useCallback((tld: string): boolean => {
     return (rules.tld_filters.custom || []).includes(tld);
   }, [rules.tld_filters.custom]);
@@ -51,7 +49,6 @@ export function Layer1DomainTab({ rules, onChange, errors }: Layer1DomainTabProp
    * Merge all TLD arrays into unified list with metadata
    * Returns alphabetically sorted list with isCustom and isChecked flags
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const allTlds = React.useMemo(() => {
     const predefined = [
       ...rules.tld_filters.commercial,
@@ -72,18 +69,112 @@ export function Layer1DomainTab({ rules, onChange, errors }: Layer1DomainTabProp
   }, [rules.tld_filters, isCheckedTld]);
 
   // ============================================================================
-  // Existing Handlers
+  // TLD Handlers
   // ============================================================================
 
-  const handleTldToggle = (category: 'commercial' | 'non_commercial' | 'personal', tld: string) => {
-    const updated = { ...rules };
-    const index = updated.tld_filters[category].indexOf(tld);
-    if (index > -1) {
-      updated.tld_filters[category].splice(index, 1);
-    } else {
-      updated.tld_filters[category].push(tld);
+  const handleAddTld = () => {
+    let tld = newTld.trim();
+
+    // Auto-prepend dot if missing (UX helper)
+    if (tld && !tld.startsWith('.')) {
+      tld = `.${tld}`;
     }
-    onChange(updated);
+
+    // Validation: Empty check
+    if (!tld) {
+      setTldError('Please enter a TLD');
+      return;
+    }
+
+    // Validation: Duplicate check (case-insensitive)
+    const allExisting = [
+      ...rules.tld_filters.commercial,
+      ...rules.tld_filters.non_commercial,
+      ...rules.tld_filters.personal,
+      ...(rules.tld_filters.custom || []),
+    ].map(t => t.toLowerCase());
+
+    if (allExisting.includes(tld.toLowerCase())) {
+      setTldError(`TLD ${tld} already exists`);
+      return;
+    }
+
+    // Add to custom array
+    const updated = {
+      ...rules.tld_filters,
+      custom: [...(rules.tld_filters.custom || []), tld]
+    };
+
+    onChange({
+      ...rules,
+      tld_filters: updated
+    });
+
+    setNewTld('');
+    setTldError('');
+  };
+
+  const handleDeleteTld = (tld: string) => {
+    const updated = {
+      ...rules.tld_filters,
+      custom: (rules.tld_filters.custom || []).filter(t => t !== tld)
+    };
+
+    onChange({
+      ...rules,
+      tld_filters: updated
+    });
+  };
+
+  const handleTldToggle = (tld: string) => {
+    const isCustom = isCustomTld(tld);
+    const isCurrentlyChecked = isCheckedTld(tld);
+
+    if (isCustom) {
+      // For custom TLDs, toggle within custom array
+      const updated = {
+        ...rules.tld_filters,
+        custom: isCurrentlyChecked
+          ? (rules.tld_filters.custom || []).filter(t => t !== tld)
+          : [...(rules.tld_filters.custom || []), tld]
+      };
+
+      onChange({
+        ...rules,
+        tld_filters: updated
+      });
+    } else {
+      // For predefined TLDs, find which category it belongs to and toggle
+      const categories: Array<'commercial' | 'non_commercial' | 'personal'> = ['commercial', 'non_commercial', 'personal'];
+      for (const category of categories) {
+        if (rules.tld_filters[category].includes(tld)) {
+          const updated = { ...rules };
+          const index = updated.tld_filters[category].indexOf(tld);
+          if (index > -1) {
+            updated.tld_filters[category].splice(index, 1);
+          }
+          onChange(updated);
+          return;
+        }
+      }
+
+      // If not found in any category (unchecked predefined), we need to add it back
+      // Find which category it originally belongs to based on defaults
+      const defaultCategories = {
+        commercial: ['.com', '.io', '.co', '.ai'],
+        non_commercial: ['.org', '.gov', '.edu'],
+        personal: ['.me', '.blog', '.xyz'],
+      };
+
+      for (const [category, defaults] of Object.entries(defaultCategories)) {
+        if (defaults.includes(tld)) {
+          const updated = { ...rules };
+          updated.tld_filters[category as keyof typeof defaultCategories].push(tld);
+          onChange(updated);
+          return;
+        }
+      }
+    }
   };
 
   const handleAddPattern = () => {
@@ -132,61 +223,63 @@ export function Layer1DomainTab({ rules, onChange, errors }: Layer1DomainTabProp
           <CardDescription>Select which domain extensions to include</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Commercial TLDs */}
+          {/* Add Custom TLD */}
           <div className="space-y-2">
-            <Label className="text-base font-semibold">Commercial TLDs</Label>
-            <div className="grid grid-cols-2 gap-3">
-              {['.com', '.io', '.co', '.ai'].map((tld) => (
-                <div key={tld} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`commercial-${tld}`}
-                    checked={rules.tld_filters.commercial.includes(tld)}
-                    onCheckedChange={() => handleTldToggle('commercial', tld)}
-                  />
-                  <label htmlFor={`commercial-${tld}`} className="text-sm cursor-pointer">
-                    {tld}
-                  </label>
-                </div>
-              ))}
+            <Label className="text-base font-semibold">Add Custom TLD</Label>
+            <div className="flex gap-2">
+              <Input
+                placeholder="e.g., .crypto or crypto"
+                value={newTld}
+                onChange={(e) => {
+                  setNewTld(e.target.value);
+                  setTldError('');
+                }}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') handleAddTld();
+                }}
+                className="font-mono text-sm"
+              />
+              <Button onClick={handleAddTld} variant="outline" size="sm">
+                <Plus className="h-4 w-4 mr-1" />
+                Add
+              </Button>
             </div>
+            {tldError && (
+              <p className="text-sm text-destructive">{tldError}</p>
+            )}
           </div>
 
-          {/* Non-Commercial TLDs */}
+          {/* All TLDs (unified list) */}
           <div className="space-y-2">
-            <Label className="text-base font-semibold">Non-Commercial TLDs</Label>
+            <Label className="text-base font-semibold">All TLDs</Label>
             <div className="grid grid-cols-2 gap-3">
-              {['.org', '.gov', '.edu'].map((tld) => (
-                <div key={tld} className="flex items-center space-x-2">
+              {allTlds.map((tld) => (
+                <div key={tld.value} className="flex items-center space-x-2">
                   <Checkbox
-                    id={`non-commercial-${tld}`}
-                    checked={rules.tld_filters.non_commercial.includes(tld)}
-                    onCheckedChange={() => handleTldToggle('non_commercial', tld)}
+                    id={`tld-${tld.value}`}
+                    checked={tld.isChecked}
+                    onCheckedChange={() => handleTldToggle(tld.value)}
                   />
-                  <label htmlFor={`non-commercial-${tld}`} className="text-sm cursor-pointer">
-                    {tld}
+                  <label htmlFor={`tld-${tld.value}`} className="text-sm cursor-pointer flex-1">
+                    {tld.value}
                   </label>
+                  {tld.isCustom && (
+                    <Button
+                      onClick={() => handleDeleteTld(tld.value)}
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      data-testid={`delete-tld-${tld.value}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Personal TLDs */}
-          <div className="space-y-2">
-            <Label className="text-base font-semibold">Personal TLDs</Label>
-            <div className="grid grid-cols-2 gap-3">
-              {['.me', '.blog', '.xyz'].map((tld) => (
-                <div key={tld} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`personal-${tld}`}
-                    checked={rules.tld_filters.personal.includes(tld)}
-                    onCheckedChange={() => handleTldToggle('personal', tld)}
-                  />
-                  <label htmlFor={`personal-${tld}`} className="text-sm cursor-pointer">
-                    {tld}
-                  </label>
-                </div>
-              ))}
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Total TLDs: {allTlds.length} ({allTlds.filter(t => t.isChecked).length} selected)
+            </p>
           </div>
         </CardContent>
       </Card>
