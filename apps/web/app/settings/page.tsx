@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Layer1DomainTab } from '@/components/settings/Layer1DomainTab';
-import { Layer2OperationalTab } from '@/components/settings/Layer2OperationalTab';
+import { Layer2PublicationTab } from '@/components/settings/Layer2PublicationTab';
 import { Layer3LlmTab } from '@/components/settings/Layer3LlmTab';
 import { ConfidenceBandsTab } from '@/components/settings/ConfidenceBandsTab';
 import { ManualReviewTab } from '@/components/settings/ManualReviewTab';
@@ -72,18 +72,13 @@ export default function SettingsPage() {
     }
 
     // Layer 2: Validate ranges
-    if (formData.layer2_rules.blog_freshness_days < 30 || formData.layer2_rules.blog_freshness_days > 180) {
-      toast.error('Layer 2: Blog freshness must be between 30-180 days');
+    if (formData.layer2_rules.publication_score_threshold < 0 || formData.layer2_rules.publication_score_threshold > 1) {
+      toast.error('Layer 2: Publication score threshold must be between 0-1');
       return false;
     }
 
-    if (formData.layer2_rules.required_pages_count < 1 || formData.layer2_rules.required_pages_count > 3) {
-      toast.error('Layer 2: Required pages must be between 1-3');
-      return false;
-    }
-
-    if (formData.layer2_rules.min_design_quality_score < 1 || formData.layer2_rules.min_design_quality_score > 10) {
-      toast.error('Layer 2: Design quality score must be between 1-10');
+    if (formData.layer2_rules.min_business_nav_percentage < 0 || formData.layer2_rules.min_business_nav_percentage > 1) {
+      toast.error('Layer 2: Min business nav percentage must be between 0-1');
       return false;
     }
 
@@ -213,7 +208,7 @@ export default function SettingsPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="layer1">Layer 1 Domain</TabsTrigger>
-          <TabsTrigger value="layer2">Layer 2 Operational</TabsTrigger>
+          <TabsTrigger value="layer2">Layer 2: Publication Detection</TabsTrigger>
           <TabsTrigger value="layer3">Layer 3 LLM</TabsTrigger>
           <TabsTrigger value="confidence">Confidence Bands</TabsTrigger>
           <TabsTrigger value="manual">Manual Review</TabsTrigger>
@@ -234,7 +229,7 @@ export default function SettingsPage() {
 
         {/* Layer 2 Tab */}
         <TabsContent value="layer2" className="space-y-4">
-          <Layer2OperationalTab
+          <Layer2PublicationTab
             rules={formData.layer2_rules}
             onChange={(rules) =>
               handleSettingsChange((prev) => ({
