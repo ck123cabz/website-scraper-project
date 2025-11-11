@@ -64,8 +64,8 @@ export class Layer2OperationalFilterService {
   }
 
   /**
-   * Main entry point: Filter URL through Layer 2 operational checks
-   * Scrapes homepage and validates company infrastructure signals
+   * Main entry point: Filter URL through Layer 2 publication detection
+   * Scrapes homepage and aggregates 4 detection modules into publication score
    *
    * @param url - URL to filter (must have passed Layer 1)
    * @returns Layer2FilterResult with passed flag, signals, and reasoning
@@ -102,14 +102,59 @@ export class Layer2OperationalFilterService {
       const html = scrapeResult.content;
       const $ = cheerio.load(html);
 
-      // TODO: Implement new publication detection logic (Tasks 3-7)
-      // Temporarily return pass-through result
+      // Run 4 detection modules
+      const productSignals = this.detectProductOffering($, html, rules);
+      const layoutSignals = this.analyzeHomepageLayout($, html);
+      const navSignals = this.parseNavigation($, html, rules);
+      const monetizationSignals = this.detectMonetization($, html, rules);
+
+      // Calculate module scores (0-1 scale, higher = more "publication-like")
+      const productScore = 1 - productSignals.product_confidence; // Invert: no product = high pub score
+      const layoutScore = layoutSignals.homepage_is_blog
+        ? layoutSignals.layout_confidence
+        : 1 - layoutSignals.layout_confidence;
+      const navScore = 1 - navSignals.business_nav_percentage; // Invert: low business nav = high pub score
+      const monetizationScore =
+        monetizationSignals.monetization_type === 'ads' ||
+        monetizationSignals.monetization_type === 'affiliates'
+          ? 1.0
+          : monetizationSignals.monetization_type === 'business'
+            ? 0.0
+            : 0.5; // mixed or unknown
+
+      // Aggregate into publication_score
+      const publication_score = (productScore + layoutScore + navScore + monetizationScore) / 4;
+
+      // Build complete signals object
+      const signals: Layer2Signals = {
+        ...productSignals,
+        ...layoutSignals,
+        ...navSignals,
+        ...monetizationSignals,
+        publication_score,
+        module_scores: {
+          product_offering: productScore,
+          layout: layoutScore,
+          navigation: navScore,
+          monetization: monetizationScore,
+        },
+      };
+
+      // Make decision
+      const passed = publication_score < rules.publication_score_threshold;
       const processingTimeMs = Date.now() - startTime;
 
+      this.logger.log(
+        `Layer 2 result for ${url.slice(0, 100)}: ${passed ? 'PASS' : 'REJECT'} ` +
+          `(publication_score: ${publication_score.toFixed(2)}, ${processingTimeMs}ms)`,
+      );
+
       return {
-        passed: true,
-        reasoning: 'PASS Layer 2 - Legacy implementation temporarily disabled during refactor',
-        signals: this.createEmptySignals(),
+        passed,
+        reasoning: passed
+          ? `PASS Layer 2 - Company site detected (publication_score: ${publication_score.toFixed(2)})`
+          : `REJECT Layer 2 - Pure publication detected (publication_score: ${publication_score.toFixed(2)})`,
+        signals,
         processingTimeMs,
       };
     } catch (error) {
