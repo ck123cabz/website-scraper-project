@@ -32,8 +32,24 @@ export class Layer2OperationalFilterService {
       features: ['features', 'capabilities', 'solutions', 'product'],
       cta: ['sign up', 'start free', 'book a call', 'request demo'],
     },
-    business_nav_keywords: ['product', 'pricing', 'solutions', 'about', 'careers', 'customers', 'contact'],
-    content_nav_keywords: ['articles', 'blog', 'news', 'topics', 'categories', 'archives', 'authors'],
+    business_nav_keywords: [
+      'product',
+      'pricing',
+      'solutions',
+      'about',
+      'careers',
+      'customers',
+      'contact',
+    ],
+    content_nav_keywords: [
+      'articles',
+      'blog',
+      'news',
+      'topics',
+      'categories',
+      'archives',
+      'authors',
+    ],
     min_business_nav_percentage: 0.3,
     ad_network_patterns: ['googlesyndication', 'adsense', 'doubleclick', 'media.net'],
     affiliate_patterns: ['amazon', 'affiliate', 'aff=', 'ref=', 'amzn'],
@@ -118,15 +134,22 @@ export class Layer2OperationalFilterService {
       if (layer2Rules && typeof layer2Rules === 'object') {
         return {
           publication_score_threshold:
-            layer2Rules.publication_score_threshold ?? this.DEFAULT_RULES.publication_score_threshold,
+            layer2Rules.publication_score_threshold ??
+            this.DEFAULT_RULES.publication_score_threshold,
           product_keywords: layer2Rules.product_keywords ?? this.DEFAULT_RULES.product_keywords,
-          business_nav_keywords: layer2Rules.business_nav_keywords ?? this.DEFAULT_RULES.business_nav_keywords,
-          content_nav_keywords: layer2Rules.content_nav_keywords ?? this.DEFAULT_RULES.content_nav_keywords,
+          business_nav_keywords:
+            layer2Rules.business_nav_keywords ?? this.DEFAULT_RULES.business_nav_keywords,
+          content_nav_keywords:
+            layer2Rules.content_nav_keywords ?? this.DEFAULT_RULES.content_nav_keywords,
           min_business_nav_percentage:
-            layer2Rules.min_business_nav_percentage ?? this.DEFAULT_RULES.min_business_nav_percentage,
-          ad_network_patterns: layer2Rules.ad_network_patterns ?? this.DEFAULT_RULES.ad_network_patterns,
-          affiliate_patterns: layer2Rules.affiliate_patterns ?? this.DEFAULT_RULES.affiliate_patterns,
-          payment_provider_patterns: layer2Rules.payment_provider_patterns ?? this.DEFAULT_RULES.payment_provider_patterns,
+            layer2Rules.min_business_nav_percentage ??
+            this.DEFAULT_RULES.min_business_nav_percentage,
+          ad_network_patterns:
+            layer2Rules.ad_network_patterns ?? this.DEFAULT_RULES.ad_network_patterns,
+          affiliate_patterns:
+            layer2Rules.affiliate_patterns ?? this.DEFAULT_RULES.affiliate_patterns,
+          payment_provider_patterns:
+            layer2Rules.payment_provider_patterns ?? this.DEFAULT_RULES.payment_provider_patterns,
         };
       }
     } catch (error) {
@@ -488,7 +511,9 @@ export class Layer2OperationalFilterService {
 
     // Check commercial keywords
     const commercialKeywords = rules.product_keywords.commercial;
-    const commercialMatches = commercialKeywords.filter(kw => bodyText.includes(kw.toLowerCase()));
+    const commercialMatches = commercialKeywords.filter((kw) =>
+      bodyText.includes(kw.toLowerCase()),
+    );
     if (commercialMatches.length > 0) {
       score += Math.min(commercialMatches.length * 0.2, 0.4);
       signalCount++;
@@ -497,7 +522,7 @@ export class Layer2OperationalFilterService {
 
     // Check feature keywords
     const featureKeywords = rules.product_keywords.features;
-    const featureMatches = featureKeywords.filter(kw => bodyText.includes(kw.toLowerCase()));
+    const featureMatches = featureKeywords.filter((kw) => bodyText.includes(kw.toLowerCase()));
     if (featureMatches.length > 0) {
       score += Math.min(featureMatches.length * 0.15, 0.3);
       signalCount++;
@@ -506,7 +531,7 @@ export class Layer2OperationalFilterService {
 
     // Check CTA keywords
     const ctaKeywords = rules.product_keywords.cta;
-    const ctaMatches = ctaKeywords.filter(kw => bodyText.includes(kw.toLowerCase()));
+    const ctaMatches = ctaKeywords.filter((kw) => bodyText.includes(kw.toLowerCase()));
     if (ctaMatches.length > 0) {
       score += Math.min(ctaMatches.length * 0.15, 0.3);
       signalCount++;
@@ -515,7 +540,7 @@ export class Layer2OperationalFilterService {
 
     // Check for price mentions ($XX, pricing tables)
     const pricePatterns = [/\$\d+/, /\d+\/month/, /\d+\/year/, /<table[^>]*pricing/i];
-    const hasPricing = pricePatterns.some(pattern => pattern.test(html));
+    const hasPricing = pricePatterns.some((pattern) => pattern.test(html));
     if (hasPricing) {
       score += 0.3;
       signalCount++;
@@ -524,8 +549,8 @@ export class Layer2OperationalFilterService {
 
     // Check for payment provider scripts
     const paymentProviders = rules.payment_provider_patterns;
-    const hasPaymentProvider = paymentProviders.some(provider =>
-      lowerHtml.includes(provider.toLowerCase())
+    const hasPaymentProvider = paymentProviders.some((provider) =>
+      lowerHtml.includes(provider.toLowerCase()),
     );
     if (hasPaymentProvider) {
       score += 0.4;
@@ -581,8 +606,13 @@ export class Layer2OperationalFilterService {
 
     const ctaButtons = $('button, .cta, .btn').filter((_: any, el: any) => {
       const text = $(el).text().toLowerCase();
-      return text.includes('start') || text.includes('get') || text.includes('try') ||
-             text.includes('demo') || text.includes('sign up');
+      return (
+        text.includes('start') ||
+        text.includes('get') ||
+        text.includes('try') ||
+        text.includes('demo') ||
+        text.includes('sign up')
+      );
     }).length;
     if (ctaButtons >= 2) marketingSignals += 2;
     else if (ctaButtons >= 1) marketingSignals += 1;
@@ -647,8 +677,8 @@ export class Layer2OperationalFilterService {
       other: string[];
     };
   } {
-    const businessKeywords = rules.business_nav_keywords.map(k => k.toLowerCase());
-    const contentKeywords = rules.content_nav_keywords.map(k => k.toLowerCase());
+    const businessKeywords = rules.business_nav_keywords.map((k) => k.toLowerCase());
+    const contentKeywords = rules.content_nav_keywords.map((k) => k.toLowerCase());
 
     const classified = {
       business: [] as string[],
@@ -672,22 +702,92 @@ export class Layer2OperationalFilterService {
       const href = $(el).attr('href') || '';
       const combinedText = `${text} ${href}`.toLowerCase();
 
-      if (businessKeywords.some(kw => combinedText.includes(kw))) {
+      if (businessKeywords.some((kw) => combinedText.includes(kw))) {
         classified.business.push(text);
-      } else if (contentKeywords.some(kw => combinedText.includes(kw))) {
+      } else if (contentKeywords.some((kw) => combinedText.includes(kw))) {
         classified.content.push(text);
       } else {
         classified.other.push(text);
       }
     });
 
-    const totalClassified = classified.business.length + classified.content.length + classified.other.length;
-    const businessPercentage = totalClassified > 0 ? classified.business.length / totalClassified : 0;
+    const totalClassified =
+      classified.business.length + classified.content.length + classified.other.length;
+    const businessPercentage =
+      totalClassified > 0 ? classified.business.length / totalClassified : 0;
 
     return {
       has_business_nav: businessPercentage >= rules.min_business_nav_percentage,
       business_nav_percentage: businessPercentage,
       nav_items_classified: classified,
+    };
+  }
+
+  /**
+   * Detect revenue model: ads, affiliates, or business
+   */
+  private detectMonetization(
+    $: any,
+    html: string,
+    rules: Layer2Rules,
+  ): {
+    monetization_type: 'ads' | 'affiliates' | 'business' | 'mixed' | 'unknown';
+    ad_networks_detected: string[];
+    affiliate_patterns_detected: string[];
+  } {
+    const lowerHtml = html.toLowerCase();
+    const adNetworks: string[] = [];
+    const affiliatePatterns: string[] = [];
+
+    // Detect ad networks
+    rules.ad_network_patterns.forEach((pattern) => {
+      if (lowerHtml.includes(pattern.toLowerCase())) {
+        adNetworks.push(pattern);
+      }
+    });
+
+    // Detect affiliate patterns
+    rules.affiliate_patterns.forEach((pattern) => {
+      if (lowerHtml.includes(pattern.toLowerCase())) {
+        affiliatePatterns.push(pattern);
+      }
+    });
+
+    // Detect payment providers (business signal)
+    const hasPaymentProvider = rules.payment_provider_patterns.some((provider) =>
+      lowerHtml.includes(provider.toLowerCase()),
+    );
+
+    // Check for explicit ad containers
+    const hasAdContainers =
+      $('.ad, [class*="ad-"], [id*="ad-"]').length > 0 ||
+      /advertisement|sponsored/i.test($('body').text());
+
+    const hasAds = adNetworks.length > 0 || hasAdContainers;
+    const hasAffiliates = affiliatePatterns.length > 0;
+    const hasBusiness = hasPaymentProvider;
+
+    // Determine monetization type
+    let monetizationType: 'ads' | 'affiliates' | 'business' | 'mixed' | 'unknown';
+
+    if (hasBusiness && (hasAds || hasAffiliates)) {
+      monetizationType = 'mixed';
+    } else if (hasBusiness) {
+      monetizationType = 'business';
+    } else if (hasAds && hasAffiliates) {
+      monetizationType = 'mixed';
+    } else if (hasAds) {
+      monetizationType = 'ads';
+    } else if (hasAffiliates) {
+      monetizationType = 'affiliates';
+    } else {
+      monetizationType = 'unknown';
+    }
+
+    return {
+      monetization_type: monetizationType,
+      ad_networks_detected: adNetworks,
+      affiliate_patterns_detected: affiliatePatterns,
     };
   }
 
