@@ -113,7 +113,7 @@ describe('SettingsService - Integration Tests', () => {
         ...mockSettings,
         layer2_rules: {
           ...mockSettings.layer2_rules,
-          blog_freshness_days: 120,
+          publication_score_threshold: 0.7,
         },
         updated_at: new Date().toISOString(),
       };
@@ -124,21 +124,25 @@ describe('SettingsService - Integration Tests', () => {
 
       await settingsController.updateSettings({
         layer2_rules: {
-          blog_freshness_days: 120,
-          required_pages_count: 2,
-          min_tech_stack_tools: 2,
-          tech_stack_tools: {
-            analytics: [],
-            marketing: [],
+          publication_score_threshold: 0.7,
+          product_keywords: {
+            commercial: ['pricing'],
+            features: ['features'],
+            cta: ['sign up'],
           },
-          min_design_quality_score: 6,
+          business_nav_keywords: ['product'],
+          content_nav_keywords: ['blog'],
+          min_business_nav_percentage: 0.3,
+          ad_network_patterns: [],
+          affiliate_patterns: [],
+          payment_provider_patterns: [],
         },
       });
 
       // Next getSettings should use cached updated settings
       const afterUpdate = await settingsController.getSettings();
       expect(mockSingleFn).toHaveBeenCalledTimes(1); // Cache was repopulated by update
-      expect(afterUpdate.layer2_rules?.blog_freshness_days).toBe(120);
+      expect(afterUpdate.layer2_rules?.publication_score_threshold).toBe(0.7);
     });
 
     it('should return updated values immediately after updateSettings', async () => {
@@ -405,14 +409,18 @@ describe('SettingsService - Integration Tests', () => {
 
       const update = {
         layer2_rules: {
-          blog_freshness_days: 120,
-          required_pages_count: 2,
-          min_tech_stack_tools: 2,
-          tech_stack_tools: {
-            analytics: [],
-            marketing: [],
+          publication_score_threshold: 0.7,
+          product_keywords: {
+            commercial: [],
+            features: [],
+            cta: [],
           },
-          min_design_quality_score: 6,
+          business_nav_keywords: [],
+          content_nav_keywords: [],
+          min_business_nav_percentage: 0.3,
+          ad_network_patterns: [],
+          affiliate_patterns: [],
+          payment_provider_patterns: [],
         },
       };
 
@@ -484,7 +492,7 @@ describe('SettingsService - Integration Tests', () => {
         },
         layer2_rules: {
           ...mockSettings.layer2_rules!,
-          blog_freshness_days: 60,
+          publication_score_threshold: 0.6,
         },
         layer3_rules: {
           ...mockSettings.layer3_rules!,
@@ -506,7 +514,7 @@ describe('SettingsService - Integration Tests', () => {
       // Verify all layers are updated
       const newSettings = await settingsService.getSettings();
       expect(newSettings.layer1_rules?.target_elimination_rate).toBe(0.7);
-      expect(newSettings.layer2_rules?.blog_freshness_days).toBe(60);
+      expect(newSettings.layer2_rules?.publication_score_threshold).toBe(0.6);
       expect(newSettings.layer3_rules?.llm_temperature).toBe(0.5);
     });
 
@@ -519,7 +527,7 @@ describe('SettingsService - Integration Tests', () => {
 
       // Load into cache
       const before = await settingsService.getSettings();
-      expect(before.layer2_rules?.blog_freshness_days).toBe(90);
+      expect(before.layer2_rules?.publication_score_threshold).toBe(0.65);
       const beforeTimestamp = before.updated_at;
 
       // Small delay to ensure different timestamp
@@ -530,7 +538,7 @@ describe('SettingsService - Integration Tests', () => {
         ...mockSettings,
         layer2_rules: {
           ...mockSettings.layer2_rules!,
-          blog_freshness_days: 180,
+          publication_score_threshold: 0.8,
         },
         updated_at: new Date().toISOString(),
       };
@@ -541,20 +549,24 @@ describe('SettingsService - Integration Tests', () => {
 
       await settingsService.updateSettings({
         layer2_rules: {
-          blog_freshness_days: 180,
-          required_pages_count: 2,
-          min_tech_stack_tools: 2,
-          tech_stack_tools: {
-            analytics: [],
-            marketing: [],
+          publication_score_threshold: 0.8,
+          product_keywords: {
+            commercial: [],
+            features: [],
+            cta: [],
           },
-          min_design_quality_score: 6,
+          business_nav_keywords: [],
+          content_nav_keywords: [],
+          min_business_nav_percentage: 0.3,
+          ad_network_patterns: [],
+          affiliate_patterns: [],
+          payment_provider_patterns: [],
         },
       });
 
       // Verify no stale cache
       const after = await settingsService.getSettings();
-      expect(after.layer2_rules?.blog_freshness_days).toBe(180);
+      expect(after.layer2_rules?.publication_score_threshold).toBe(0.8);
       expect(after.updated_at).not.toBe(beforeTimestamp);
     });
 
@@ -647,7 +659,7 @@ describe('SettingsService - Integration Tests', () => {
         ...mockSettings,
         layer2_rules: {
           ...mockSettings.layer2_rules!,
-          blog_freshness_days: 30,
+          publication_score_threshold: 0.5,
         },
         updated_at: new Date().toISOString(),
       };
@@ -658,14 +670,18 @@ describe('SettingsService - Integration Tests', () => {
 
       await settingsService.updateSettings({
         layer2_rules: {
-          blog_freshness_days: 30,
-          required_pages_count: 2,
-          min_tech_stack_tools: 2,
-          tech_stack_tools: {
-            analytics: [],
-            marketing: [],
+          publication_score_threshold: 0.5,
+          product_keywords: {
+            commercial: [],
+            features: [],
+            cta: [],
           },
-          min_design_quality_score: 6,
+          business_nav_keywords: [],
+          content_nav_keywords: [],
+          min_business_nav_percentage: 0.3,
+          ad_network_patterns: [],
+          affiliate_patterns: [],
+          payment_provider_patterns: [],
         },
       });
 
@@ -674,7 +690,7 @@ describe('SettingsService - Integration Tests', () => {
         ...updated1,
         layer2_rules: {
           ...updated1.layer2_rules!,
-          blog_freshness_days: 45,
+          publication_score_threshold: 0.75,
         },
         updated_at: new Date().toISOString(),
       };
@@ -685,20 +701,24 @@ describe('SettingsService - Integration Tests', () => {
 
       await settingsService.updateSettings({
         layer2_rules: {
-          blog_freshness_days: 45,
-          required_pages_count: 2,
-          min_tech_stack_tools: 2,
-          tech_stack_tools: {
-            analytics: [],
-            marketing: [],
+          publication_score_threshold: 0.75,
+          product_keywords: {
+            commercial: [],
+            features: [],
+            cta: [],
           },
-          min_design_quality_score: 6,
+          business_nav_keywords: [],
+          content_nav_keywords: [],
+          min_business_nav_percentage: 0.3,
+          ad_network_patterns: [],
+          affiliate_patterns: [],
+          payment_provider_patterns: [],
         },
       });
 
       // Final state should reflect the second update
       const final = await settingsService.getSettings();
-      expect(final.layer2_rules?.blog_freshness_days).toBe(45);
+      expect(final.layer2_rules?.publication_score_threshold).toBe(0.75);
     });
   });
 

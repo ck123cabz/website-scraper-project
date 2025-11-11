@@ -90,12 +90,7 @@ export function generateTestJobConfig(options?: SeedOptions) {
 /**
  * Helper to generate queue statistics structure
  */
-export function generateQueueStats(
-  total: number,
-  active: number,
-  stale: number,
-  reviewed: number,
-) {
+export function generateQueueStats(total: number, active: number, stale: number, reviewed: number) {
   return {
     total,
     active,

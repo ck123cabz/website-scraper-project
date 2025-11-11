@@ -41,14 +41,18 @@ describe('SettingsController', () => {
       target_elimination_rate: 0.5,
     },
     layer2_rules: {
-      blog_freshness_days: 90,
-      required_pages_count: 2,
-      min_tech_stack_tools: 2,
-      tech_stack_tools: {
-        analytics: ['google-analytics', 'mixpanel'],
-        marketing: ['hubspot', 'marketo'],
+      publication_score_threshold: 0.65,
+      product_keywords: {
+        commercial: ['pricing', 'buy'],
+        features: ['features'],
+        cta: ['get started'],
       },
-      min_design_quality_score: 6,
+      business_nav_keywords: ['product', 'pricing'],
+      content_nav_keywords: ['articles', 'blog'],
+      min_business_nav_percentage: 0.3,
+      ad_network_patterns: ['googlesyndication'],
+      affiliate_patterns: ['amazon'],
+      payment_provider_patterns: ['stripe'],
     },
     layer3_rules: {
       guest_post_red_flags: ['Test indicator'],
@@ -254,17 +258,21 @@ describe('SettingsController - Validation Tests', () => {
   });
 
   describe('Layer 2 Validation', () => {
-    it('should reject blog_freshness_days < 30', async () => {
+    it('should reject publication_score_threshold < 0', async () => {
       const dto = plainToClass(UpdateSettingsDto, {
         layer2_rules: {
-          blog_freshness_days: 20, // Invalid
-          required_pages_count: 2,
-          min_tech_stack_tools: 2,
-          tech_stack_tools: {
-            analytics: [],
-            marketing: [],
+          publication_score_threshold: -0.1, // Invalid
+          product_keywords: {
+            commercial: [],
+            features: [],
+            cta: [],
           },
-          min_design_quality_score: 6,
+          business_nav_keywords: [],
+          content_nav_keywords: [],
+          min_business_nav_percentage: 0.3,
+          ad_network_patterns: [],
+          affiliate_patterns: [],
+          payment_provider_patterns: [],
         },
       });
 
@@ -274,17 +282,21 @@ describe('SettingsController - Validation Tests', () => {
       expect(layer2Errors).toBeDefined();
     });
 
-    it('should reject blog_freshness_days > 180', async () => {
+    it('should reject publication_score_threshold > 1', async () => {
       const dto = plainToClass(UpdateSettingsDto, {
         layer2_rules: {
-          blog_freshness_days: 200, // Invalid
-          required_pages_count: 2,
-          min_tech_stack_tools: 2,
-          tech_stack_tools: {
-            analytics: [],
-            marketing: [],
+          publication_score_threshold: 1.5, // Invalid
+          product_keywords: {
+            commercial: [],
+            features: [],
+            cta: [],
           },
-          min_design_quality_score: 6,
+          business_nav_keywords: [],
+          content_nav_keywords: [],
+          min_business_nav_percentage: 0.3,
+          ad_network_patterns: [],
+          affiliate_patterns: [],
+          payment_provider_patterns: [],
         },
       });
 
@@ -294,17 +306,21 @@ describe('SettingsController - Validation Tests', () => {
       expect(layer2Errors).toBeDefined();
     });
 
-    it('should reject min_design_quality_score < 1', async () => {
+    it('should reject min_business_nav_percentage < 0', async () => {
       const dto = plainToClass(UpdateSettingsDto, {
         layer2_rules: {
-          blog_freshness_days: 90,
-          required_pages_count: 2,
-          min_tech_stack_tools: 2,
-          tech_stack_tools: {
-            analytics: [],
-            marketing: [],
+          publication_score_threshold: 0.65,
+          product_keywords: {
+            commercial: [],
+            features: [],
+            cta: [],
           },
-          min_design_quality_score: 0, // Invalid
+          business_nav_keywords: [],
+          content_nav_keywords: [],
+          min_business_nav_percentage: -0.1, // Invalid
+          ad_network_patterns: [],
+          affiliate_patterns: [],
+          payment_provider_patterns: [],
         },
       });
 
@@ -314,17 +330,21 @@ describe('SettingsController - Validation Tests', () => {
       expect(layer2Errors).toBeDefined();
     });
 
-    it('should reject min_design_quality_score > 10', async () => {
+    it('should reject min_business_nav_percentage > 1', async () => {
       const dto = plainToClass(UpdateSettingsDto, {
         layer2_rules: {
-          blog_freshness_days: 90,
-          required_pages_count: 2,
-          min_tech_stack_tools: 2,
-          tech_stack_tools: {
-            analytics: [],
-            marketing: [],
+          publication_score_threshold: 0.65,
+          product_keywords: {
+            commercial: [],
+            features: [],
+            cta: [],
           },
-          min_design_quality_score: 11, // Invalid
+          business_nav_keywords: [],
+          content_nav_keywords: [],
+          min_business_nav_percentage: 1.5, // Invalid
+          ad_network_patterns: [],
+          affiliate_patterns: [],
+          payment_provider_patterns: [],
         },
       });
 
@@ -337,14 +357,18 @@ describe('SettingsController - Validation Tests', () => {
     it('should accept valid layer2 values', async () => {
       const dto = plainToClass(UpdateSettingsDto, {
         layer2_rules: {
-          blog_freshness_days: 90,
-          required_pages_count: 2,
-          min_tech_stack_tools: 2,
-          tech_stack_tools: {
-            analytics: [],
-            marketing: [],
+          publication_score_threshold: 0.65,
+          product_keywords: {
+            commercial: ['pricing'],
+            features: ['features'],
+            cta: ['sign up'],
           },
-          min_design_quality_score: 6,
+          business_nav_keywords: ['product'],
+          content_nav_keywords: ['blog'],
+          min_business_nav_percentage: 0.3,
+          ad_network_patterns: [],
+          affiliate_patterns: [],
+          payment_provider_patterns: [],
         },
       });
 

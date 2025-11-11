@@ -25,14 +25,18 @@ const createTestSettings = (
     target_elimination_rate: 0.5,
   },
   layer2_rules: {
-    blog_freshness_days: 90,
-    required_pages_count: 2,
-    min_tech_stack_tools: 2,
-    tech_stack_tools: {
-      analytics: ['google-analytics'],
-      marketing: ['hubspot'],
+    publication_score_threshold: 0.65,
+    product_keywords: {
+      commercial: ['pricing'],
+      features: ['features'],
+      cta: ['sign up'],
     },
-    min_design_quality_score: 6,
+    business_nav_keywords: ['product'],
+    content_nav_keywords: ['blog'],
+    min_business_nav_percentage: 0.3,
+    ad_network_patterns: [],
+    affiliate_patterns: [],
+    payment_provider_patterns: [],
   },
   layer3_rules: {
     guest_post_red_flags: [],
