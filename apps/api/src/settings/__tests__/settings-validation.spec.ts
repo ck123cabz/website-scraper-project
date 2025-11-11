@@ -240,7 +240,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
         ...mockSettings,
         layer2_rules: {
           ...mockSettings.layer2_rules,
-          blog_freshness_days: 120,
+          publication_score_threshold: 0.75,
         },
         updated_at: new Date().toISOString(),
       };
@@ -251,19 +251,23 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
       const partialUpdate = {
         layer2_rules: {
-          blog_freshness_days: 120,
-          required_pages_count: 2,
-          min_tech_stack_tools: 2,
-          tech_stack_tools: {
-            analytics: [],
-            marketing: [],
+          publication_score_threshold: 0.75,
+          product_keywords: {
+            commercial: ['pricing', 'buy'],
+            features: ['features'],
+            cta: ['sign up'],
           },
-          min_design_quality_score: 6,
+          business_nav_keywords: ['product', 'pricing'],
+          content_nav_keywords: ['blog', 'articles'],
+          min_business_nav_percentage: 0.3,
+          ad_network_patterns: ['googlesyndication'],
+          affiliate_patterns: ['amazon'],
+          payment_provider_patterns: ['stripe'],
         },
       };
 
       const result = await service.updateSettings(partialUpdate);
-      expect(result.layer2_rules?.blog_freshness_days).toBe(120);
+      expect(result.layer2_rules?.publication_score_threshold).toBe(0.75);
       // Other layers should remain unchanged
       expect(result.layer1_rules).toBeDefined();
       expect(result.layer3_rules).toBeDefined();
@@ -313,7 +317,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
         ...mockSettings,
         layer2_rules: {
           ...mockSettings.layer2_rules,
-          blog_freshness_days: 60,
+          publication_score_threshold: 0.55,
         },
         layer3_rules: {
           ...mockSettings.layer3_rules,
@@ -328,14 +332,18 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
       const partialUpdate = {
         layer2_rules: {
-          blog_freshness_days: 60,
-          required_pages_count: 2,
-          min_tech_stack_tools: 2,
-          tech_stack_tools: {
-            analytics: [],
-            marketing: [],
+          publication_score_threshold: 0.55,
+          product_keywords: {
+            commercial: ['pricing', 'buy'],
+            features: ['features'],
+            cta: ['sign up'],
           },
-          min_design_quality_score: 6,
+          business_nav_keywords: ['product', 'pricing'],
+          content_nav_keywords: ['blog', 'articles'],
+          min_business_nav_percentage: 0.3,
+          ad_network_patterns: ['googlesyndication'],
+          affiliate_patterns: ['amazon'],
+          payment_provider_patterns: ['stripe'],
         },
         layer3_rules: {
           guest_post_red_flags: ['Test'],
@@ -346,7 +354,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
       };
 
       const result = await service.updateSettings(partialUpdate);
-      expect(result.layer2_rules?.blog_freshness_days).toBe(60);
+      expect(result.layer2_rules?.publication_score_threshold).toBe(0.55);
       expect(result.layer3_rules?.llm_temperature).toBe(0.5);
     });
 
@@ -496,14 +504,18 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
       const update = {
         layer2_rules: {
-          blog_freshness_days: 120,
-          required_pages_count: 2,
-          min_tech_stack_tools: 2,
-          tech_stack_tools: {
-            analytics: [],
-            marketing: [],
+          publication_score_threshold: 0.7,
+          product_keywords: {
+            commercial: ['pricing'],
+            features: ['features'],
+            cta: ['sign up'],
           },
-          min_design_quality_score: 6,
+          business_nav_keywords: ['product'],
+          content_nav_keywords: ['blog'],
+          min_business_nav_percentage: 0.3,
+          ad_network_patterns: [],
+          affiliate_patterns: [],
+          payment_provider_patterns: [],
         },
       };
 
@@ -551,14 +563,18 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
       const result = await service.updateSettings({
         layer2_rules: {
-          blog_freshness_days: 120,
-          required_pages_count: 2,
-          min_tech_stack_tools: 2,
-          tech_stack_tools: {
-            analytics: [],
-            marketing: [],
+          publication_score_threshold: 0.7,
+          product_keywords: {
+            commercial: ['pricing'],
+            features: ['features'],
+            cta: ['sign up'],
           },
-          min_design_quality_score: 6,
+          business_nav_keywords: ['product'],
+          content_nav_keywords: ['blog'],
+          min_business_nav_percentage: 0.3,
+          ad_network_patterns: [],
+          affiliate_patterns: [],
+          payment_provider_patterns: [],
         },
       });
 
@@ -588,336 +604,295 @@ describe('SettingsService - Advanced Validation Tests', () => {
   });
 
   describe('Layer-Specific Field Boundary Validation', () => {
-    describe('Layer 2 - blog_freshness_days (30-180)', () => {
-      it('should reject blog_freshness_days below minimum (29)', async () => {
+    describe('Layer 2 - publication_score_threshold (0-1)', () => {
+      it('should reject publication_score_threshold below minimum (-0.1)', async () => {
         const mockSettings = service.getDefaultSettings();
         mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
 
         const invalidUpdate = {
           layer2_rules: {
-            blog_freshness_days: 29,
-            required_pages_count: 2,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 6,
+            publication_score_threshold: -0.1,
+            product_keywords: {
+              commercial: ['pricing'],
+              features: ['features'],
+              cta: ['sign up'],
+            },
+            business_nav_keywords: ['product'],
+            content_nav_keywords: ['blog'],
+            min_business_nav_percentage: 0.3,
+            ad_network_patterns: [],
+            affiliate_patterns: [],
+            payment_provider_patterns: [],
           },
         };
 
         await expect(service.updateSettings(invalidUpdate)).rejects.toThrow(BadRequestException);
       });
 
-      it('should reject blog_freshness_days above maximum (181)', async () => {
+      it('should reject publication_score_threshold above maximum (1.1)', async () => {
         const mockSettings = service.getDefaultSettings();
         mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
 
         const invalidUpdate = {
           layer2_rules: {
-            blog_freshness_days: 181,
-            required_pages_count: 2,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 6,
+            publication_score_threshold: 1.1,
+            product_keywords: {
+              commercial: ['pricing'],
+              features: ['features'],
+              cta: ['sign up'],
+            },
+            business_nav_keywords: ['product'],
+            content_nav_keywords: ['blog'],
+            min_business_nav_percentage: 0.3,
+            ad_network_patterns: [],
+            affiliate_patterns: [],
+            payment_provider_patterns: [],
           },
         };
 
         await expect(service.updateSettings(invalidUpdate)).rejects.toThrow(BadRequestException);
       });
 
-      it('should accept blog_freshness_days at minimum boundary (30)', async () => {
+      it('should accept publication_score_threshold at minimum boundary (0)', async () => {
         const mockSettings = service.getDefaultSettings();
         mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
 
         const updatedSettings = {
           ...mockSettings,
-          layer2_rules: { ...mockSettings.layer2_rules, blog_freshness_days: 30 },
+          layer2_rules: { ...mockSettings.layer2_rules, publication_score_threshold: 0 },
           updated_at: new Date().toISOString(),
         };
         mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
 
         const validUpdate = {
           layer2_rules: {
-            blog_freshness_days: 30,
-            required_pages_count: 2,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 6,
+            publication_score_threshold: 0,
+            product_keywords: {
+              commercial: ['pricing'],
+              features: ['features'],
+              cta: ['sign up'],
+            },
+            business_nav_keywords: ['product'],
+            content_nav_keywords: ['blog'],
+            min_business_nav_percentage: 0.3,
+            ad_network_patterns: [],
+            affiliate_patterns: [],
+            payment_provider_patterns: [],
           },
         };
 
         const result = await service.updateSettings(validUpdate);
-        expect(result.layer2_rules?.blog_freshness_days).toBe(30);
+        expect(result.layer2_rules?.publication_score_threshold).toBe(0);
       });
 
-      it('should accept blog_freshness_days at middle value (90)', async () => {
+      it('should accept publication_score_threshold at middle value (0.5)', async () => {
         const mockSettings = service.getDefaultSettings();
         mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
 
         const updatedSettings = {
           ...mockSettings,
-          layer2_rules: { ...mockSettings.layer2_rules, blog_freshness_days: 90 },
+          layer2_rules: { ...mockSettings.layer2_rules, publication_score_threshold: 0.5 },
           updated_at: new Date().toISOString(),
         };
         mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
 
         const validUpdate = {
           layer2_rules: {
-            blog_freshness_days: 90,
-            required_pages_count: 2,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 6,
+            publication_score_threshold: 0.5,
+            product_keywords: {
+              commercial: ['pricing'],
+              features: ['features'],
+              cta: ['sign up'],
+            },
+            business_nav_keywords: ['product'],
+            content_nav_keywords: ['blog'],
+            min_business_nav_percentage: 0.3,
+            ad_network_patterns: [],
+            affiliate_patterns: [],
+            payment_provider_patterns: [],
           },
         };
 
         const result = await service.updateSettings(validUpdate);
-        expect(result.layer2_rules?.blog_freshness_days).toBe(90);
+        expect(result.layer2_rules?.publication_score_threshold).toBe(0.5);
       });
 
-      it('should accept blog_freshness_days at maximum boundary (180)', async () => {
+      it('should accept publication_score_threshold at maximum boundary (1)', async () => {
         const mockSettings = service.getDefaultSettings();
         mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
 
         const updatedSettings = {
           ...mockSettings,
-          layer2_rules: { ...mockSettings.layer2_rules, blog_freshness_days: 180 },
+          layer2_rules: { ...mockSettings.layer2_rules, publication_score_threshold: 1 },
           updated_at: new Date().toISOString(),
         };
         mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
 
         const validUpdate = {
           layer2_rules: {
-            blog_freshness_days: 180,
-            required_pages_count: 2,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 6,
+            publication_score_threshold: 1,
+            product_keywords: {
+              commercial: ['pricing'],
+              features: ['features'],
+              cta: ['sign up'],
+            },
+            business_nav_keywords: ['product'],
+            content_nav_keywords: ['blog'],
+            min_business_nav_percentage: 0.3,
+            ad_network_patterns: [],
+            affiliate_patterns: [],
+            payment_provider_patterns: [],
           },
         };
 
         const result = await service.updateSettings(validUpdate);
-        expect(result.layer2_rules?.blog_freshness_days).toBe(180);
+        expect(result.layer2_rules?.publication_score_threshold).toBe(1);
       });
     });
 
-    describe('Layer 2 - required_pages_count (1-3)', () => {
-      it('should reject required_pages_count below minimum (0)', async () => {
+    describe('Layer 2 - min_business_nav_percentage (0-1)', () => {
+      it('should reject min_business_nav_percentage below minimum (-0.1)', async () => {
         const mockSettings = service.getDefaultSettings();
         mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
 
         const invalidUpdate = {
           layer2_rules: {
-            blog_freshness_days: 90,
-            required_pages_count: 0,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 6,
+            publication_score_threshold: 0.65,
+            product_keywords: {
+              commercial: ['pricing'],
+              features: ['features'],
+              cta: ['sign up'],
+            },
+            business_nav_keywords: ['product'],
+            content_nav_keywords: ['blog'],
+            min_business_nav_percentage: -0.1,
+            ad_network_patterns: [],
+            affiliate_patterns: [],
+            payment_provider_patterns: [],
           },
         };
 
         await expect(service.updateSettings(invalidUpdate)).rejects.toThrow(BadRequestException);
       });
 
-      it('should reject required_pages_count above maximum (4)', async () => {
+      it('should reject min_business_nav_percentage above maximum (1.1)', async () => {
         const mockSettings = service.getDefaultSettings();
         mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
 
         const invalidUpdate = {
           layer2_rules: {
-            blog_freshness_days: 90,
-            required_pages_count: 4,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 6,
+            publication_score_threshold: 0.65,
+            product_keywords: {
+              commercial: ['pricing'],
+              features: ['features'],
+              cta: ['sign up'],
+            },
+            business_nav_keywords: ['product'],
+            content_nav_keywords: ['blog'],
+            min_business_nav_percentage: 1.1,
+            ad_network_patterns: [],
+            affiliate_patterns: [],
+            payment_provider_patterns: [],
           },
         };
 
         await expect(service.updateSettings(invalidUpdate)).rejects.toThrow(BadRequestException);
       });
 
-      it('should accept required_pages_count at minimum boundary (1)', async () => {
+      it('should accept min_business_nav_percentage at minimum boundary (0)', async () => {
         const mockSettings = service.getDefaultSettings();
         mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
 
         const updatedSettings = {
           ...mockSettings,
-          layer2_rules: { ...mockSettings.layer2_rules, required_pages_count: 1 },
+          layer2_rules: { ...mockSettings.layer2_rules, min_business_nav_percentage: 0 },
           updated_at: new Date().toISOString(),
         };
         mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
 
         const validUpdate = {
           layer2_rules: {
-            blog_freshness_days: 90,
-            required_pages_count: 1,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 6,
+            publication_score_threshold: 0.65,
+            product_keywords: {
+              commercial: ['pricing'],
+              features: ['features'],
+              cta: ['sign up'],
+            },
+            business_nav_keywords: ['product'],
+            content_nav_keywords: ['blog'],
+            min_business_nav_percentage: 0,
+            ad_network_patterns: [],
+            affiliate_patterns: [],
+            payment_provider_patterns: [],
           },
         };
 
         const result = await service.updateSettings(validUpdate);
-        expect(result.layer2_rules?.required_pages_count).toBe(1);
+        expect(result.layer2_rules?.min_business_nav_percentage).toBe(0);
       });
 
-      it('should accept required_pages_count at middle value (2)', async () => {
+      it('should accept min_business_nav_percentage at middle value (0.5)', async () => {
         const mockSettings = service.getDefaultSettings();
         mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
 
         const updatedSettings = {
           ...mockSettings,
-          layer2_rules: { ...mockSettings.layer2_rules, required_pages_count: 2 },
+          layer2_rules: { ...mockSettings.layer2_rules, min_business_nav_percentage: 0.5 },
           updated_at: new Date().toISOString(),
         };
         mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
 
         const validUpdate = {
           layer2_rules: {
-            blog_freshness_days: 90,
-            required_pages_count: 2,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 6,
+            publication_score_threshold: 0.65,
+            product_keywords: {
+              commercial: ['pricing'],
+              features: ['features'],
+              cta: ['sign up'],
+            },
+            business_nav_keywords: ['product'],
+            content_nav_keywords: ['blog'],
+            min_business_nav_percentage: 0.5,
+            ad_network_patterns: [],
+            affiliate_patterns: [],
+            payment_provider_patterns: [],
           },
         };
 
         const result = await service.updateSettings(validUpdate);
-        expect(result.layer2_rules?.required_pages_count).toBe(2);
+        expect(result.layer2_rules?.min_business_nav_percentage).toBe(0.5);
       });
 
-      it('should accept required_pages_count at maximum boundary (3)', async () => {
+      it('should accept min_business_nav_percentage at maximum boundary (1)', async () => {
         const mockSettings = service.getDefaultSettings();
         mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
 
         const updatedSettings = {
           ...mockSettings,
-          layer2_rules: { ...mockSettings.layer2_rules, required_pages_count: 3 },
+          layer2_rules: { ...mockSettings.layer2_rules, min_business_nav_percentage: 1 },
           updated_at: new Date().toISOString(),
         };
         mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
 
         const validUpdate = {
           layer2_rules: {
-            blog_freshness_days: 90,
-            required_pages_count: 3,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 6,
+            publication_score_threshold: 0.65,
+            product_keywords: {
+              commercial: ['pricing'],
+              features: ['features'],
+              cta: ['sign up'],
+            },
+            business_nav_keywords: ['product'],
+            content_nav_keywords: ['blog'],
+            min_business_nav_percentage: 1,
+            ad_network_patterns: [],
+            affiliate_patterns: [],
+            payment_provider_patterns: [],
           },
         };
 
         const result = await service.updateSettings(validUpdate);
-        expect(result.layer2_rules?.required_pages_count).toBe(3);
-      });
-    });
-
-    describe('Layer 2 - min_design_quality_score (1-10)', () => {
-      it('should reject min_design_quality_score below minimum (0)', async () => {
-        const mockSettings = service.getDefaultSettings();
-        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
-
-        const invalidUpdate = {
-          layer2_rules: {
-            blog_freshness_days: 90,
-            required_pages_count: 2,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 0,
-          },
-        };
-
-        await expect(service.updateSettings(invalidUpdate)).rejects.toThrow(BadRequestException);
-      });
-
-      it('should reject min_design_quality_score above maximum (11)', async () => {
-        const mockSettings = service.getDefaultSettings();
-        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
-
-        const invalidUpdate = {
-          layer2_rules: {
-            blog_freshness_days: 90,
-            required_pages_count: 2,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 11,
-          },
-        };
-
-        await expect(service.updateSettings(invalidUpdate)).rejects.toThrow(BadRequestException);
-      });
-
-      it('should accept min_design_quality_score at minimum boundary (1)', async () => {
-        const mockSettings = service.getDefaultSettings();
-        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
-
-        const updatedSettings = {
-          ...mockSettings,
-          layer2_rules: { ...mockSettings.layer2_rules, min_design_quality_score: 1 },
-          updated_at: new Date().toISOString(),
-        };
-        mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
-
-        const validUpdate = {
-          layer2_rules: {
-            blog_freshness_days: 90,
-            required_pages_count: 2,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 1,
-          },
-        };
-
-        const result = await service.updateSettings(validUpdate);
-        expect(result.layer2_rules?.min_design_quality_score).toBe(1);
-      });
-
-      it('should accept min_design_quality_score at middle value (5)', async () => {
-        const mockSettings = service.getDefaultSettings();
-        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
-
-        const updatedSettings = {
-          ...mockSettings,
-          layer2_rules: { ...mockSettings.layer2_rules, min_design_quality_score: 5 },
-          updated_at: new Date().toISOString(),
-        };
-        mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
-
-        const validUpdate = {
-          layer2_rules: {
-            blog_freshness_days: 90,
-            required_pages_count: 2,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 5,
-          },
-        };
-
-        const result = await service.updateSettings(validUpdate);
-        expect(result.layer2_rules?.min_design_quality_score).toBe(5);
-      });
-
-      it('should accept min_design_quality_score at maximum boundary (10)', async () => {
-        const mockSettings = service.getDefaultSettings();
-        mockSingleFn.mockResolvedValue({ data: mockSettings, error: null });
-
-        const updatedSettings = {
-          ...mockSettings,
-          layer2_rules: { ...mockSettings.layer2_rules, min_design_quality_score: 10 },
-          updated_at: new Date().toISOString(),
-        };
-        mockUpdateSingleFn.mockResolvedValue({ data: updatedSettings, error: null });
-
-        const validUpdate = {
-          layer2_rules: {
-            blog_freshness_days: 90,
-            required_pages_count: 2,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 10,
-          },
-        };
-
-        const result = await service.updateSettings(validUpdate);
-        expect(result.layer2_rules?.min_design_quality_score).toBe(10);
+        expect(result.layer2_rules?.min_business_nav_percentage).toBe(1);
       });
     });
 
@@ -1135,33 +1110,22 @@ describe('SettingsService - Advanced Validation Tests', () => {
   });
 
   describe('DTO Validation Pipeline - Layer 2 Boundaries', () => {
-    describe('blog_freshness_days DTO validation', () => {
-      it('should fail DTO validation for blog_freshness_days = 29', async () => {
+    describe('publication_score_threshold DTO validation', () => {
+      it('should fail DTO validation for publication_score_threshold = -0.1', async () => {
         const dto = plainToClass(UpdateSettingsDto, {
           layer2_rules: {
-            blog_freshness_days: 29,
-            required_pages_count: 2,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 6,
-          },
-        });
-
-        const errors = await validate(dto);
-        expect(errors.length).toBeGreaterThan(0);
-        const layer2Errors = errors.find((e) => e.property === 'layer2_rules');
-        expect(layer2Errors).toBeDefined();
-        expect(JSON.stringify(layer2Errors)).toMatch(/blog.*freshness.*days/i);
-      });
-
-      it('should fail DTO validation for blog_freshness_days = 181', async () => {
-        const dto = plainToClass(UpdateSettingsDto, {
-          layer2_rules: {
-            blog_freshness_days: 181,
-            required_pages_count: 2,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 6,
+            publication_score_threshold: -0.1,
+            product_keywords: {
+              commercial: ['pricing'],
+              features: ['features'],
+              cta: ['sign up'],
+            },
+            business_nav_keywords: ['product'],
+            content_nav_keywords: ['blog'],
+            min_business_nav_percentage: 0.3,
+            ad_network_patterns: [],
+            affiliate_patterns: [],
+            payment_provider_patterns: [],
           },
         });
 
@@ -1171,44 +1135,89 @@ describe('SettingsService - Advanced Validation Tests', () => {
         expect(layer2Errors).toBeDefined();
       });
 
-      it('should pass DTO validation for blog_freshness_days at boundaries (30, 180)', async () => {
-        const dto30 = plainToClass(UpdateSettingsDto, {
+      it('should fail DTO validation for publication_score_threshold = 1.1', async () => {
+        const dto = plainToClass(UpdateSettingsDto, {
           layer2_rules: {
-            blog_freshness_days: 30,
-            required_pages_count: 2,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 6,
+            publication_score_threshold: 1.1,
+            product_keywords: {
+              commercial: ['pricing'],
+              features: ['features'],
+              cta: ['sign up'],
+            },
+            business_nav_keywords: ['product'],
+            content_nav_keywords: ['blog'],
+            min_business_nav_percentage: 0.3,
+            ad_network_patterns: [],
+            affiliate_patterns: [],
+            payment_provider_patterns: [],
           },
         });
 
-        const dto180 = plainToClass(UpdateSettingsDto, {
+        const errors = await validate(dto);
+        expect(errors.length).toBeGreaterThan(0);
+        const layer2Errors = errors.find((e) => e.property === 'layer2_rules');
+        expect(layer2Errors).toBeDefined();
+      });
+
+      it('should pass DTO validation for publication_score_threshold at boundaries (0, 1)', async () => {
+        const dto0 = plainToClass(UpdateSettingsDto, {
           layer2_rules: {
-            blog_freshness_days: 180,
-            required_pages_count: 2,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 6,
+            publication_score_threshold: 0,
+            product_keywords: {
+              commercial: ['pricing'],
+              features: ['features'],
+              cta: ['sign up'],
+            },
+            business_nav_keywords: ['product'],
+            content_nav_keywords: ['blog'],
+            min_business_nav_percentage: 0.3,
+            ad_network_patterns: [],
+            affiliate_patterns: [],
+            payment_provider_patterns: [],
           },
         });
 
-        const errors30 = await validate(dto30);
-        const errors180 = await validate(dto180);
+        const dto1 = plainToClass(UpdateSettingsDto, {
+          layer2_rules: {
+            publication_score_threshold: 1,
+            product_keywords: {
+              commercial: ['pricing'],
+              features: ['features'],
+              cta: ['sign up'],
+            },
+            business_nav_keywords: ['product'],
+            content_nav_keywords: ['blog'],
+            min_business_nav_percentage: 0.3,
+            ad_network_patterns: [],
+            affiliate_patterns: [],
+            payment_provider_patterns: [],
+          },
+        });
 
-        expect(errors30.length).toBe(0);
-        expect(errors180.length).toBe(0);
+        const errors0 = await validate(dto0);
+        const errors1 = await validate(dto1);
+
+        expect(errors0.length).toBe(0);
+        expect(errors1.length).toBe(0);
       });
     });
 
-    describe('required_pages_count DTO validation', () => {
-      it('should fail DTO validation for required_pages_count = 0', async () => {
+    describe('min_business_nav_percentage DTO validation', () => {
+      it('should fail DTO validation for min_business_nav_percentage = -0.1', async () => {
         const dto = plainToClass(UpdateSettingsDto, {
           layer2_rules: {
-            blog_freshness_days: 90,
-            required_pages_count: 0,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 6,
+            publication_score_threshold: 0.65,
+            product_keywords: {
+              commercial: ['pricing'],
+              features: ['features'],
+              cta: ['sign up'],
+            },
+            business_nav_keywords: ['product'],
+            content_nav_keywords: ['blog'],
+            min_business_nav_percentage: -0.1,
+            ad_network_patterns: [],
+            affiliate_patterns: [],
+            payment_provider_patterns: [],
           },
         });
 
@@ -1218,14 +1227,21 @@ describe('SettingsService - Advanced Validation Tests', () => {
         expect(layer2Errors).toBeDefined();
       });
 
-      it('should fail DTO validation for required_pages_count = 4', async () => {
+      it('should fail DTO validation for min_business_nav_percentage = 1.1', async () => {
         const dto = plainToClass(UpdateSettingsDto, {
           layer2_rules: {
-            blog_freshness_days: 90,
-            required_pages_count: 4,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 6,
+            publication_score_threshold: 0.65,
+            product_keywords: {
+              commercial: ['pricing'],
+              features: ['features'],
+              cta: ['sign up'],
+            },
+            business_nav_keywords: ['product'],
+            content_nav_keywords: ['blog'],
+            min_business_nav_percentage: 1.1,
+            ad_network_patterns: [],
+            affiliate_patterns: [],
+            payment_provider_patterns: [],
           },
         });
 
@@ -1235,96 +1251,46 @@ describe('SettingsService - Advanced Validation Tests', () => {
         expect(layer2Errors).toBeDefined();
       });
 
-      it('should pass DTO validation for required_pages_count at boundaries (1, 3)', async () => {
+      it('should pass DTO validation for min_business_nav_percentage at boundaries (0, 1)', async () => {
+        const dto0 = plainToClass(UpdateSettingsDto, {
+          layer2_rules: {
+            publication_score_threshold: 0.65,
+            product_keywords: {
+              commercial: ['pricing'],
+              features: ['features'],
+              cta: ['sign up'],
+            },
+            business_nav_keywords: ['product'],
+            content_nav_keywords: ['blog'],
+            min_business_nav_percentage: 0,
+            ad_network_patterns: [],
+            affiliate_patterns: [],
+            payment_provider_patterns: [],
+          },
+        });
+
         const dto1 = plainToClass(UpdateSettingsDto, {
           layer2_rules: {
-            blog_freshness_days: 90,
-            required_pages_count: 1,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 6,
+            publication_score_threshold: 0.65,
+            product_keywords: {
+              commercial: ['pricing'],
+              features: ['features'],
+              cta: ['sign up'],
+            },
+            business_nav_keywords: ['product'],
+            content_nav_keywords: ['blog'],
+            min_business_nav_percentage: 1,
+            ad_network_patterns: [],
+            affiliate_patterns: [],
+            payment_provider_patterns: [],
           },
         });
 
-        const dto3 = plainToClass(UpdateSettingsDto, {
-          layer2_rules: {
-            blog_freshness_days: 90,
-            required_pages_count: 3,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 6,
-          },
-        });
-
+        const errors0 = await validate(dto0);
         const errors1 = await validate(dto1);
-        const errors3 = await validate(dto3);
 
+        expect(errors0.length).toBe(0);
         expect(errors1.length).toBe(0);
-        expect(errors3.length).toBe(0);
-      });
-    });
-
-    describe('min_design_quality_score DTO validation', () => {
-      it('should fail DTO validation for min_design_quality_score = 0', async () => {
-        const dto = plainToClass(UpdateSettingsDto, {
-          layer2_rules: {
-            blog_freshness_days: 90,
-            required_pages_count: 2,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 0,
-          },
-        });
-
-        const errors = await validate(dto);
-        expect(errors.length).toBeGreaterThan(0);
-        const layer2Errors = errors.find((e) => e.property === 'layer2_rules');
-        expect(layer2Errors).toBeDefined();
-      });
-
-      it('should fail DTO validation for min_design_quality_score = 11', async () => {
-        const dto = plainToClass(UpdateSettingsDto, {
-          layer2_rules: {
-            blog_freshness_days: 90,
-            required_pages_count: 2,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 11,
-          },
-        });
-
-        const errors = await validate(dto);
-        expect(errors.length).toBeGreaterThan(0);
-        const layer2Errors = errors.find((e) => e.property === 'layer2_rules');
-        expect(layer2Errors).toBeDefined();
-      });
-
-      it('should pass DTO validation for min_design_quality_score at boundaries (1, 10)', async () => {
-        const dto1 = plainToClass(UpdateSettingsDto, {
-          layer2_rules: {
-            blog_freshness_days: 90,
-            required_pages_count: 2,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 1,
-          },
-        });
-
-        const dto10 = plainToClass(UpdateSettingsDto, {
-          layer2_rules: {
-            blog_freshness_days: 90,
-            required_pages_count: 2,
-            min_tech_stack_tools: 2,
-            tech_stack_tools: { analytics: [], marketing: [] },
-            min_design_quality_score: 10,
-          },
-        });
-
-        const errors1 = await validate(dto1);
-        const errors10 = await validate(dto10);
-
-        expect(errors1.length).toBe(0);
-        expect(errors10.length).toBe(0);
       });
     });
   });
@@ -1480,14 +1446,21 @@ describe('SettingsService - Advanced Validation Tests', () => {
   });
 
   describe('DTO Validation Pipeline - Error Messages', () => {
-    it('should provide helpful error message for invalid blog_freshness_days', async () => {
+    it('should provide helpful error message for invalid publication_score_threshold', async () => {
       const dto = plainToClass(UpdateSettingsDto, {
         layer2_rules: {
-          blog_freshness_days: 200,
-          required_pages_count: 2,
-          min_tech_stack_tools: 2,
-          tech_stack_tools: { analytics: [], marketing: [] },
-          min_design_quality_score: 6,
+          publication_score_threshold: 2.0,
+          product_keywords: {
+            commercial: ['pricing'],
+            features: ['features'],
+            cta: ['sign up'],
+          },
+          business_nav_keywords: ['product'],
+          content_nav_keywords: ['blog'],
+          min_business_nav_percentage: 0.3,
+          ad_network_patterns: [],
+          affiliate_patterns: [],
+          payment_provider_patterns: [],
         },
       });
 
@@ -1498,7 +1471,7 @@ describe('SettingsService - Advanced Validation Tests', () => {
 
       // Verify error message mentions the valid range
       const errorMessage = JSON.stringify(layer2Errors?.constraints || layer2Errors);
-      expect(errorMessage).toMatch(/30.*180|blog.*freshness/i);
+      expect(errorMessage).toMatch(/0.*1|publication.*score|threshold/i);
     });
 
     it('should provide helpful error message for invalid llm_temperature', async () => {
