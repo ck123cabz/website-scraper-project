@@ -4,20 +4,23 @@ import { NotificationService } from '../notification.service';
 import * as slackWebhook from '@slack/webhook';
 
 /**
- * Unit Tests for NotificationService (Phase 6: T047-TEST-B)
+ * Unit Tests for NotificationService (Phase 6: T047-TEST-B, Phase 8: T048-TEST-C & T049-TEST-D)
  *
  * Tests sendSlackNotification() method with mocked @slack/webhook:
- * - Verify correct message format with queue size and link
- * - Test error handling (non-blocking, logged)
+ * - Verify correct message format with queue size and link (T047-TEST-B)
+ * - Test error handling (non-blocking, logged) (T048-TEST-C)
+ * - Test retry logic with exponential backoff (T049-TEST-D)
  * - Test webhook validation
  * - Test success/failure response format
  *
- * Success Criteria (SC-006):
+ * Success Criteria (SC-006, SC-008, SC-009):
  * - sendSlackNotification() posts correct message format
- * - Error handling is non-blocking
+ * - Error handling is non-blocking and comprehensive
  * - Queue size and review page link included in message
+ * - Retry logic with exponential backoff (1s, 2s, 4s)
+ * - Only transient errors are retried
  */
-describe('NotificationService (T047-TEST-B)', () => {
+describe('NotificationService (T047-TEST-B, T048-TEST-C, T049-TEST-D)', () => {
   let service: NotificationService;
   let mockWebhookSend: jest.Mock;
   let mockConfigService: jest.Mocked<ConfigService>;
@@ -141,6 +144,7 @@ describe('NotificationService (T047-TEST-B)', () => {
       const queueSize = 15;
       const error = new Error('Webhook timeout');
 
+      // This is a non-retryable error (unknown type), so it fails immediately
       mockWebhookSend.mockRejectedValueOnce(error);
 
       const result = await service.sendSlackNotification(queueSize, webhookUrl);
@@ -279,6 +283,199 @@ describe('NotificationService (T047-TEST-B)', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Failed to initialize webhook');
+    });
+  });
+
+  describe('Retry Logic and Exponential Backoff (T049-TEST-D)', () => {
+    it('should return retries: 0 when first attempt succeeds (no retries needed)', async () => {
+      const webhookUrl = 'https://hooks.slack.com/services/T1234/B5678/XXXX';
+      const queueSize = 12;
+
+      const result = await service.sendSlackNotification(queueSize, webhookUrl);
+
+      expect(result.success).toBe(true);
+      expect(result.retries).toBe(0);
+      expect(mockWebhookSend).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not retry on 4xx HTTP errors (client errors)', async () => {
+      const webhookUrl = 'https://hooks.slack.com/services/T1234/B5678/XXXX';
+      const queueSize = 10;
+
+      mockWebhookSend.mockRejectedValueOnce(
+        new Error('HTTP 401: Unauthorized'),
+      );
+
+      const result = await service.sendSlackNotification(queueSize, webhookUrl);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Unauthorized');
+      expect(result.retries).toBe(3); // maxRetries, but not actually retried
+      expect(mockWebhookSend).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not retry on validation errors', async () => {
+      const webhookUrl = 'https://hooks.slack.com/services/T1234/B5678/XXXX';
+      const queueSize = 10;
+
+      mockWebhookSend.mockRejectedValueOnce(
+        new Error('Invalid webhook URL format'),
+      );
+
+      const result = await service.sendSlackNotification(queueSize, webhookUrl);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Invalid webhook URL format');
+      expect(mockWebhookSend).toHaveBeenCalledTimes(1);
+    });
+
+    it('should identify retryable errors (ETIMEDOUT)', async () => {
+      const webhookUrl = 'https://hooks.slack.com/services/T1234/B5678/XXXX';
+      const queueSize = 10;
+
+      mockWebhookSend
+        .mockRejectedValueOnce(new Error('ETIMEDOUT: connection timed out'))
+        .mockResolvedValueOnce(undefined);
+
+      const result = await service.sendSlackNotification(queueSize, webhookUrl);
+
+      // Should attempt retry
+      expect(mockWebhookSend).toHaveBeenCalledTimes(2);
+    });
+
+    it('should identify retryable errors (ECONNREFUSED)', async () => {
+      const webhookUrl = 'https://hooks.slack.com/services/T1234/B5678/XXXX';
+      const queueSize = 10;
+
+      mockWebhookSend
+        .mockRejectedValueOnce(new Error('ECONNREFUSED: connection refused'))
+        .mockResolvedValueOnce(undefined);
+
+      const result = await service.sendSlackNotification(queueSize, webhookUrl);
+
+      expect(mockWebhookSend).toHaveBeenCalledTimes(2);
+    });
+
+    it('should identify retryable errors (5xx HTTP)', async () => {
+      const webhookUrl = 'https://hooks.slack.com/services/T1234/B5678/XXXX';
+      const queueSize = 10;
+
+      mockWebhookSend
+        .mockRejectedValueOnce(new Error('HTTP 503: Service Unavailable'))
+        .mockResolvedValueOnce(undefined);
+
+      const result = await service.sendSlackNotification(queueSize, webhookUrl);
+
+      expect(mockWebhookSend).toHaveBeenCalledTimes(2);
+    });
+
+    it('should not retry on 404 not found error', async () => {
+      const webhookUrl = 'https://hooks.slack.com/services/T1234/B5678/XXXX';
+      const queueSize = 10;
+
+      mockWebhookSend.mockRejectedValueOnce(
+        new Error('HTTP 404: Not Found'),
+      );
+
+      const result = await service.sendSlackNotification(queueSize, webhookUrl);
+
+      expect(result.success).toBe(false);
+      expect(mockWebhookSend).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not retry on 429 rate limit error', async () => {
+      const webhookUrl = 'https://hooks.slack.com/services/T1234/B5678/XXXX';
+      const queueSize = 10;
+
+      mockWebhookSend.mockRejectedValueOnce(
+        new Error('HTTP 429: Too Many Requests'),
+      );
+
+      const result = await service.sendSlackNotification(queueSize, webhookUrl);
+
+      expect(result.success).toBe(false);
+      expect(mockWebhookSend).toHaveBeenCalledTimes(1);
+    });
+
+    it('should accept custom maxRetries parameter', async () => {
+      const webhookUrl = 'https://hooks.slack.com/services/T1234/B5678/XXXX';
+      const queueSize = 10;
+
+      mockWebhookSend
+        .mockRejectedValueOnce(new Error('ETIMEDOUT'))
+        .mockResolvedValueOnce(undefined);
+
+      const result = await service.sendSlackNotification(
+        queueSize,
+        webhookUrl,
+        1, // custom maxRetries of 1
+      );
+
+      expect(result.retries).toBe(1);
+      expect(mockWebhookSend).toHaveBeenCalledTimes(2); // 1 initial + 1 retry
+    });
+  });
+
+  describe('Error Handling (T048-TEST-C)', () => {
+    it('should handle string errors thrown by webhook', async () => {
+      const webhookUrl = 'https://hooks.slack.com/services/T1234/B5678/XXXX';
+      const queueSize = 10;
+
+      mockWebhookSend.mockRejectedValueOnce('String error message');
+
+      const result = await service.sendSlackNotification(queueSize, webhookUrl);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('String error message');
+      expect(result.retries).toBe(3);
+    });
+
+    it('should handle object errors thrown by webhook', async () => {
+      const webhookUrl = 'https://hooks.slack.com/services/T1234/B5678/XXXX';
+      const queueSize = 10;
+
+      mockWebhookSend.mockRejectedValueOnce({ code: 'ERR_INVALID' });
+
+      const result = await service.sendSlackNotification(queueSize, webhookUrl);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+      expect(result.retries).toBe(3);
+    });
+
+    it('should handle null or undefined errors gracefully', async () => {
+      const webhookUrl = 'https://hooks.slack.com/services/T1234/B5678/XXXX';
+      const queueSize = 10;
+
+      mockWebhookSend.mockRejectedValueOnce(null);
+
+      const result = await service.sendSlackNotification(queueSize, webhookUrl);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+      expect(typeof result.error).toBe('string');
+    });
+
+    it('should include error context in logger output', async () => {
+      const webhookUrl = 'https://hooks.slack.com/services/T1234/B5678/XXXX';
+      const queueSize = 10;
+      const testError = new Error('Test error with stack');
+
+      mockWebhookSend.mockRejectedValueOnce(testError);
+
+      const loggerErrorSpy = jest.spyOn(service['logger'], 'error');
+
+      await service.sendSlackNotification(queueSize, webhookUrl);
+
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to send Slack notification'),
+        expect.objectContaining({
+          queueSize,
+          retriesAttempted: 3,
+        }),
+      );
+
+      loggerErrorSpy.mockRestore();
     });
   });
 });

@@ -1,104 +1,104 @@
-<testsuites id="" name="" tests="48" failures="0" skipped="0" errors="0" time="32.368168000000004">
-<testsuite name="dashboard-badge.spec.ts" timestamp="2025-11-10T23:43:41.922Z" hostname="chromium" tests="16" failures="0" skipped="0" time="30.244" errors="0">
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should load dashboard page successfully" classname="dashboard-badge.spec.ts" time="3.252">
+<testsuites id="" name="" tests="48" failures="0" skipped="0" errors="0" time="29.150338">
+<testsuite name="dashboard-badge.spec.ts" timestamp="2025-11-10T23:44:47.209Z" hostname="chromium" tests="16" failures="0" skipped="0" time="25.483" errors="0">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should load dashboard page successfully" classname="dashboard-badge.spec.ts" time="2.57">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should display manual review button" classname="dashboard-badge.spec.ts" time="3.257">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should display manual review button" classname="dashboard-badge.spec.ts" time="3.148">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should display badge when queue has items and badge is enabled (SC-002)" classname="dashboard-badge.spec.ts" time="3.249">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should display badge when queue has items and badge is enabled (SC-002)" classname="dashboard-badge.spec.ts" time="2.39">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify badge styling when visible" classname="dashboard-badge.spec.ts" time="3.261">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify badge styling when visible" classname="dashboard-badge.spec.ts" time="2.353">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify badge loads within 1 second (SC-002)" classname="dashboard-badge.spec.ts" time="0.918">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify badge loads within 1 second (SC-002)" classname="dashboard-badge.spec.ts" time="0.68">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify badge is hidden when queue is empty" classname="dashboard-badge.spec.ts" time="1.756">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify badge is hidden when queue is empty" classname="dashboard-badge.spec.ts" time="1.402">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should navigate to manual review page on button click" classname="dashboard-badge.spec.ts" time="3.666">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should navigate to manual review page on button click" classname="dashboard-badge.spec.ts" time="3.425">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should handle page gracefully" classname="dashboard-badge.spec.ts" time="0.9">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should handle page gracefully" classname="dashboard-badge.spec.ts" time="0.725">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should be responsive on different viewports (SC-002)" classname="dashboard-badge.spec.ts" time="0.898">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should be responsive on different viewports (SC-002)" classname="dashboard-badge.spec.ts" time="0.783">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify button accessibility" classname="dashboard-badge.spec.ts" time="2.384">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify button accessibility" classname="dashboard-badge.spec.ts" time="1.648">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should have correct HTML structure for badge" classname="dashboard-badge.spec.ts" time="1.924">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should have correct HTML structure for badge" classname="dashboard-badge.spec.ts" time="1.632">
 </testcase>
-<testcase name="Dashboard Badge Integration (SC-002) › should handle different queue count scenarios" classname="dashboard-badge.spec.ts" time="1.9">
+<testcase name="Dashboard Badge Integration (SC-002) › should handle different queue count scenarios" classname="dashboard-badge.spec.ts" time="2.282">
 </testcase>
-<testcase name="Dashboard Badge Integration (SC-002) › should display settings button" classname="dashboard-badge.spec.ts" time="0.487">
+<testcase name="Dashboard Badge Integration (SC-002) › should display settings button" classname="dashboard-badge.spec.ts" time="0.552">
 </testcase>
-<testcase name="Dashboard Badge Integration (SC-002) › should display new job button" classname="dashboard-badge.spec.ts" time="0.784">
+<testcase name="Dashboard Badge Integration (SC-002) › should display new job button" classname="dashboard-badge.spec.ts" time="0.557">
 </testcase>
-<testcase name="Dashboard Badge Integration (SC-002) › should have all header elements visible" classname="dashboard-badge.spec.ts" time="0.803">
+<testcase name="Dashboard Badge Integration (SC-002) › should have all header elements visible" classname="dashboard-badge.spec.ts" time="0.662">
 </testcase>
-<testcase name="Dashboard Badge Integration (SC-002) › should load quickly for dashboard badge display (SC-002 &lt; 1s)" classname="dashboard-badge.spec.ts" time="0.805">
-</testcase>
-</testsuite>
-<testsuite name="dashboard-badge.spec.ts" timestamp="2025-11-10T23:43:41.922Z" hostname="firefox" tests="16" failures="0" skipped="0" time="26.918" errors="0">
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should load dashboard page successfully" classname="dashboard-badge.spec.ts" time="1.944">
-</testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should display manual review button" classname="dashboard-badge.spec.ts" time="3.519">
-</testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should display badge when queue has items and badge is enabled (SC-002)" classname="dashboard-badge.spec.ts" time="4.075">
-</testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify badge styling when visible" classname="dashboard-badge.spec.ts" time="2.874">
-</testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify badge loads within 1 second (SC-002)" classname="dashboard-badge.spec.ts" time="0.792">
-</testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify badge is hidden when queue is empty" classname="dashboard-badge.spec.ts" time="1.997">
-</testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should navigate to manual review page on button click" classname="dashboard-badge.spec.ts" time="2.314">
-</testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should handle page gracefully" classname="dashboard-badge.spec.ts" time="0.493">
-</testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should be responsive on different viewports (SC-002)" classname="dashboard-badge.spec.ts" time="0.85">
-</testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify button accessibility" classname="dashboard-badge.spec.ts" time="1.867">
-</testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should have correct HTML structure for badge" classname="dashboard-badge.spec.ts" time="1.921">
-</testcase>
-<testcase name="Dashboard Badge Integration (SC-002) › should handle different queue count scenarios" classname="dashboard-badge.spec.ts" time="1.994">
-</testcase>
-<testcase name="Dashboard Badge Integration (SC-002) › should display settings button" classname="dashboard-badge.spec.ts" time="0.617">
-</testcase>
-<testcase name="Dashboard Badge Integration (SC-002) › should display new job button" classname="dashboard-badge.spec.ts" time="0.593">
-</testcase>
-<testcase name="Dashboard Badge Integration (SC-002) › should have all header elements visible" classname="dashboard-badge.spec.ts" time="0.569">
-</testcase>
-<testcase name="Dashboard Badge Integration (SC-002) › should load quickly for dashboard badge display (SC-002 &lt; 1s)" classname="dashboard-badge.spec.ts" time="0.499">
+<testcase name="Dashboard Badge Integration (SC-002) › should load quickly for dashboard badge display (SC-002 &lt; 1s)" classname="dashboard-badge.spec.ts" time="0.674">
 </testcase>
 </testsuite>
-<testsuite name="dashboard-badge.spec.ts" timestamp="2025-11-10T23:43:41.922Z" hostname="webkit" tests="16" failures="0" skipped="0" time="30.405" errors="0">
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should load dashboard page successfully" classname="dashboard-badge.spec.ts" time="2.952">
+<testsuite name="dashboard-badge.spec.ts" timestamp="2025-11-10T23:44:47.209Z" hostname="firefox" tests="16" failures="0" skipped="0" time="28.696" errors="0">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should load dashboard page successfully" classname="dashboard-badge.spec.ts" time="3.942">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should display manual review button" classname="dashboard-badge.spec.ts" time="2.952">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should display manual review button" classname="dashboard-badge.spec.ts" time="2.526">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should display badge when queue has items and badge is enabled (SC-002)" classname="dashboard-badge.spec.ts" time="2.826">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should display badge when queue has items and badge is enabled (SC-002)" classname="dashboard-badge.spec.ts" time="3.579">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify badge styling when visible" classname="dashboard-badge.spec.ts" time="3.089">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify badge styling when visible" classname="dashboard-badge.spec.ts" time="3.537">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify badge loads within 1 second (SC-002)" classname="dashboard-badge.spec.ts" time="1.231">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify badge loads within 1 second (SC-002)" classname="dashboard-badge.spec.ts" time="0.468">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify badge is hidden when queue is empty" classname="dashboard-badge.spec.ts" time="2.055">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify badge is hidden when queue is empty" classname="dashboard-badge.spec.ts" time="2.41">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should navigate to manual review page on button click" classname="dashboard-badge.spec.ts" time="2.554">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should navigate to manual review page on button click" classname="dashboard-badge.spec.ts" time="2.723">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should handle page gracefully" classname="dashboard-badge.spec.ts" time="1.156">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should handle page gracefully" classname="dashboard-badge.spec.ts" time="0.26">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should be responsive on different viewports (SC-002)" classname="dashboard-badge.spec.ts" time="1.484">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should be responsive on different viewports (SC-002)" classname="dashboard-badge.spec.ts" time="0.581">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify button accessibility" classname="dashboard-badge.spec.ts" time="2.075">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify button accessibility" classname="dashboard-badge.spec.ts" time="1.991">
 </testcase>
-<testcase name="Dashboard Badge UI (T047-TEST-A) › should have correct HTML structure for badge" classname="dashboard-badge.spec.ts" time="2.192">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should have correct HTML structure for badge" classname="dashboard-badge.spec.ts" time="1.853">
 </testcase>
-<testcase name="Dashboard Badge Integration (SC-002) › should handle different queue count scenarios" classname="dashboard-badge.spec.ts" time="1.949">
+<testcase name="Dashboard Badge Integration (SC-002) › should handle different queue count scenarios" classname="dashboard-badge.spec.ts" time="2.741">
 </testcase>
-<testcase name="Dashboard Badge Integration (SC-002) › should display settings button" classname="dashboard-badge.spec.ts" time="0.997">
+<testcase name="Dashboard Badge Integration (SC-002) › should display settings button" classname="dashboard-badge.spec.ts" time="0.516">
 </testcase>
-<testcase name="Dashboard Badge Integration (SC-002) › should display new job button" classname="dashboard-badge.spec.ts" time="1.064">
+<testcase name="Dashboard Badge Integration (SC-002) › should display new job button" classname="dashboard-badge.spec.ts" time="0.522">
 </testcase>
-<testcase name="Dashboard Badge Integration (SC-002) › should have all header elements visible" classname="dashboard-badge.spec.ts" time="0.984">
+<testcase name="Dashboard Badge Integration (SC-002) › should have all header elements visible" classname="dashboard-badge.spec.ts" time="0.537">
 </testcase>
-<testcase name="Dashboard Badge Integration (SC-002) › should load quickly for dashboard badge display (SC-002 &lt; 1s)" classname="dashboard-badge.spec.ts" time="0.845">
+<testcase name="Dashboard Badge Integration (SC-002) › should load quickly for dashboard badge display (SC-002 &lt; 1s)" classname="dashboard-badge.spec.ts" time="0.51">
+</testcase>
+</testsuite>
+<testsuite name="dashboard-badge.spec.ts" timestamp="2025-11-10T23:44:47.209Z" hostname="webkit" tests="16" failures="0" skipped="0" time="29.758" errors="0">
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should load dashboard page successfully" classname="dashboard-badge.spec.ts" time="3.054">
+</testcase>
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should display manual review button" classname="dashboard-badge.spec.ts" time="3.691">
+</testcase>
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should display badge when queue has items and badge is enabled (SC-002)" classname="dashboard-badge.spec.ts" time="2.924">
+</testcase>
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify badge styling when visible" classname="dashboard-badge.spec.ts" time="3.322">
+</testcase>
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify badge loads within 1 second (SC-002)" classname="dashboard-badge.spec.ts" time="0.986">
+</testcase>
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify badge is hidden when queue is empty" classname="dashboard-badge.spec.ts" time="2.052">
+</testcase>
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should navigate to manual review page on button click" classname="dashboard-badge.spec.ts" time="2.38">
+</testcase>
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should handle page gracefully" classname="dashboard-badge.spec.ts" time="1.078">
+</testcase>
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should be responsive on different viewports (SC-002)" classname="dashboard-badge.spec.ts" time="1.359">
+</testcase>
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should verify button accessibility" classname="dashboard-badge.spec.ts" time="1.868">
+</testcase>
+<testcase name="Dashboard Badge UI (T047-TEST-A) › should have correct HTML structure for badge" classname="dashboard-badge.spec.ts" time="1.713">
+</testcase>
+<testcase name="Dashboard Badge Integration (SC-002) › should handle different queue count scenarios" classname="dashboard-badge.spec.ts" time="1.856">
+</testcase>
+<testcase name="Dashboard Badge Integration (SC-002) › should display settings button" classname="dashboard-badge.spec.ts" time="0.819">
+</testcase>
+<testcase name="Dashboard Badge Integration (SC-002) › should display new job button" classname="dashboard-badge.spec.ts" time="0.944">
+</testcase>
+<testcase name="Dashboard Badge Integration (SC-002) › should have all header elements visible" classname="dashboard-badge.spec.ts" time="0.86">
+</testcase>
+<testcase name="Dashboard Badge Integration (SC-002) › should load quickly for dashboard badge display (SC-002 &lt; 1s)" classname="dashboard-badge.spec.ts" time="0.852">
 </testcase>
 </testsuite>
 </testsuites>
