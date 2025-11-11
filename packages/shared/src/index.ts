@@ -30,10 +30,6 @@ export type {
   Layer2FilterResult,
   Layer2Signals,
   Layer2Rules,
-  CompanyPageSignals,
-  BlogDataSignals,
-  TechStackSignals,
-  DesignQualitySignals,
 } from './types/layer2';
 export type {
   ManualReviewQueueEntry,
