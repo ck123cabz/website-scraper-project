@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MulterModule } from '@nestjs/platform-express';
 import { ScheduleModule } from '@nestjs/schedule';
 import { JobsController } from './jobs.controller';
@@ -11,11 +11,11 @@ import { Layer2OperationalFilterService } from './services/layer2-operational-fi
 import { LlmService } from './services/llm.service';
 import { MockLlmService } from './services/llm.service.mock';
 import { ConfidenceScoringService } from './services/confidence-scoring.service';
-import { ManualReviewRouterService } from './services/manual-review-router.service';
 import { StaleQueueMarkerProcessor } from './processors/stale-queue-marker.processor';
 import { QueueModule } from '../queue/queue.module';
 import { SettingsModule } from '../settings/settings.module';
 import { ScraperModule } from '../scraper/scraper.module';
+import { ManualReviewModule } from '../manual-review/manual-review.module';
 import { memoryStorage } from 'multer';
 import { extname } from 'path';
 
@@ -34,6 +34,7 @@ import { extname } from 'path';
     QueueModule, // Import QueueModule to access QueueService
     SettingsModule, // Import SettingsModule for database-driven settings (Story 3.0)
     ScraperModule, // Import ScraperModule for Layer 2 homepage scraping (Story 2.6)
+    forwardRef(() => ManualReviewModule), // Import ManualReviewModule for NotificationService (Story 001-manual-review-system)
     MulterModule.register({
       storage: memoryStorage(), // Use memory storage to avoid file cleanup issues (H2 fix)
       limits: {
@@ -59,7 +60,6 @@ import { extname } from 'path';
     Layer1DomainAnalysisService,
     Layer2OperationalFilterService, // Story 2.6: Layer 2 operational filtering (homepage scraping & validation)
     ConfidenceScoringService, // Story 2.4-refactored: Confidence band calculation
-    ManualReviewRouterService, // Story 2.4-refactored: Manual review routing
     StaleQueueMarkerProcessor, // Story 001-manual-review-system T030: Stale queue marking (daily cron job)
     {
       provide: LlmService,
@@ -73,7 +73,6 @@ import { extname } from 'path';
     Layer2OperationalFilterService, // Export for worker integration (Story 2.5-refactored)
     LlmService,
     ConfidenceScoringService, // Export for worker integration
-    ManualReviewRouterService, // Export for worker integration
   ],
 })
 export class JobsModule {}

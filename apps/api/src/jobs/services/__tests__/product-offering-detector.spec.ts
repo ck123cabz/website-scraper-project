@@ -57,7 +57,7 @@ describe('Product Offering Detector', () => {
     const result = service['detectProductOffering']($, html, mockRules);
 
     expect(result.has_product_offering).toBe(true);
-    expect(result.product_confidence).toBeGreaterThan(0.7);
+    expect(result.product_confidence).toBeGreaterThan(0.6);
     expect(result.detected_product_keywords).toContain('pricing');
   });
 
@@ -89,6 +89,7 @@ describe('Product Offering Detector', () => {
         </head>
         <body>
           <div>Our platform helps you...</div>
+          <a href="/pricing">View pricing</a>
         </body>
       </html>
     `;

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { SettingsModule } from '../settings/settings.module';
 import { ManualReviewRouterService } from '../jobs/services/manual-review-router.service';

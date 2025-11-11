@@ -3,6 +3,7 @@ import { UrlWorkerProcessor } from './url-worker.processor';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { ScraperModule } from '../scraper/scraper.module';
 import { JobsModule } from '../jobs/jobs.module';
+import { ManualReviewModule } from '../manual-review/manual-review.module';
 
 /**
  * Workers module for BullMQ background processing
@@ -14,6 +15,7 @@ import { JobsModule } from '../jobs/jobs.module';
     SupabaseModule,
     ScraperModule,
     JobsModule, // Provides PreFilterService, Layer1DomainAnalysisService, and LlmService
+    ManualReviewModule, // Provides ManualReviewRouterService and NotificationService
   ],
   providers: [UrlWorkerProcessor],
   exports: [UrlWorkerProcessor],

@@ -490,7 +490,7 @@ export class Layer2OperationalFilterService {
     const commercialKeywords = rules.product_keywords.commercial;
     const commercialMatches = commercialKeywords.filter(kw => bodyText.includes(kw.toLowerCase()));
     if (commercialMatches.length > 0) {
-      score += Math.min(commercialMatches.length * 0.25, 0.5);
+      score += Math.min(commercialMatches.length * 0.2, 0.4);
       signalCount++;
       detectedKeywords.push(...commercialMatches);
     }
@@ -499,7 +499,7 @@ export class Layer2OperationalFilterService {
     const featureKeywords = rules.product_keywords.features;
     const featureMatches = featureKeywords.filter(kw => bodyText.includes(kw.toLowerCase()));
     if (featureMatches.length > 0) {
-      score += Math.min(featureMatches.length * 0.2, 0.4);
+      score += Math.min(featureMatches.length * 0.15, 0.3);
       signalCount++;
       detectedKeywords.push(...featureMatches);
     }
@@ -508,7 +508,7 @@ export class Layer2OperationalFilterService {
     const ctaKeywords = rules.product_keywords.cta;
     const ctaMatches = ctaKeywords.filter(kw => bodyText.includes(kw.toLowerCase()));
     if (ctaMatches.length > 0) {
-      score += Math.min(ctaMatches.length * 0.2, 0.4);
+      score += Math.min(ctaMatches.length * 0.15, 0.3);
       signalCount++;
       detectedKeywords.push(...ctaMatches);
     }
@@ -517,7 +517,7 @@ export class Layer2OperationalFilterService {
     const pricePatterns = [/\$\d+/, /\d+\/month/, /\d+\/year/, /<table[^>]*pricing/i];
     const hasPricing = pricePatterns.some(pattern => pattern.test(html));
     if (hasPricing) {
-      score += 0.35;
+      score += 0.3;
       signalCount++;
       detectedKeywords.push('pricing_pattern');
     }
@@ -528,7 +528,7 @@ export class Layer2OperationalFilterService {
       lowerHtml.includes(provider.toLowerCase())
     );
     if (hasPaymentProvider) {
-      score += 0.6;
+      score += 0.4;
       signalCount++;
       detectedKeywords.push('payment_provider');
     }
@@ -537,7 +537,7 @@ export class Layer2OperationalFilterService {
     const confidence = signalCount > 0 ? Math.min(score, 1.0) : 0;
 
     return {
-      has_product_offering: confidence >= 0.5,
+      has_product_offering: confidence > 0.5,
       product_confidence: confidence,
       detected_product_keywords: detectedKeywords,
     };

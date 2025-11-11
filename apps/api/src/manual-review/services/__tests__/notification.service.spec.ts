@@ -26,6 +26,9 @@ describe('NotificationService (T047-TEST-B, T048-TEST-C, T049-TEST-D)', () => {
   let mockConfigService: jest.Mocked<ConfigService>;
 
   beforeEach(async () => {
+    // Use fake timers to speed up retry tests
+    jest.useFakeTimers();
+
     // Mock the IncomingWebhook
     mockWebhookSend = jest.fn().mockResolvedValue(undefined);
     jest.spyOn(slackWebhook, 'IncomingWebhook').mockImplementation(
@@ -59,6 +62,8 @@ describe('NotificationService (T047-TEST-B, T048-TEST-C, T049-TEST-D)', () => {
   });
 
   afterEach(() => {
+    jest.runOnlyPendingTimers();
+    jest.useRealTimers();
     jest.restoreAllMocks();
   });
 
@@ -333,7 +338,12 @@ describe('NotificationService (T047-TEST-B, T048-TEST-C, T049-TEST-D)', () => {
         .mockRejectedValueOnce(new Error('ETIMEDOUT: connection timed out'))
         .mockResolvedValueOnce(undefined);
 
-      const result = await service.sendSlackNotification(queueSize, webhookUrl);
+      const resultPromise = service.sendSlackNotification(queueSize, webhookUrl);
+
+      // Fast-forward through the retry delay (1000ms for first retry)
+      await jest.advanceTimersByTimeAsync(1000);
+
+      const result = await resultPromise;
 
       // Should attempt retry
       expect(mockWebhookSend).toHaveBeenCalledTimes(2);
@@ -347,7 +357,12 @@ describe('NotificationService (T047-TEST-B, T048-TEST-C, T049-TEST-D)', () => {
         .mockRejectedValueOnce(new Error('ECONNREFUSED: connection refused'))
         .mockResolvedValueOnce(undefined);
 
-      const result = await service.sendSlackNotification(queueSize, webhookUrl);
+      const resultPromise = service.sendSlackNotification(queueSize, webhookUrl);
+
+      // Fast-forward through the retry delay (1000ms for first retry)
+      await jest.advanceTimersByTimeAsync(1000);
+
+      const result = await resultPromise;
 
       expect(mockWebhookSend).toHaveBeenCalledTimes(2);
     });
@@ -360,7 +375,12 @@ describe('NotificationService (T047-TEST-B, T048-TEST-C, T049-TEST-D)', () => {
         .mockRejectedValueOnce(new Error('HTTP 503: Service Unavailable'))
         .mockResolvedValueOnce(undefined);
 
-      const result = await service.sendSlackNotification(queueSize, webhookUrl);
+      const resultPromise = service.sendSlackNotification(queueSize, webhookUrl);
+
+      // Fast-forward through the retry delay (1000ms for first retry)
+      await jest.advanceTimersByTimeAsync(1000);
+
+      const result = await resultPromise;
 
       expect(mockWebhookSend).toHaveBeenCalledTimes(2);
     });
@@ -397,11 +417,16 @@ describe('NotificationService (T047-TEST-B, T048-TEST-C, T049-TEST-D)', () => {
         .mockRejectedValueOnce(new Error('ETIMEDOUT'))
         .mockResolvedValueOnce(undefined);
 
-      const result = await service.sendSlackNotification(
+      const resultPromise = service.sendSlackNotification(
         queueSize,
         webhookUrl,
         1, // custom maxRetries of 1
       );
+
+      // Fast-forward through the retry delay (1000ms for first retry)
+      await jest.advanceTimersByTimeAsync(1000);
+
+      const result = await resultPromise;
 
       expect(result.retries).toBe(1);
       expect(mockWebhookSend).toHaveBeenCalledTimes(2); // 1 initial + 1 retry
