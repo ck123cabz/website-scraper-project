@@ -1,44 +1,68 @@
-import { IsInt, IsArray, IsString, Min, Max, ValidateNested, IsOptional } from 'class-validator';
+import {
+  IsNumber,
+  IsArray,
+  IsString,
+  Min,
+  Max,
+  ValidateNested,
+  IsOptional,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
-class TechStackToolsDto {
-  @IsOptional()
+class ProductKeywordsDto {
   @IsArray()
   @IsString({ each: true })
-  analytics?: string[];
+  commercial!: string[];
 
-  @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  marketing?: string[];
+  features!: string[];
+
+  @IsArray()
+  @IsString({ each: true })
+  cta!: string[];
 }
 
 export class Layer2RulesDto {
   @IsOptional()
-  @IsInt({ message: 'Blog freshness days must be an integer' })
-  @Min(30, { message: 'Blog freshness days must be between 30 and 180' })
-  @Max(180, { message: 'Blog freshness days must be between 30 and 180' })
-  blog_freshness_days?: number;
-
-  @IsOptional()
-  @IsInt({ message: 'Required pages count must be an integer' })
-  @Min(1, { message: 'Required pages count must be between 1 and 3' })
-  @Max(3, { message: 'Required pages count must be between 1 and 3' })
-  required_pages_count?: number;
-
-  @IsOptional()
-  @IsInt({ message: 'Minimum tech stack tools must be an integer' })
-  @Min(1, { message: 'Minimum tech stack tools must be at least 1' })
-  min_tech_stack_tools?: number;
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  publication_score_threshold?: number;
 
   @IsOptional()
   @ValidateNested()
-  @Type(() => TechStackToolsDto)
-  tech_stack_tools?: TechStackToolsDto;
+  @Type(() => ProductKeywordsDto)
+  product_keywords?: ProductKeywordsDto;
 
   @IsOptional()
-  @IsInt({ message: 'Minimum design quality score must be an integer' })
-  @Min(1, { message: 'Minimum design quality score must be between 1 and 10' })
-  @Max(10, { message: 'Minimum design quality score must be between 1 and 10' })
-  min_design_quality_score?: number;
+  @IsArray()
+  @IsString({ each: true })
+  business_nav_keywords?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  content_nav_keywords?: string[];
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  min_business_nav_percentage?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  ad_network_patterns?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  affiliate_patterns?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  payment_provider_patterns?: string[];
 }
