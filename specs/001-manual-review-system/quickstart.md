@@ -16,21 +16,30 @@ This quickstart provides the minimal set of information needed to start implemen
 
 ## Prerequisites
 
-1. **Local environment running**:
+1. **Local environment setup**:
    ```bash
-   docker-compose up -d  # Starts Supabase + Redis
-   cd apps/api && npm run dev  # API on port 3001
-   cd apps/web && npm run dev  # Web on port 3000
+   # Install dependencies
+   pnpm install
+
+   # Start development servers
+   pnpm dev  # Runs both apps/api (port 3001) and apps/web (port 3000) in parallel via turbo
+
+   # Or individually:
+   # cd apps/api && npm run dev
+   # cd apps/web && npm run dev
    ```
 
-2. **Database access**:
-   - Supabase Studio: http://localhost:54323
-   - Direct connection: `postgresql://postgres:postgres@localhost:54322/postgres`
+2. **Database configuration**:
+   - Database: PostgreSQL via Supabase
+   - Supabase Studio: http://localhost:54323 (if running locally)
+   - Environment: Set DATABASE_URL in `.env.local` files for each app
+   - Migrations: Located in `supabase/migrations/` directory
 
-3. **Tools installed**:
-   - Node.js 18+
-   - pnpm (package manager)
-   - Supabase CLI (for migrations)
+3. **Tools required**:
+   - Node.js 18+ (for TypeScript/NestJS/Next.js)
+   - pnpm (package manager for monorepo)
+   - Supabase CLI (optional, for running local database)
+   - Docker (optional, for local Supabase instance)
 
 ---
 
@@ -258,8 +267,8 @@ test('complete manual review workflow', async ({ page }) => {
 
 **Step 5.3**: Add notification dependencies
 ```bash
-pnpm add nodemailer @slack/webhook
-pnpm add -D @types/nodemailer
+pnpm add @slack/webhook @nestjs/schedule
+pnpm add -D @types/nodemailer  # For email support (optional)
 ```
 
 **Step 5.4**: Configure environment variables
@@ -274,7 +283,7 @@ SMTP_FROM=noreply@example.com
 
 **Test**: Write scheduled job test
 ```typescript
-// apps/api/src/jobs/__tests__/stale-queue-marker.spec.ts
+// apps/api/src/jobs/processors/__tests__/stale-queue-marker.spec.ts
 describe('StaleQueueMarkerProcessor', () => {
   it('should flag items older than timeout', async () => {
     // Configure auto_review_timeout_days = 7
