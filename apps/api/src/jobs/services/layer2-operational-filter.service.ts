@@ -544,6 +544,94 @@ export class Layer2OperationalFilterService {
   }
 
   /**
+   * Analyze homepage layout to distinguish blog vs marketing landing page
+   */
+  private analyzeHomepageLayout(
+    $: any,
+    html: string,
+  ): {
+    homepage_is_blog: boolean;
+    layout_type: 'blog' | 'marketing' | 'mixed';
+    layout_confidence: number;
+  } {
+    let blogSignals = 0;
+    let marketingSignals = 0;
+
+    // Blog-style signals
+    const articleCount = $('article').length;
+    if (articleCount >= 3) blogSignals += 2;
+    else if (articleCount >= 1) blogSignals += 1;
+
+    const dateStamps = $('time, .date, .published').length;
+    if (dateStamps >= 3) blogSignals += 2;
+    else if (dateStamps >= 1) blogSignals += 1;
+
+    const authorBylines = $('.author, .byline, [rel="author"]').length;
+    if (authorBylines >= 2) blogSignals += 1;
+
+    const pagination = $('.pagination, .pager, [rel="next"]').length > 0;
+    if (pagination) blogSignals += 1;
+
+    const latestPostsHeading = /latest posts?|recent articles?|blog/i.test($('h1, h2, h3').text());
+    if (latestPostsHeading) blogSignals += 2;
+
+    // Marketing-style signals
+    const heroSection = $('.hero, .banner, .jumbotron').length > 0;
+    if (heroSection) marketingSignals += 2;
+
+    const ctaButtons = $('button, .cta, .btn').filter((_: any, el: any) => {
+      const text = $(el).text().toLowerCase();
+      return text.includes('start') || text.includes('get') || text.includes('try') ||
+             text.includes('demo') || text.includes('sign up');
+    }).length;
+    if (ctaButtons >= 2) marketingSignals += 2;
+    else if (ctaButtons >= 1) marketingSignals += 1;
+
+    const featureSections = $('[class*="feature"], [class*="benefit"]').length;
+    if (featureSections >= 3) marketingSignals += 2;
+    else if (featureSections >= 1) marketingSignals += 1;
+
+    const testimonials = $('.testimonial, blockquote, .review').length;
+    if (testimonials >= 1) marketingSignals += 1;
+
+    const productImagery = $('img[alt*="product"], img[alt*="screenshot"]').length;
+    if (productImagery >= 2) marketingSignals += 1;
+
+    // Calculate layout type and confidence
+    const totalSignals = blogSignals + marketingSignals;
+    if (totalSignals === 0) {
+      return {
+        homepage_is_blog: false,
+        layout_type: 'mixed',
+        layout_confidence: 0.5,
+      };
+    }
+
+    const blogRatio = blogSignals / totalSignals;
+    const marketingRatio = marketingSignals / totalSignals;
+
+    if (blogRatio >= 0.7) {
+      return {
+        homepage_is_blog: true,
+        layout_type: 'blog',
+        layout_confidence: blogRatio,
+      };
+    } else if (marketingRatio >= 0.7) {
+      return {
+        homepage_is_blog: false,
+        layout_type: 'marketing',
+        layout_confidence: marketingRatio,
+      };
+    } else {
+      return {
+        homepage_is_blog: blogSignals > marketingSignals,
+        layout_type: 'mixed',
+        layout_confidence: Math.abs(blogRatio - marketingRatio),
+      };
+    }
+  }
+
+  /**
    * Evaluate all signals against Layer 2 pass/fail criteria
    * TODO: Will be replaced with new publication detection logic in Task 7
    */
