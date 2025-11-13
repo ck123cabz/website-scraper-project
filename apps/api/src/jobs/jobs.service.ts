@@ -281,4 +281,354 @@ export class JobsService {
     // All fields are returned as-is, including NULL values for pre-migration data
     return result;
   }
+
+  /**
+   * Get queue position for a job
+   *
+   * Returns the position (1-indexed) of a job in the queue, or null if the job
+   * is not in the queue (processing, completed, or doesn't exist).
+   *
+   * Queue position is determined by created_at timestamp (oldest first = position 1).
+   * Used by dashboard to display "Queued - position #3" for waiting jobs.
+   *
+   * @param jobId - UUID of the job
+   * @returns Position number (1, 2, 3...) or null if not queued
+   * @throws Error if database query fails
+   */
+  async getQueuePosition(jobId: string): Promise<number | null> {
+    const client = this.supabase.getClient();
+
+    // Get all jobs with 'queued' status, ordered by creation time (oldest first)
+    const { data: queuedJobs, error } = await client
+      .from('jobs')
+      .select('id')
+      .eq('status', 'queued')
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      throw new Error(`Failed to fetch queued jobs: ${error.message}`);
+    }
+
+    // If no queued jobs exist, return null
+    if (!queuedJobs || queuedJobs.length === 0) {
+      return null;
+    }
+
+    // Find the index of the requested job in the queued jobs list
+    const jobIndex = queuedJobs.findIndex((job) => job.id === jobId);
+
+    // If job not found in queue (not queued, or doesn't exist), return null
+    if (jobIndex === -1) {
+      return null;
+    }
+
+    // Return 1-indexed position (first job in queue = position 1)
+    return jobIndex + 1;
+  }
+
+  /**
+   * Get estimated wait time for a queued job
+   * Task T073 [Phase 6 - Dashboard]
+   *
+   * Returns estimated wait time in seconds for jobs in the queue.
+   * Returns null for jobs that are not queued (processing, completed, etc).
+   *
+   * Calculation Logic:
+   * 1. Get queue position for the job (returns null if not queued)
+   * 2. Calculate average processing time per URL from completed jobs in last 24 hours
+   * 3. Estimate wait time: (jobs ahead × estimated job time) × 1.05 buffer
+   * 4. Cap at 24 hours maximum (86400 seconds)
+   * 5. Minimum wait time: 60 seconds (1 minute) if any wait
+   *
+   * Default Values (when no historical data):
+   * - Average processing time: 30 seconds per URL
+   *
+   * @param jobId - UUID of the job
+   * @returns Estimated wait time in seconds, or null if not queued
+   * @throws Error if database query fails
+   */
+  async getEstimatedWaitTime(jobId: string): Promise<number | null> {
+    // Get queue position - if null, job is not queued
+    const queuePosition = await this.getQueuePosition(jobId);
+    if (!queuePosition) {
+      return null;
+    }
+
+    // Get the job details to know URL count
+    const job = await this.getJobById(jobId);
+    if (!job) {
+      return null;
+    }
+
+    // Edge case: If job has 0 URLs, return minimum wait time
+    if (job.total_urls === 0) {
+      return 60;
+    }
+
+    // Calculate average seconds per URL from recent completed jobs
+    const avgSecondsPerUrl = await this.getAverageSecondsPerUrl();
+
+    // Estimate processing time for this specific job
+    const estimatedJobTime = job.total_urls * avgSecondsPerUrl;
+
+    // Calculate wait time based on jobs ahead in queue
+    const jobsAhead = queuePosition - 1;
+
+    // First in queue gets minimum wait time
+    if (jobsAhead === 0) {
+      return 60; // 1 minute minimum
+    }
+
+    // Calculate wait time with 5% buffer
+    const waitSeconds = jobsAhead * estimatedJobTime * 1.05;
+
+    // Cap at 24 hours maximum
+    return Math.min(Math.round(waitSeconds), 86400);
+  }
+
+  /**
+   * Calculate average processing time per URL from recent completed jobs
+   * Helper method for getEstimatedWaitTime()
+   *
+   * Queries completed jobs from the last 24 hours and calculates:
+   * - Average total processing time per job
+   * - Average time per URL: (completedAt - createdAt) / urlCount
+   *
+   * @returns Average seconds per URL, or 30 (default) if no historical data
+   * @private
+   */
+  private async getAverageSecondsPerUrl(): Promise<number> {
+    const client = this.supabase.getClient();
+
+    // Get completed jobs from the last 24 hours
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: completedJobs, error } = await client
+      .from('jobs')
+      .select('created_at, completed_at, total_urls')
+      .eq('status', 'completed')
+      .gte('completed_at', twentyFourHoursAgo)
+      .not('completed_at', 'is', null)
+      .gt('total_urls', 0); // Exclude jobs with 0 URLs
+
+    if (error) {
+      // If query fails, use default
+      console.warn(`Failed to fetch completed jobs for estimation: ${error.message}`);
+      return 30;
+    }
+
+    // If no completed jobs in last 24 hours, use default
+    if (!completedJobs || completedJobs.length === 0) {
+      return 30;
+    }
+
+    // Calculate average seconds per URL across all completed jobs
+    let totalSecondsPerUrl = 0;
+    let validJobCount = 0;
+
+    for (const job of completedJobs) {
+      if (!job.completed_at || !job.created_at) {
+        continue;
+      }
+
+      const createdAt = new Date(job.created_at).getTime();
+      const completedAt = new Date(job.completed_at).getTime();
+      const processingTimeMs = completedAt - createdAt;
+
+      // Skip jobs with negative or zero processing time (data integrity issues)
+      if (processingTimeMs <= 0) {
+        continue;
+      }
+
+      const processingTimeSeconds = processingTimeMs / 1000;
+      const secondsPerUrl = processingTimeSeconds / job.total_urls;
+
+      totalSecondsPerUrl += secondsPerUrl;
+      validJobCount++;
+    }
+
+    // If no valid jobs found, use default
+    if (validJobCount === 0) {
+      return 30;
+    }
+
+    // Return average, but ensure it's at least 1 second per URL
+    const average = totalSecondsPerUrl / validJobCount;
+    return Math.max(Math.round(average), 1);
+  }
+
+  /**
+   * Calculate progress percentage for a job
+   * Task T072 [Phase 6 - Dashboard]
+   *
+   * Calculates the progress of a job based on completed URLs vs total URLs.
+   * Used by the GET /jobs/queue/status endpoint to show real-time progress.
+   *
+   * Calculation: progress = (completedCount / totalUrlCount) * 100
+   * - Returns integer percentage (0-100)
+   * - Rounded to nearest integer using Math.round()
+   * - Min value: 0, Max value: 100
+   *
+   * Edge Cases:
+   * - totalUrlCount = 0: Returns 0 (avoid division by zero)
+   * - completedCount >= totalUrlCount: Returns 100 (safety cap)
+   * - Negative numbers: Returns 0 (shouldn't happen, but safety check)
+   *
+   * @param job - Job object with urlCount and completedCount properties
+   * @returns Progress percentage (0-100)
+   */
+  calculateProgress(job: { urlCount: number; completedCount: number }): number {
+    const { urlCount, completedCount } = job;
+
+    // Edge case: Handle negative numbers (shouldn't happen, but safety check)
+    if (urlCount < 0 || completedCount < 0) {
+      return 0;
+    }
+
+    // Edge case: Avoid division by zero
+    if (urlCount === 0) {
+      return 0;
+    }
+
+    // Edge case: Safety cap at 100% if completed exceeds total
+    if (completedCount >= urlCount) {
+      return 100;
+    }
+
+    // Calculate progress percentage and round to nearest integer
+    const progress = (completedCount / urlCount) * 100;
+    return Math.round(progress);
+  }
+
+  /**
+   * Get active jobs (processing + queued) for queue status endpoint
+   * Task T072 [Phase 6 - Dashboard]
+   *
+   * Returns jobs with status 'processing' or 'pending' (which maps to 'queued' in the response).
+   * Includes calculated progress, layer breakdown, and queue position/wait time for queued jobs.
+   *
+   * Order: Processing jobs first (oldest to newest), then queued jobs (oldest to newest).
+   *
+   * @param limit - Maximum number of jobs to return (default: 50)
+   * @param offset - Pagination offset (default: 0)
+   * @returns Array of active jobs with progress metrics
+   */
+  async getActiveJobs(limit: number = 50, offset: number = 0): Promise<any[]> {
+    const client = this.supabase.getClient();
+
+    // Query jobs with status 'processing' or 'pending' (queued)
+    // Order: processing jobs first (by created_at ASC), then queued jobs (by created_at ASC)
+    const { data: jobs, error } = await client
+      .from('jobs')
+      .select('*')
+      .in('status', ['processing', 'pending'])
+      .order('status', { ascending: false }) // processing comes before pending alphabetically
+      .order('created_at', { ascending: true })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      throw new Error(`Failed to fetch active jobs: ${error.message}`);
+    }
+
+    if (!jobs || jobs.length === 0) {
+      return [];
+    }
+
+    // Get queue positions for queued jobs (only from pending jobs globally, not just from the paginated results)
+    const { data: allQueuedJobs, error: queueError } = await client
+      .from('jobs')
+      .select('id, created_at')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true });
+
+    if (queueError) {
+      throw new Error(`Failed to fetch queued jobs: ${queueError.message}`);
+    }
+
+    const queuePositions = new Map<string, number>();
+    if (allQueuedJobs) {
+      allQueuedJobs.forEach((job, index) => {
+        queuePositions.set(job.id, index + 1);
+      });
+    }
+
+    // Transform jobs to match API contract
+    return jobs.map((job) => {
+      const isQueued = job.status === 'pending';
+      const status = isQueued ? 'queued' : 'processing';
+
+      // Calculate progress: (completed_count / url_count) * 100
+      const urlCount = job.total_urls || 0;
+      const completedCount = job.processed_urls || 0;
+      const progress = urlCount > 0 ? Math.round((completedCount / urlCount) * 100) : 0;
+
+      // Get layer breakdown (count of URLs eliminated at each layer)
+      const layer1 = job.layer1_eliminated || 0;
+      const layer2 = job.layer2_eliminated || 0;
+      const layer3 = job.layer3_classified || 0;
+
+      // Queue position and estimated wait time (only for queued jobs)
+      const queuePosition = isQueued ? queuePositions.get(job.id) || null : null;
+      // Use simple heuristic: 5 minutes per position * 60 seconds
+      const estimatedWaitTime = isQueued && queuePosition ? queuePosition * 300 : null;
+
+      return {
+        id: job.id,
+        name: job.name || 'Untitled Job',
+        status,
+        progress,
+        layerBreakdown: {
+          layer1,
+          layer2,
+          layer3,
+        },
+        queuePosition,
+        estimatedWaitTime,
+        urlCount,
+        completedCount,
+        createdAt: job.created_at,
+      };
+    });
+  }
+
+  /**
+   * Get recently completed jobs
+   * Task T072 [Phase 6 - Dashboard]
+   *
+   * Returns jobs with status 'completed' from the last 24 hours.
+   * Includes total cost and completion timestamp.
+   *
+   * @returns Array of completed jobs
+   */
+  async getCompletedJobs(): Promise<any[]> {
+    const client = this.supabase.getClient();
+
+    // Get completed jobs from the last 24 hours
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: jobs, error } = await client
+      .from('jobs')
+      .select('*')
+      .eq('status', 'completed')
+      .gte('completed_at', twentyFourHoursAgo)
+      .order('completed_at', { ascending: false })
+      .limit(10); // Limit to 10 most recent completed jobs
+
+    if (error) {
+      throw new Error(`Failed to fetch completed jobs: ${error.message}`);
+    }
+
+    if (!jobs || jobs.length === 0) {
+      return [];
+    }
+
+    // Transform jobs to match API contract
+    return jobs.map((job) => ({
+      id: job.id,
+      name: job.name || 'Untitled Job',
+      completedAt: job.completed_at,
+      urlCount: job.total_urls || 0,
+      totalCost: job.total_cost || 0,
+    }));
+  }
 }

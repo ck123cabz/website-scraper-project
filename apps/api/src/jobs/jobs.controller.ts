@@ -492,4 +492,66 @@ export class JobsController {
       );
     }
   }
+
+  /**
+   * GET /jobs/queue/status
+   * Task T072 [Phase 6 - Dashboard]
+   *
+   * Returns real-time job progress for dashboard monitoring.
+   * Includes active jobs (processing + queued) with optional completed jobs.
+   *
+   * @param includeCompleted - Include recently completed jobs (optional)
+   * @param limit - Limit active jobs returned (default: 50, max: 100)
+   * @param offset - Pagination offset (default: 0)
+   * @returns Job queue status with progress metrics
+   */
+  @Get('queue/status')
+  async getQueueStatus(
+    @Query('includeCompleted') includeCompleted?: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    try {
+      // Parse and validate query parameters
+      const parsedLimit = limit ? parseInt(limit, 10) : 50;
+      const parsedOffset = offset ? parseInt(offset, 10) : 0;
+      const parsedIncludeCompleted = includeCompleted === 'true';
+
+      // Validate limit (1-100)
+      if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 100) {
+        throw new BadRequestException('Limit must be a number between 1 and 100');
+      }
+
+      // Validate offset (>= 0)
+      if (isNaN(parsedOffset) || parsedOffset < 0) {
+        throw new BadRequestException('Offset must be a non-negative number');
+      }
+
+      // Get active jobs (processing + queued)
+      const activeJobs = await this.jobsService.getActiveJobs(parsedLimit, parsedOffset);
+
+      // Build response data
+      const responseData: any = {
+        activeJobs,
+      };
+
+      // Include completed jobs if requested
+      if (parsedIncludeCompleted) {
+        const completedJobs = await this.jobsService.getCompletedJobs();
+        responseData.completedJobs = completedJobs;
+      }
+
+      return {
+        success: true,
+        data: responseData,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      console.error('[JobsController] Error fetching queue status:', error);
+      throw new InternalServerErrorException('Failed to retrieve queue status. Please try again.');
+    }
+  }
 }
