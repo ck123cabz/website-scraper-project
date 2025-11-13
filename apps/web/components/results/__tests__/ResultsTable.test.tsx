@@ -263,11 +263,15 @@ describe('ResultsTable Component', () => {
       renderWithQueryClient(<ResultsTable jobId="job-1" />);
 
       await waitFor(() => {
-        expect(screen.getByText(/url/i)).toBeInTheDocument();
-        expect(screen.getByText(/status/i)).toBeInTheDocument();
-        expect(screen.getByText(/confidence/i)).toBeInTheDocument();
-        expect(screen.getByText(/layer/i)).toBeInTheDocument();
-        expect(screen.getByText(/processing time/i)).toBeInTheDocument();
+        // Use getByRole to specifically find table headers
+        const headers = screen.getAllByRole('columnheader');
+        const headerTexts = headers.map(h => h.textContent);
+
+        expect(headerTexts).toContain('URL');
+        expect(headerTexts).toContain('Status');
+        expect(headerTexts).toContain('Confidence');
+        expect(headerTexts).toContain('Eliminated At Layer');
+        expect(headerTexts).toContain('Processing Time');
       });
     });
 
@@ -691,15 +695,15 @@ describe('ResultsTable Component', () => {
       renderWithQueryClient(<ResultsTable jobId="job-1" />);
 
       await waitFor(() => {
-        expect(screen.getAllByRole('button', { name: /expand/i })[0]).toBeInTheDocument();
+        expect(screen.getByText('https://example.com')).toBeInTheDocument();
       });
 
       const expandButtons = screen.getAllByRole('button', { name: /expand/i });
       await userEvent.click(expandButtons[0]);
 
       await waitFor(() => {
-        // Should show additional details
-        expect(screen.getByText(/layer 1 factors/i)).toBeInTheDocument();
+        // Should show additional details - the Layer1Factors component displays "Layer 1: Domain Analysis"
+        expect(screen.getByText(/layer 1.*domain analysis/i)).toBeInTheDocument();
       });
     });
 
@@ -707,21 +711,21 @@ describe('ResultsTable Component', () => {
       renderWithQueryClient(<ResultsTable jobId="job-1" />);
 
       await waitFor(() => {
-        expect(screen.getAllByRole('button', { name: /expand/i })[0]).toBeInTheDocument();
+        expect(screen.getByText('https://example.com')).toBeInTheDocument();
       });
 
       const expandButtons = screen.getAllByRole('button', { name: /expand/i });
       await userEvent.click(expandButtons[0]);
 
       await waitFor(() => {
-        expect(screen.getByText(/layer 1 factors/i)).toBeInTheDocument();
+        expect(screen.getByText(/layer 1.*domain analysis/i)).toBeInTheDocument();
       });
 
       const collapseButton = screen.getByRole('button', { name: /collapse/i });
       await userEvent.click(collapseButton);
 
       await waitFor(() => {
-        expect(screen.queryByText(/layer 1 factors/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/layer 1.*domain analysis/i)).not.toBeInTheDocument();
       });
     });
 
@@ -729,16 +733,16 @@ describe('ResultsTable Component', () => {
       renderWithQueryClient(<ResultsTable jobId="job-1" />);
 
       await waitFor(() => {
-        expect(screen.getAllByRole('button', { name: /expand/i })[0]).toBeInTheDocument();
+        expect(screen.getByText('https://example.com')).toBeInTheDocument();
       });
 
       const expandButtons = screen.getAllByRole('button', { name: /expand/i });
       await userEvent.click(expandButtons[0]);
 
       await waitFor(() => {
-        expect(screen.getByText(/layer 1 factors/i)).toBeInTheDocument();
-        expect(screen.getByText(/layer 2 factors/i)).toBeInTheDocument();
-        expect(screen.getByText(/layer 3 factors/i)).toBeInTheDocument();
+        expect(screen.getByText(/layer 1.*domain analysis/i)).toBeInTheDocument();
+        expect(screen.getByText(/layer 2.*publication detection/i)).toBeInTheDocument();
+        expect(screen.getByText(/layer 3.*sophistication analysis/i)).toBeInTheDocument();
       });
     });
 
@@ -746,7 +750,7 @@ describe('ResultsTable Component', () => {
       renderWithQueryClient(<ResultsTable jobId="job-1" />);
 
       await waitFor(() => {
-        expect(screen.getAllByRole('button', { name: /expand/i })[1]).toBeInTheDocument();
+        expect(screen.getByText('https://example.com')).toBeInTheDocument();
       });
 
       // Expand second row (rejected at layer 2, has no layer 3 factors)
@@ -754,88 +758,219 @@ describe('ResultsTable Component', () => {
       await userEvent.click(expandButtons[1]);
 
       await waitFor(() => {
-        expect(screen.getByText(/layer 1 factors/i)).toBeInTheDocument();
-        expect(screen.getByText(/layer 2 factors/i)).toBeInTheDocument();
+        expect(screen.getByText(/layer 1.*domain analysis/i)).toBeInTheDocument();
+        expect(screen.getByText(/layer 2.*publication detection/i)).toBeInTheDocument();
         // Should not show layer 3 factors since they're null
-        expect(screen.queryByText(/layer 3 factors/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/layer 3.*sophistication analysis/i)).not.toBeInTheDocument();
       });
     });
   });
 
   describe('8. Filtering Support', () => {
-    it('should accept status filter prop', async () => {
-      renderWithQueryClient(<ResultsTable jobId="job-1" status="approved" />);
+    it('should filter by decision (approved)', async () => {
+      renderWithQueryClient(<ResultsTable jobId="job-1" />);
 
+      await waitFor(() => {
+        expect(screen.getByText('https://example.com')).toBeInTheDocument();
+      });
+
+      // Find and click the decision filter dropdown
+      const decisionSelect = screen.getByLabelText(/decision/i);
+      fireEvent.click(decisionSelect);
+
+      // Wait for options to appear and select "Approved"
+      await waitFor(() => {
+        expect(screen.getByRole('option', { name: /^approved$/i })).toBeInTheDocument();
+      });
+
+      const approvedOption = screen.getByRole('option', { name: /^approved$/i });
+      fireEvent.click(approvedOption);
+
+      // Verify API was called with correct filter parameter
       await waitFor(() => {
         expect(mockedResultsApi.getJobResults).toHaveBeenCalledWith(
           'job-1',
-          expect.objectContaining({ status: 'approved' })
+          expect.objectContaining({ filter: 'approved' })
         );
       });
     });
 
-    it('should accept classification filter prop', async () => {
-      renderWithQueryClient(<ResultsTable jobId="job-1" classification="suitable" />);
+    it('should filter by layer (layer2)', async () => {
+      renderWithQueryClient(<ResultsTable jobId="job-1" />);
 
+      await waitFor(() => {
+        expect(screen.getByText('https://example.com')).toBeInTheDocument();
+      });
+
+      // Find and click the layer filter dropdown
+      const layerSelect = screen.getByLabelText(/^layer$/i);
+      fireEvent.click(layerSelect);
+
+      // Wait for options to appear and select "Layer 2"
+      await waitFor(() => {
+        expect(screen.getByRole('option', { name: /^layer 2$/i })).toBeInTheDocument();
+      });
+
+      const layer2Option = screen.getByRole('option', { name: /^layer 2$/i });
+      fireEvent.click(layer2Option);
+
+      // Verify API was called with correct layer parameter
       await waitFor(() => {
         expect(mockedResultsApi.getJobResults).toHaveBeenCalledWith(
           'job-1',
-          expect.objectContaining({ classification: 'suitable' })
+          expect.objectContaining({ layer: 'layer2' })
         );
       });
     });
 
-    it('should accept confidence filter prop', async () => {
-      renderWithQueryClient(<ResultsTable jobId="job-1" minConfidence={0.8} />);
+    it('should filter by confidence band (high)', async () => {
+      renderWithQueryClient(<ResultsTable jobId="job-1" />);
 
+      await waitFor(() => {
+        expect(screen.getByText('https://example.com')).toBeInTheDocument();
+      });
+
+      // Find and click the confidence filter dropdown
+      const confidenceSelect = screen.getByLabelText(/confidence band/i);
+      fireEvent.click(confidenceSelect);
+
+      // Wait for options to appear and select "High"
+      await waitFor(() => {
+        expect(screen.getByRole('option', { name: /^high/i })).toBeInTheDocument();
+      });
+
+      const highOption = screen.getByRole('option', { name: /^high/i });
+      fireEvent.click(highOption);
+
+      // Verify API was called with correct confidence parameter
       await waitFor(() => {
         expect(mockedResultsApi.getJobResults).toHaveBeenCalledWith(
           'job-1',
-          expect.objectContaining({ minConfidence: 0.8 })
+          expect.objectContaining({ confidence: 'high' })
         );
       });
     });
 
     it('should combine multiple filters', async () => {
-      renderWithQueryClient(
-        <ResultsTable
-          jobId="job-1"
-          status="approved"
-          classification="suitable"
-          minConfidence={0.7}
-        />
-      );
+      renderWithQueryClient(<ResultsTable jobId="job-1" />);
+
+      // Wait for initial load
+      await waitFor(() => {
+        expect(screen.getByText('https://example.com')).toBeInTheDocument();
+      });
+
+      // Select decision filter: Approved
+      let decisionSelect = screen.getByLabelText(/decision/i);
+      fireEvent.click(decisionSelect);
+
+      await waitFor(() => {
+        expect(screen.getByRole('option', { name: /^approved$/i })).toBeInTheDocument();
+      });
+
+      const approvedOption = screen.getByRole('option', { name: /^approved$/i });
+      fireEvent.click(approvedOption);
 
       await waitFor(() => {
         expect(mockedResultsApi.getJobResults).toHaveBeenCalledWith(
           'job-1',
+          expect.objectContaining({ filter: 'approved' })
+        );
+      });
+
+      // Wait for the component to finish loading after the first filter
+      await waitFor(() => {
+        expect(screen.getByText('https://example.com')).toBeInTheDocument();
+      });
+
+      // Select layer filter: Layer 3
+      const layerSelect = screen.getByLabelText(/^layer$/i);
+      fireEvent.click(layerSelect);
+
+      await waitFor(() => {
+        expect(screen.getByRole('option', { name: /^layer 3$/i })).toBeInTheDocument();
+      });
+
+      const layer3Option = screen.getByRole('option', { name: /^layer 3$/i });
+      fireEvent.click(layer3Option);
+
+      await waitFor(() => {
+        expect(mockedResultsApi.getJobResults).toHaveBeenCalledWith(
+          'job-1',
+          expect.objectContaining({ filter: 'approved', layer: 'layer3' })
+        );
+      });
+
+      // Wait for the component to finish loading after the second filter
+      await waitFor(() => {
+        expect(screen.getByText('https://example.com')).toBeInTheDocument();
+      });
+
+      // Select confidence filter: High
+      const confidenceSelect = screen.getByLabelText(/confidence band/i);
+      fireEvent.click(confidenceSelect);
+
+      await waitFor(() => {
+        expect(screen.getByRole('option', { name: /^high/i })).toBeInTheDocument();
+      });
+
+      const highOption = screen.getByRole('option', { name: /^high/i });
+      fireEvent.click(highOption);
+
+      // Verify all three filters are applied
+      await waitFor(() => {
+        expect(mockedResultsApi.getJobResults).toHaveBeenCalledWith(
+          'job-1',
           expect.objectContaining({
-            status: 'approved',
-            classification: 'suitable',
-            minConfidence: 0.7,
+            filter: 'approved',
+            layer: 'layer3',
+            confidence: 'high',
           })
         );
       });
     });
 
-    it('should refetch data when filter props change', async () => {
-      const { rerender } = renderWithQueryClient(<ResultsTable jobId="job-1" />);
+    it('should refetch data when filters change', async () => {
+      renderWithQueryClient(<ResultsTable jobId="job-1" />);
 
       await waitFor(() => {
-        expect(mockedResultsApi.getJobResults).toHaveBeenCalledTimes(1);
+        expect(screen.getByText('https://example.com')).toBeInTheDocument();
       });
 
-      // Change filter prop
-      rerender(
-        <QueryClientProvider client={createTestQueryClient()}>
-          <ResultsTable jobId="job-1" status="rejected" />
-        </QueryClientProvider>
-      );
+      const initialCallCount = mockedResultsApi.getJobResults.mock.calls.length;
 
+      // Change decision filter
+      const decisionSelect = screen.getByLabelText(/decision/i);
+      fireEvent.click(decisionSelect);
+
+      await waitFor(() => {
+        expect(screen.getByRole('option', { name: /^rejected$/i })).toBeInTheDocument();
+      });
+
+      const rejectedOption = screen.getByRole('option', { name: /^rejected$/i });
+      fireEvent.click(rejectedOption);
+
+      // Verify API was called again with new filter
+      await waitFor(() => {
+        expect(mockedResultsApi.getJobResults.mock.calls.length).toBeGreaterThan(initialCallCount);
+        expect(mockedResultsApi.getJobResults).toHaveBeenCalledWith(
+          'job-1',
+          expect.objectContaining({ filter: 'rejected' })
+        );
+      });
+    });
+
+    it('should reset to "all" for each filter by default', async () => {
+      renderWithQueryClient(<ResultsTable jobId="job-1" />);
+
+      // On initial render, all filters should be "all"
       await waitFor(() => {
         expect(mockedResultsApi.getJobResults).toHaveBeenCalledWith(
           'job-1',
-          expect.objectContaining({ status: 'rejected' })
+          expect.objectContaining({
+            filter: 'all',
+            layer: 'all',
+            confidence: 'all',
+          })
         );
       });
     });

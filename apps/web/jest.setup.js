@@ -34,3 +34,19 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: jest.fn(),
   })),
 })
+
+// Mock pointer capture methods for Radix UI Select
+if (!Element.prototype.hasPointerCapture) {
+  Element.prototype.hasPointerCapture = jest.fn()
+}
+if (!Element.prototype.setPointerCapture) {
+  Element.prototype.setPointerCapture = jest.fn()
+}
+if (!Element.prototype.releasePointerCapture) {
+  Element.prototype.releasePointerCapture = jest.fn()
+}
+
+// Mock scrollIntoView for Radix UI Select
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = jest.fn()
+}

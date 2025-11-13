@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { Layer1Factors } from '../Layer1Factors';
 import type { Layer1Factors as Layer1FactorsType } from '@website-scraper/shared';
 
@@ -68,7 +68,8 @@ describe('Layer1Factors Display Component', () => {
 
       // Domain classification
       expect(screen.getByText(/Domain Classification/i)).toBeInTheDocument();
-      expect(screen.getByText(/commercial/i)).toBeInTheDocument();
+      const classificationSection = screen.getByTestId('domain-classification');
+      expect(within(classificationSection).getByText(/commercial/i)).toBeInTheDocument();
 
       // Pattern matches
       expect(screen.getByText(/Pattern Matches/i)).toBeInTheDocument();
@@ -91,9 +92,15 @@ describe('Layer1Factors Display Component', () => {
     it('should render all fields for rejected URL', () => {
       render(<Layer1Factors factors={mockLayer1FactorsRejected} />);
 
-      expect(screen.getByText(/custom/i)).toBeInTheDocument();
+      // Use scoped queries to avoid text collision
+      const tldTypeSection = screen.getByTestId('tld-type');
+      expect(within(tldTypeSection).getByText(/custom/i)).toBeInTheDocument();
+
       expect(screen.getByText('.xyz')).toBeInTheDocument();
-      expect(screen.getByText(/spam/i)).toBeInTheDocument();
+
+      const classificationSection = screen.getByTestId('domain-classification');
+      expect(within(classificationSection).getByText(/spam/i)).toBeInTheDocument();
+
       expect(screen.getByText('affiliate-link')).toBeInTheDocument();
       expect(screen.getByText('url-shortener')).toBeInTheDocument();
       expect(screen.getByText('redirect-page')).toBeInTheDocument();
@@ -116,7 +123,8 @@ describe('Layer1Factors Display Component', () => {
 
     it('should display custom TLD type correctly', () => {
       render(<Layer1Factors factors={mockLayer1FactorsRejected} />);
-      expect(screen.getByText(/custom/i)).toBeInTheDocument();
+      const tldTypeSection = screen.getByTestId('tld-type');
+      expect(within(tldTypeSection).getByText(/custom/i)).toBeInTheDocument();
     });
 
     it('should display various TLD values correctly', () => {
@@ -134,29 +142,34 @@ describe('Layer1Factors Display Component', () => {
   describe('Domain Classification Display', () => {
     it('should display commercial classification', () => {
       render(<Layer1Factors factors={mockLayer1FactorsPassed} />);
-      expect(screen.getByText(/commercial/i)).toBeInTheDocument();
+      const classificationSection = screen.getByTestId('domain-classification');
+      expect(within(classificationSection).getByText(/commercial/i)).toBeInTheDocument();
     });
 
     it('should display spam classification', () => {
       render(<Layer1Factors factors={mockLayer1FactorsRejected} />);
-      expect(screen.getByText(/spam/i)).toBeInTheDocument();
+      const classificationSection = screen.getByTestId('domain-classification');
+      expect(within(classificationSection).getByText(/spam/i)).toBeInTheDocument();
     });
 
     it('should display institutional classification', () => {
       render(<Layer1Factors factors={mockLayer1FactorsCCTLD} />);
-      expect(screen.getByText(/institutional/i)).toBeInTheDocument();
+      const classificationSection = screen.getByTestId('domain-classification');
+      expect(within(classificationSection).getByText(/institutional/i)).toBeInTheDocument();
     });
 
     it('should display personal classification', () => {
       render(<Layer1Factors factors={mockLayer1FactorsPersonal} />);
-      expect(screen.getByText(/personal/i)).toBeInTheDocument();
+      const classificationSection = screen.getByTestId('domain-classification');
+      expect(within(classificationSection).getByText(/personal/i)).toBeInTheDocument();
     });
 
     it('should apply color coding to domain classification', () => {
       const { container } = render(<Layer1Factors factors={mockLayer1FactorsPassed} />);
 
       // Check for color-coded badge/chip (implementation-dependent)
-      const commercialBadge = screen.getByText(/commercial/i).closest('span');
+      const classificationSection = screen.getByTestId('domain-classification');
+      const commercialBadge = within(classificationSection).getByText(/commercial/i).closest('span');
       expect(commercialBadge).toBeInTheDocument();
     });
   });
@@ -239,8 +252,8 @@ describe('Layer1Factors Display Component', () => {
       expect(passBadge).toBeInTheDocument();
 
       // Check for green color class (Tailwind: bg-green-500, bg-green-600, text-green-600, etc.)
-      const badgeElement = passBadge.closest('div, span');
-      expect(badgeElement).toHaveClass(/green/);
+      const badgeElement = screen.getByTestId('pass-fail-status');
+      expect(badgeElement.className).toMatch(/green/);
     });
 
     it('should display passed=false as red "REJECTED at Layer 1" badge', () => {
@@ -250,23 +263,23 @@ describe('Layer1Factors Display Component', () => {
       expect(rejectBadge).toBeInTheDocument();
 
       // Check for red color class
-      const badgeElement = rejectBadge.closest('div, span');
-      expect(badgeElement).toHaveClass(/red/);
+      const badgeElement = screen.getByTestId('pass-fail-status');
+      expect(badgeElement.className).toMatch(/red/);
     });
 
     it('should visually distinguish pass from fail status', () => {
       const { rerender, container } = render(<Layer1Factors factors={mockLayer1FactorsPassed} />);
 
-      const passText = screen.getByText(/PASS Layer 1/i);
-      const passElement = passText.closest('div, span');
+      const passElement = screen.getByTestId('pass-fail-status');
+      const passClassName = passElement.className;
 
       rerender(<Layer1Factors factors={mockLayer1FactorsRejected} />);
 
-      const rejectText = screen.getByText(/REJECTED at Layer 1/i);
-      const rejectElement = rejectText.closest('div, span');
+      const rejectElement = screen.getByTestId('pass-fail-status');
+      const rejectClassName = rejectElement.className;
 
       // Elements should have different classes
-      expect(passElement?.className).not.toBe(rejectElement?.className);
+      expect(passClassName).not.toBe(rejectClassName);
     });
   });
 
@@ -420,7 +433,8 @@ describe('Layer1Factors Display Component', () => {
     it('should accept factors prop with correct type', () => {
       // TypeScript compilation will fail if prop types are incorrect
       render(<Layer1Factors factors={mockLayer1FactorsPassed} />);
-      expect(screen.getByText(/B2B software/)).toBeInTheDocument();
+      const targetProfile = screen.getByTestId('target-profile');
+      expect(within(targetProfile).getByText(/B2B software/)).toBeInTheDocument();
     });
 
     it('should accept optional loading and error props', () => {
@@ -431,7 +445,8 @@ describe('Layer1Factors Display Component', () => {
           error={undefined}
         />
       );
-      expect(screen.getByText(/B2B software/)).toBeInTheDocument();
+      const targetProfile = screen.getByTestId('target-profile');
+      expect(within(targetProfile).getByText(/B2B software/)).toBeInTheDocument();
     });
   });
 });

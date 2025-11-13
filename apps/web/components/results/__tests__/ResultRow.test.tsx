@@ -765,8 +765,8 @@ describe('ResultRow Component - TDD Test Suite', () => {
         'very-low',
       ];
 
-      confidenceBands.forEach(band => {
-        const { rerender } = renderWithQueryClient(
+      confidenceBands.forEach((band, index) => {
+        const { rerender, unmount } = renderWithQueryClient(
           <ResultRow
             result={createMockResult({
               confidence_band: band,
@@ -777,7 +777,12 @@ describe('ResultRow Component - TDD Test Suite', () => {
         );
 
         // Band should be reflected in UI somehow (could be color, badge, etc)
-        expect(screen.getByText(/85%|0\.85/)).toBeInTheDocument();
+        // Use getAllByText and check the first instance to handle multiple renders
+        const confidenceElements = screen.getAllByText(/85%|0\.85/);
+        expect(confidenceElements[0]).toBeInTheDocument();
+
+        // Clean up after each iteration to prevent DOM accumulation
+        unmount();
       });
     });
   });

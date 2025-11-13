@@ -96,12 +96,12 @@ export function Layer1Factors({ factors, loading, error }: Layer1FactorsProps) {
         <CardTitle className="flex items-center justify-between">
           <span>Layer 1: Domain Analysis</span>
           {factors.passed ? (
-            <div className="flex items-center gap-2 text-sm font-normal text-green-600 bg-green-50 dark:bg-green-950 dark:text-green-400 px-3 py-1 rounded-md">
+            <div data-testid="pass-fail-status" className="flex items-center gap-2 text-sm font-normal text-green-600 bg-green-50 dark:bg-green-950 dark:text-green-400 px-3 py-1 rounded-md">
               <CheckCircle2 className="h-4 w-4" />
               <span>PASS Layer 1</span>
             </div>
           ) : (
-            <div className="flex items-center gap-2 text-sm font-normal text-red-600 bg-red-50 dark:bg-red-950 dark:text-red-400 px-3 py-1 rounded-md">
+            <div data-testid="pass-fail-status" className="flex items-center gap-2 text-sm font-normal text-red-600 bg-red-50 dark:bg-red-950 dark:text-red-400 px-3 py-1 rounded-md">
               <XCircle className="h-4 w-4" />
               <span>REJECTED at Layer 1</span>
             </div>
@@ -126,7 +126,7 @@ export function Layer1Factors({ factors, loading, error }: Layer1FactorsProps) {
         {/* Domain Classification */}
         <div>
           <div className="text-sm font-medium text-muted-foreground mb-2">Domain Classification</div>
-          <div>
+          <div data-testid="domain-classification">
             <Badge variant={getClassificationVariant(factors.domain_classification)}>
               <span data-classification="badge">{factors.domain_classification}</span>
             </Badge>
@@ -150,7 +150,7 @@ export function Layer1Factors({ factors, loading, error }: Layer1FactorsProps) {
         </div>
 
         {/* Target Profile */}
-        <div>
+        <div data-testid="target-profile">
           <div className="text-sm font-medium text-muted-foreground mb-2">Target Profile</div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -164,7 +164,7 @@ export function Layer1Factors({ factors, loading, error }: Layer1FactorsProps) {
         </div>
 
         {/* Reasoning */}
-        <div>
+        <div data-testid="reasoning">
           <div className="text-sm font-medium text-muted-foreground mb-2">Reasoning</div>
           <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
             {factors.reasoning || 'No reasoning available'}
