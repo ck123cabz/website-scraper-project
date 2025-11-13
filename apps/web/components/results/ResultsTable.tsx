@@ -22,11 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Filter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Filter, Download } from 'lucide-react';
 import { FactorBreakdown } from './FactorBreakdown';
+import { ExportDialog } from './ExportDialog';
 
 export interface ResultsTableProps {
   jobId: string;
+  jobName?: string;
   initialPage?: number;
   pageSize?: number;
   status?: 'approved' | 'rejected' | 'failed';
@@ -56,6 +58,7 @@ interface PaginationData {
  */
 export function ResultsTable({
   jobId,
+  jobName,
   initialPage = 1,
   pageSize = 50,
   status,
@@ -65,6 +68,7 @@ export function ResultsTable({
   const [page, setPage] = useState(initialPage);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [jumpToPage, setJumpToPage] = useState('');
+  const [showExportDialog, setShowExportDialog] = useState(false);
 
   // Filter states for T053
   const [decisionFilter, setDecisionFilter] = useState<'all' | 'approved' | 'rejected'>('all');
@@ -215,6 +219,19 @@ export function ResultsTable({
 
   return (
     <div className="space-y-4">
+      {/* Header with Export Button - T068 */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Results</h2>
+        <Button
+          variant="outline"
+          onClick={() => setShowExportDialog(true)}
+          className="gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Export Results
+        </Button>
+      </div>
+
       {/* Filter Controls - T053 */}
       <div className="bg-card border rounded-lg p-4">
         <div className="flex items-center gap-2 mb-3">
@@ -397,6 +414,14 @@ export function ResultsTable({
           </div>
         </div>
       </div>
+
+      {/* Export Dialog - T069 */}
+      <ExportDialog
+        jobId={jobId}
+        jobName={jobName}
+        isOpen={showExportDialog}
+        onOpenChange={setShowExportDialog}
+      />
     </div>
   );
 }

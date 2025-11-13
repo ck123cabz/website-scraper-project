@@ -96,7 +96,7 @@ export interface GetResultsParams {
 }
 
 export interface ExportResultsParams {
-  format: 'csv' | 'json';
+  format: 'complete' | 'summary' | 'layer1' | 'layer2' | 'layer3';
   status?: 'success' | 'rejected' | 'failed';
   classification?: 'suitable' | 'not_suitable' | 'rejected_prefilter';
   search?: string;
