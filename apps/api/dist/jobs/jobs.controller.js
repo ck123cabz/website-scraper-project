@@ -207,6 +207,31 @@ let JobsController = class JobsController {
             }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    async getResultDetails(jobId, resultId) {
+        try {
+            const result = await this.jobsService.getResultDetails(jobId, resultId);
+            if (!result) {
+                throw new common_1.HttpException({
+                    success: false,
+                    error: 'Result not found or does not belong to this job',
+                }, common_1.HttpStatus.NOT_FOUND);
+            }
+            return {
+                success: true,
+                data: result,
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.HttpException) {
+                throw error;
+            }
+            console.error('[JobsController] Error fetching result details:', error);
+            throw new common_1.HttpException({
+                success: false,
+                error: 'Failed to retrieve result details. Please try again.',
+            }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
     async exportJobResults(jobId, format = 'csv', status = '', classification = '', search = '', res) {
         try {
             let query = this.supabase
@@ -399,6 +424,14 @@ __decorate([
     __metadata("design:paramtypes", [String, String, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], JobsController.prototype, "getJobResults", null);
+__decorate([
+    (0, common_1.Get)(':id/results/:resultId'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Param)('resultId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], JobsController.prototype, "getResultDetails", null);
 __decorate([
     (0, common_1.Get)(':id/export'),
     __param(0, (0, common_1.Param)('id')),

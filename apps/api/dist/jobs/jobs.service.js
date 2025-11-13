@@ -110,6 +110,62 @@ let JobsService = class JobsService {
         }
         return { job, urlIds };
     }
+    async getJobResults(jobId, page = 1, pageSize = 20, filter, layer, confidence) {
+        const job = await this.getJobById(jobId);
+        if (!job) {
+            throw new Error(`Job not found: ${jobId}`);
+        }
+        const normalizedPageSize = Math.min(pageSize || 20, 100);
+        const normalizedPage = Math.max(page || 1, 1);
+        const offset = (normalizedPage - 1) * normalizedPageSize;
+        const client = this.supabase.getClient();
+        let query = client
+            .from('url_results')
+            .select('*', { count: 'exact' })
+            .eq('job_id', jobId);
+        if (filter && filter !== 'all') {
+            query = query.eq('status', filter);
+        }
+        if (layer && layer !== 'all') {
+            query = query.eq('eliminated_at_layer', layer);
+        }
+        if (confidence && confidence !== 'all') {
+            query = query.eq('confidence_band', confidence);
+        }
+        query = query.order('processed_at', { ascending: false });
+        query = query.range(offset, offset + normalizedPageSize - 1);
+        const { data: results, error, count } = await query;
+        if (error) {
+            throw new Error(`Failed to fetch job results: ${error.message}`);
+        }
+        const total = count || 0;
+        const pages = Math.ceil(total / normalizedPageSize);
+        return {
+            results: results || [],
+            pagination: {
+                total,
+                page: normalizedPage,
+                pageSize: normalizedPageSize,
+                pages,
+            },
+        };
+    }
+    async getResultDetails(jobId, resultId) {
+        const client = this.supabase.getClient();
+        const { data: result, error } = await client
+            .from('url_results')
+            .select('*')
+            .eq('id', resultId)
+            .eq('job_id', jobId)
+            .single();
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return null;
+            }
+            throw new Error(`Failed to fetch result details: ${error.message}`);
+        }
+        return result;
+    }
 };
 exports.JobsService = JobsService;
 exports.JobsService = JobsService = __decorate([

@@ -123,6 +123,10 @@ export declare class JobsController {
             totalPages: number;
         };
     }>;
+    getResultDetails(jobId: string, resultId: string): Promise<{
+        success: boolean;
+        data: any;
+    }>;
     exportJobResults(jobId: string, format: string | undefined, status: string | undefined, classification: string | undefined, search: string | undefined, res: Response): Promise<void>;
     pauseJob(jobId: string): Promise<{
         success: boolean;

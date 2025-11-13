@@ -130,7 +130,7 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
       await this.updateCurrentLayer(jobId, url, 2);
 
       const layer2Start = Date.now();
-      const { scrapeResult, layer2Result } = await this.executeLayer2(jobId, url);
+      const { scrapeResult, layer2Result } = await this.executeLayer2(jobId, url, urlId);
       const layer2Time = Date.now() - layer2Start;
 
       if (!layer2Result.passed) {
@@ -156,7 +156,7 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
       await this.updateCurrentLayer(jobId, url, 3);
 
       const layer3Start = Date.now();
-      const layer3Result = await this.executeLayer3(jobId, url, scrapeResult);
+      const layer3Result = await this.executeLayer3(jobId, url, scrapeResult, urlId);
       const layer3Time = Date.now() - layer3Start;
 
       // Layer 3 COMPLETE - Route URL based on confidence band action (T009)
@@ -222,12 +222,19 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
   private async executeLayer2(
     jobId: string,
     url: string,
+    urlId?: string,
   ): Promise<{
     scrapeResult: any;
     layer2Result: { passed: boolean; reasoning: string; signals?: any; processingTimeMs?: number };
   }> {
-    // Scrape homepage (with retries)
-    const scrapeResult = await this.retryWithBackoff(() => this.scraper.fetchUrl(url), 3, url);
+    // Scrape homepage (with retries + T034 retry tracking)
+    const scrapeResult = await this.retryWithBackoff(
+      () => this.scraper.fetchUrl(url),
+      3,
+      url,
+      jobId,
+      urlId,
+    );
 
     if (!scrapeResult.success) {
       // Scraping failed after retries - treat as Layer 2 failure
@@ -254,6 +261,7 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     jobId: string,
     url: string,
     scrapeResult: any,
+    urlId?: string,
   ): Promise<{
     classification: any;
     confidenceBand: string;
@@ -262,11 +270,13 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     layer2Results: any;
     layer3Results: any;
   }> {
-    // Classify with LLM (Gemini → GPT fallback, with retries)
+    // Classify with LLM (Gemini → GPT fallback, with retries + T034 retry tracking)
     const classification = await this.retryWithBackoff(
       () => this.llm.classifyUrl(url, scrapeResult.content || scrapeResult.title || ''),
       3,
       url,
+      jobId,
+      urlId,
     );
 
     // Get confidence band action (T009: Confidence Band Action Routing)
@@ -579,8 +589,9 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
       ? 'approved'
       : 'rejected';
 
-    // Store complete result in url_results table with all factor data (T018-T019)
+    // Store complete result in url_results table with all factor data (T018-T019, T033)
     // Includes backwards compatibility: null factors are allowed for pre-migration data
+    // Note: Using updated_at for timestamp tracking (auto-updated by trigger)
     try {
       await this.supabase.getClient().from('url_results').upsert(
         {
@@ -595,7 +606,6 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
           total_cost: totalCost,
           retry_count: layer3Result.classification.retryCount || 0,
           last_error: null, // No error since we reached Layer 3 successfully
-          processed_at: new Date().toISOString(),
           layer1_factors: layer1Factors,
           layer2_factors: layer2Factors,
           layer3_factors: layer3Factors,
@@ -624,7 +634,6 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
           total_cost: totalCost,
           retry_count: layer3Result.classification.retryCount || 0,
           last_error: `Factor write failed: ${error instanceof Error ? error.message : 'Unknown'}`,
-          processed_at: new Date().toISOString(),
           layer1_factors: null,
           layer2_factors: null,
           layer3_factors: null,
@@ -947,6 +956,7 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
    * - Backoff multiplier: 2x (1s → 2s → 4s)
    * - Special handling: 429 rate limit errors get 30s delay
    * - Transient errors only: Permanent errors (401, 400, 403) are not retried
+   * - T034: Tracks retry state in url_results (retry_count, last_error, last_retry_at)
    *
    * @private
    */
@@ -954,6 +964,8 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     fn: () => Promise<T>,
     maxAttempts: number,
     url: string,
+    jobId?: string,
+    urlId?: string,
   ): Promise<T> {
     // Exponential backoff delays: 1s → 2s → 4s (2x multiplier)
     const delays = [1000, 2000, 4000];
@@ -969,8 +981,31 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
         const isTransient = this.isTransientError(errorMessage);
 
         if (!isTransient || isLastAttempt) {
+          // T034: Track final failure state in url_results
+          if (jobId && urlId && isTransient) {
+            await this.trackRetryState(
+              jobId,
+              urlId,
+              url,
+              attempt + 1,
+              errorMessage,
+              'failed',
+            );
+          }
           // Permanent error or last attempt - throw
           throw error;
+        }
+
+        // T034: Track retry attempt in url_results (transient error, will retry)
+        if (jobId && urlId) {
+          await this.trackRetryState(
+            jobId,
+            urlId,
+            url,
+            attempt + 1,
+            errorMessage,
+            'processing',
+          );
         }
 
         // Special handling for ScrapingBee 429 rate limit
@@ -1025,6 +1060,51 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
 
     // Default: treat as transient
     return true;
+  }
+
+  /**
+   * Track retry state in url_results table (T034)
+   * Updates retry_count, last_error, and last_retry_at fields
+   * @private
+   */
+  private async trackRetryState(
+    jobId: string,
+    urlId: string,
+    url: string,
+    retryCount: number,
+    errorMessage: string,
+    status: 'processing' | 'failed',
+  ): Promise<void> {
+    try {
+      // Sanitize error message (max 200 chars)
+      const sanitizedError =
+        errorMessage.length > 200 ? errorMessage.slice(0, 200) + '...' : errorMessage;
+
+      // Update retry tracking in url_results
+      await this.supabase.getClient().from('url_results').upsert(
+        {
+          url_id: urlId,
+          job_id: jobId,
+          url: url,
+          status: status,
+          retry_count: retryCount,
+          last_error: sanitizedError,
+          last_retry_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'url_id', // Update if exists based on url_id uniqueness
+        },
+      );
+
+      this.logger.debug(
+        `[Job ${jobId}] Tracked retry state: attempt ${retryCount}, status=${status}, error="${sanitizedError.slice(0, 50)}..."`,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Failed to track retry state for ${url}: ${error instanceof Error ? error.message : 'Unknown'}`,
+      );
+      // Don't throw - retry tracking is non-critical, continue processing
+    }
   }
 
   /**

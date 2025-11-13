@@ -74,6 +74,12 @@ export const jobsApi = {
     const response = await apiClient.delete(`/jobs/${id}/cancel`);
     return response.data;
   },
+
+  // Get single result details with full factor data
+  getResultDetails: async (jobId: string, resultId: string) => {
+    const response = await apiClient.get(`/jobs/${jobId}/results/${resultId}`);
+    return response.data;
+  },
 };
 
 // Results API

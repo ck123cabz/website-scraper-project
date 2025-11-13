@@ -291,6 +291,41 @@ export class JobsController {
     }
   }
 
+  @Get(':id/results/:resultId')
+  async getResultDetails(@Param('id') jobId: string, @Param('resultId') resultId: string) {
+    try {
+      const result = await this.jobsService.getResultDetails(jobId, resultId);
+
+      if (!result) {
+        throw new HttpException(
+          {
+            success: false,
+            error: 'Result not found or does not belong to this job',
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      console.error('[JobsController] Error fetching result details:', error);
+      throw new HttpException(
+        {
+          success: false,
+          error: 'Failed to retrieve result details. Please try again.',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   @Get(':id/export')
   async exportJobResults(
     @Param('id') jobId: string,

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
-import { Database } from '@website-scraper/shared';
+import { Database, UrlResult } from '@website-scraper/shared';
 
 type JobInsert = Database['public']['Tables']['jobs']['Insert'];
 type JobRow = Database['public']['Tables']['jobs']['Row'];
@@ -141,5 +141,144 @@ export class JobsService {
     }
 
     return { job, urlIds };
+  }
+
+  /**
+   * Get paginated and filtered results for a job from url_results table
+   * Task T044 [Phase 4 - User Story 2]
+   *
+   * @param jobId - Job ID to fetch results for
+   * @param page - Page number (1-indexed), defaults to 1
+   * @param pageSize - Results per page, defaults to 20, max 100
+   * @param filter - Status filter: 'approved' | 'rejected' | 'all', defaults to 'all'
+   * @param layer - Layer filter: 'layer1' | 'layer2' | 'layer3' | 'passed_all' | 'all', defaults to 'all'
+   * @param confidence - Confidence band filter: 'high' | 'medium' | 'low' | 'very-high' | 'very-low' | 'all', defaults to 'all'
+   * @returns Paginated results with metadata
+   * @throws Error if job doesn't exist or database query fails
+   */
+  async getJobResults(
+    jobId: string,
+    page: number = 1,
+    pageSize: number = 20,
+    filter?: 'approved' | 'rejected' | 'all',
+    layer?: 'layer1' | 'layer2' | 'layer3' | 'passed_all' | 'all',
+    confidence?: 'high' | 'medium' | 'low' | 'very-high' | 'very-low' | 'all',
+  ): Promise<{
+    results: UrlResult[];
+    pagination: {
+      total: number;
+      page: number;
+      pageSize: number;
+      pages: number;
+    };
+  }> {
+    // Validation: Verify job exists
+    const job = await this.getJobById(jobId);
+    if (!job) {
+      throw new Error(`Job not found: ${jobId}`);
+    }
+
+    // Validation: Enforce max pageSize of 100
+    const normalizedPageSize = Math.min(pageSize || 20, 100);
+    const normalizedPage = Math.max(page || 1, 1);
+
+    // Calculate offset
+    const offset = (normalizedPage - 1) * normalizedPageSize;
+
+    const client = this.supabase.getClient();
+
+    // Build query with count
+    let query = client
+      .from('url_results')
+      .select('*', { count: 'exact' })
+      .eq('job_id', jobId);
+
+    // Apply filter: status
+    if (filter && filter !== 'all') {
+      query = query.eq('status', filter);
+    }
+
+    // Apply filter: eliminated_at_layer
+    if (layer && layer !== 'all') {
+      query = query.eq('eliminated_at_layer', layer);
+    }
+
+    // Apply filter: confidence_band
+    if (confidence && confidence !== 'all') {
+      query = query.eq('confidence_band', confidence);
+    }
+
+    // Order by processed_at DESC (newest first)
+    query = query.order('processed_at', { ascending: false });
+
+    // Apply pagination
+    query = query.range(offset, offset + normalizedPageSize - 1);
+
+    // Execute query
+    const { data: results, error, count } = await query;
+
+    if (error) {
+      throw new Error(`Failed to fetch job results: ${error.message}`);
+    }
+
+    // Calculate total pages
+    const total = count || 0;
+    const pages = Math.ceil(total / normalizedPageSize);
+
+    return {
+      results: results || [],
+      pagination: {
+        total,
+        page: normalizedPage,
+        pageSize: normalizedPageSize,
+        pages,
+      },
+    };
+  }
+
+  /**
+   * Get complete factor data for a single URL result
+   * Task T045 [Phase 4 - User Story 2]
+   *
+   * Retrieves complete UrlResult with all Layer 1/2/3 factor data.
+   * Enforces job isolation - only returns result if it belongs to the specified job.
+   *
+   * Security: The dual eq() check (id + job_id) ensures that results can only be
+   * accessed through their parent job, preventing cross-job data leakage.
+   *
+   * JSONB Handling: Supabase automatically parses JSONB columns (layer1_factors,
+   * layer2_factors, layer3_factors) into JavaScript objects. NULL values are
+   * preserved for pre-migration data.
+   *
+   * @param jobId - UUID of the job (security: ensures result belongs to this job)
+   * @param resultId - UUID of the URL result
+   * @returns Complete UrlResult with all fields and JSONB factor data, or null if not found
+   * @throws Error if database query fails
+   */
+  async getResultDetails(jobId: string, resultId: string): Promise<any | null> {
+    const client = this.supabase.getClient();
+
+    // Query url_results with job isolation check
+    // This ensures the result belongs to the requested job (security/isolation)
+    const { data: result, error } = await client
+      .from('url_results')
+      .select('*')
+      .eq('id', resultId)
+      .eq('job_id', jobId)
+      .single();
+
+    // Handle not found or database errors
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // Result not found or doesn't belong to this job
+        return null;
+      }
+      throw new Error(`Failed to fetch result details: ${error.message}`);
+    }
+
+    // Return complete result with all fields
+    // Supabase automatically parses JSONB columns (layer1_factors, layer2_factors, layer3_factors)
+    // All fields are returned as-is, including NULL values for pre-migration data
+    return result;
   }
 }
