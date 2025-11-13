@@ -6,6 +6,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 export interface UrlProcessingJob {
   jobId: string;
   url: string;
+  urlId: string;
   priority?: number;
 }
 
@@ -99,13 +100,13 @@ export class QueueService {
    * Story 2.5: Task 9 - Pause/Resume Job Controls
    */
   async resumeJob(jobId: string): Promise<void> {
-    // 1. Find URLs that were never processed (classification_result is NULL)
+    // 1. Find URLs from job_urls table that haven't been completed
     const { data: unprocessedUrls, error: selectError } = await this.supabase
       .getClient()
-      .from('results')
-      .select('url')
+      .from('job_urls')
+      .select('id, url')
       .eq('job_id', jobId)
-      .is('classification_result', null);
+      .in('status', ['queued', 'processing']); // Re-queue URLs that are still pending or stuck
 
     if (selectError) {
       this.logger.error(
@@ -123,6 +124,7 @@ export class QueueService {
       const jobs = unprocessedUrls.map((row) => ({
         jobId,
         url: row.url,
+        urlId: row.id, // Include urlId from job_urls table
       }));
 
       await this.addUrlsToQueue(jobs);

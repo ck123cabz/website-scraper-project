@@ -713,4 +713,137 @@ Respond ONLY with valid JSON in this exact format:
       },
     };
   }
+
+  /**
+   * Get complete Layer 3 factor structure for url_results table
+   * Returns JSONB-compatible object with all sophistication analysis factors
+   *
+   * This method returns ALL fields required by the Layer3Factors interface:
+   * - classification: 'accepted' | 'rejected' - Final LLM decision
+   * - sophistication_signals: Object with 4 dimensions (design_quality, authority_indicators,
+   *   professional_presentation, content_originality), each containing score and indicators array
+   * - llm_provider: string - Provider name ('gemini' or 'gpt')
+   * - model_version: string - Model version identifier
+   * - cost_usd: number - API call cost in USD
+   * - reasoning: string - Full LLM explanation (up to 5000 chars)
+   * - tokens_used: { input: number, output: number } - Token usage statistics
+   * - processing_time_ms: number - Total Layer 3 processing time
+   *
+   * @param url - URL to analyze
+   * @param content - Website content to analyze
+   * @returns Promise<Layer3Factors> with complete sophistication analysis data
+   */
+  async getLayer3Factors(url: string, content: string): Promise<any> {
+    try {
+      // Run full LLM classification to get all metadata
+      const classification = await this.classifyUrl(url, content);
+
+      // Get structured Layer 3 results for sophistication signals
+      const layer3Results = await this.getStructuredResults(url, content);
+
+      // Parse sophistication signals from classification response if available
+      // The LLM response may include a sophistication_signals array
+      let sophisticationSignals: any;
+      try {
+        // Try to get sophistication_signals from the raw LLM response
+        // For now, we'll construct it from the structured results
+        sophisticationSignals = {
+          design_quality: {
+            score: layer3Results.design_quality.score,
+            indicators: layer3Results.design_quality.signals || [],
+          },
+          authority_indicators: {
+            score: layer3Results.authority_indicators.score,
+            indicators: layer3Results.authority_indicators.signals || [],
+          },
+          professional_presentation: {
+            score: layer3Results.professional_presentation.score,
+            indicators: layer3Results.professional_presentation.signals || [],
+          },
+          content_originality: {
+            score: layer3Results.content_originality.score,
+            indicators: layer3Results.content_originality.signals || [],
+          },
+        };
+      } catch (error) {
+        // Fallback to basic structure if parsing fails
+        sophisticationSignals = {
+          design_quality: { score: classification.confidence, indicators: [] },
+          authority_indicators: { score: classification.confidence, indicators: [] },
+          professional_presentation: { score: classification.confidence, indicators: [] },
+          content_originality: { score: classification.confidence, indicators: [] },
+        };
+      }
+
+      // Determine model version based on provider
+      let modelVersion = 'unknown';
+      if (classification.provider === 'gemini') {
+        modelVersion = 'gemini-2.0-flash-exp';
+      } else if (classification.provider === 'gpt') {
+        modelVersion = 'gpt-4o-mini';
+      }
+
+      // Calculate token usage (estimated as fallback - real tokens tracked in classifyWithGemini/GPT)
+      // Note: Real token counts are available from LLM providers via usageMetadata/usage fields
+      // but not passed through classifyUrl() response. This is acceptable for MVP.
+      const estimatedInputTokens = Math.ceil(content.length / 4);
+      const estimatedOutputTokens = Math.ceil(classification.reasoning.length / 4);
+
+      return {
+        classification: classification.classification === 'suitable' ? 'accepted' : 'rejected',
+        sophistication_signals: sophisticationSignals,
+        llm_provider: classification.provider,
+        model_version: modelVersion,
+        cost_usd: classification.cost,
+        reasoning: classification.reasoning,
+        tokens_used: {
+          input: estimatedInputTokens,
+          output: estimatedOutputTokens,
+        },
+        processing_time_ms: classification.processingTimeMs,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Error getting Layer 3 factors: ${errorMessage}`);
+      return this.getEmptyLayer3Factors('Analysis error');
+    }
+  }
+
+  /**
+   * Return empty Layer3Factors structure when analysis cannot be performed
+   * @private
+   */
+  private getEmptyLayer3Factors(reason: string): any {
+    this.logger.warn(`Returning empty Layer 3 factors: ${reason}`);
+    return {
+      classification: 'rejected',
+      sophistication_signals: {
+        design_quality: {
+          score: 0,
+          indicators: [],
+        },
+        authority_indicators: {
+          score: 0,
+          indicators: [],
+        },
+        professional_presentation: {
+          score: 0,
+          indicators: [],
+        },
+        content_originality: {
+          score: 0,
+          indicators: [],
+        },
+      },
+      llm_provider: 'none',
+      model_version: 'unknown',
+      cost_usd: 0,
+      reasoning: reason,
+      tokens_used: {
+        input: 0,
+        output: 0,
+      },
+      processing_time_ms: 0,
+    };
+  }
 }

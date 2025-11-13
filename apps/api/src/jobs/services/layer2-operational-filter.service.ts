@@ -959,4 +959,76 @@ export class Layer2OperationalFilterService {
       },
     };
   }
+
+  /**
+   * Get complete Layer 2 factor structure for url_results table
+   * Returns JSONB-compatible object with all publication detection factors
+   *
+   * @param url - URL to analyze
+   * @returns Promise<Layer2Factors> with complete publication detection data
+   */
+  async getLayer2Factors(url: string): Promise<any> {
+    try {
+      // Run full Layer 2 analysis
+      const filterResult = await this.filterUrl(url);
+
+      if (!filterResult.signals) {
+        return this.getEmptyLayer2Factors('No signals available');
+      }
+
+      const signals = filterResult.signals;
+
+      // Map Layer2Signals to Layer2Factors structure
+      return {
+        publication_score: signals.publication_score || 0,
+        module_scores: {
+          product_offering: signals.module_scores?.product_offering || 0,
+          layout_quality: signals.module_scores?.layout || 0,
+          navigation_complexity: signals.module_scores?.navigation || 0,
+          monetization_indicators: signals.module_scores?.monetization || 0,
+        },
+        keywords_found: signals.detected_product_keywords || [],
+        ad_networks_detected: signals.ad_networks_detected || [],
+        content_signals: {
+          has_blog: signals.homepage_is_blog || false,
+          has_press_releases: false, // Not currently detected
+          has_whitepapers: false, // Not currently detected
+          has_case_studies: false, // Not currently detected
+        },
+        reasoning: filterResult.reasoning,
+        passed: filterResult.passed,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Error getting Layer 2 factors: ${errorMessage}`);
+      return this.getEmptyLayer2Factors('Analysis error');
+    }
+  }
+
+  /**
+   * Return empty Layer2Factors structure when analysis cannot be performed
+   * @private
+   */
+  private getEmptyLayer2Factors(reason: string): any {
+    this.logger.warn(`Returning empty Layer 2 factors: ${reason}`);
+    return {
+      publication_score: 0,
+      module_scores: {
+        product_offering: 0,
+        layout_quality: 0,
+        navigation_complexity: 0,
+        monetization_indicators: 0,
+      },
+      keywords_found: [],
+      ad_networks_detected: [],
+      content_signals: {
+        has_blog: false,
+        has_press_releases: false,
+        has_whitepapers: false,
+        has_case_studies: false,
+      },
+      reasoning: reason,
+      passed: false,
+    };
+  }
 }

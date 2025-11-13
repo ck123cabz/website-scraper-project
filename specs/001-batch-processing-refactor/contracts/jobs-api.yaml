@@ -1,0 +1,794 @@
+openapi: 3.0.0
+info:
+  title: Jobs API - Batch Processing Workflow
+  version: 1.0.0
+  description: |
+    API endpoints for managing batch processing jobs.
+    Supports job creation, progress monitoring, results retrieval, and CSV export.
+
+servers:
+  - url: http://localhost:3001/api
+    description: Local development
+  - url: https://api.website-scraper.example.com/api
+    description: Production
+
+paths:
+  /jobs:
+    get:
+      summary: List jobs
+      description: Get paginated list of jobs with optional filtering by status and archival state
+      tags:
+        - Jobs
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [queued, running, paused, completed, failed, archived]
+          description: Filter by job status
+        - name: includeArchived
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include archived jobs in results
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number (1-indexed)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: Results per page
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Job'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      summary: Create new job
+      description: Create a new batch processing job by uploading a CSV file with URLs
+      tags:
+        - Jobs
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - jobName
+                - csvFile
+              properties:
+                jobName:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  example: "Q4 2024 Lead Generation Campaign"
+                csvFile:
+                  type: string
+                  format: binary
+                  description: CSV file with URLs (required column: 'url')
+      responses:
+        '201':
+          description: Job created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          description: CSV file too large (max 10MB)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /jobs/{jobId}:
+    get:
+      summary: Get job details
+      description: Get detailed information about a specific job including progress metrics
+      tags:
+        - Jobs
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    patch:
+      summary: Update job
+      description: Update job properties (pause, resume, archive)
+      tags:
+        - Jobs
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [running, paused, archived]
+                  description: New job status
+                jobName:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  description: Update job name
+      responses:
+        '200':
+          description: Job updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Invalid state transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      summary: Delete job
+      description: Permanently delete a job and all associated URL results
+      tags:
+        - Jobs
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Job deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /jobs/{jobId}/results:
+    get:
+      summary: Get job results
+      description: Get paginated URL processing results for a job with optional filtering
+      tags:
+        - Results
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 200
+        - name: finalDecision
+          in: query
+          schema:
+            type: string
+            enum: [accepted, rejected, error]
+          description: Filter by final decision
+        - name: eliminatedAtLayer
+          in: query
+          schema:
+            type: string
+            enum: [layer1, layer2, layer3, passed_all]
+          description: Filter by elimination layer
+        - name: minConfidence
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 1
+          description: Filter by minimum confidence score
+        - name: maxConfidence
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 1
+          description: Filter by maximum confidence score
+        - name: searchUrl
+          in: query
+          schema:
+            type: string
+          description: Search URLs containing this text
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UrlResult'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /jobs/{jobId}/results/{resultId}:
+    get:
+      summary: Get single result details
+      description: Get complete factor data for a single URL result
+      tags:
+        - Results
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: resultId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UrlResultDetailed'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /jobs/{jobId}/export:
+    post:
+      summary: Export job results as CSV
+      description: Generate and download CSV export of job results with configurable format
+      tags:
+        - Export
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - format
+              properties:
+                format:
+                  type: string
+                  enum: [complete, summary, layer1, layer2, layer3, filtered]
+                  description: |
+                    Export format:
+                    - complete: All 48 columns
+                    - summary: 7 core columns
+                    - layer1/layer2/layer3: Layer-specific columns
+                    - filtered: Apply active filters
+                filters:
+                  type: object
+                  description: Filters to apply (only for format=filtered)
+                  properties:
+                    finalDecision:
+                      type: string
+                      enum: [accepted, rejected, error]
+                    eliminatedAtLayer:
+                      type: string
+                      enum: [layer1, layer2, layer3, passed_all]
+                    minConfidence:
+                      type: number
+                    maxConfidence:
+                      type: number
+      responses:
+        '200':
+          description: CSV export generated successfully
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: 'attachment; filename="job-123-results.csv"'
+            Content-Type:
+              schema:
+                type: string
+                example: 'text/csv; charset=utf-8'
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /jobs/{jobId}/retry:
+    post:
+      summary: Retry failed URLs
+      description: Requeue selected failed URLs for processing
+      tags:
+        - Jobs
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resultIds
+              properties:
+                resultIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  minItems: 1
+                  maxItems: 1000
+                  description: IDs of URL results to retry
+      responses:
+        '202':
+          description: URLs queued for retry
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  retriedCount:
+                    type: integer
+                    example: 15
+                  skippedCount:
+                    type: integer
+                    description: URLs at max retries (3/3)
+                    example: 3
+                  message:
+                    type: string
+                    example: "15 URLs queued for retry, 3 skipped (max retries reached)"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /queue/status:
+    get:
+      summary: Get queue status
+      description: Get global queue status (active jobs, queue position estimates)
+      tags:
+        - Queue
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  activeJobs:
+                    type: integer
+                    example: 5
+                    description: Number of currently running jobs
+                  maxConcurrency:
+                    type: integer
+                    example: 5
+                    description: Maximum concurrent jobs allowed
+                  queuedJobs:
+                    type: integer
+                    example: 3
+                    description: Number of jobs waiting in queue
+                  averageJobDuration:
+                    type: integer
+                    example: 7200
+                    description: Average job duration in seconds (last 10 jobs)
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  schemas:
+    Job:
+      type: object
+      required:
+        - id
+        - jobName
+        - status
+        - createdAt
+        - totalUrls
+        - processedUrls
+        - totalCost
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        jobName:
+          type: string
+          example: "Q4 2024 Lead Generation Campaign"
+        status:
+          type: string
+          enum: [queued, running, paused, completed, failed, archived]
+        createdAt:
+          type: string
+          format: date-time
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        archivedAt:
+          type: string
+          format: date-time
+          nullable: true
+        totalUrls:
+          type: integer
+          example: 10000
+        processedUrls:
+          type: integer
+          example: 7543
+        acceptedCount:
+          type: integer
+          example: 1234
+        rejectedCount:
+          type: integer
+          example: 6102
+        errorCount:
+          type: integer
+          example: 207
+        totalCost:
+          type: number
+          format: double
+          example: 12.45
+          description: Total cost in USD
+        layer1Eliminated:
+          type: integer
+          example: 4521
+        layer2Eliminated:
+          type: integer
+          example: 1581
+        layer3Classified:
+          type: integer
+          example: 1234
+        csvFilePath:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+        progress:
+          type: object
+          description: Calculated progress metrics (not stored)
+          properties:
+            percentage:
+              type: integer
+              example: 75
+            estimatedTimeRemaining:
+              type: integer
+              example: 1800
+              description: Estimated seconds remaining
+            currentLayer:
+              type: string
+              enum: [layer1, layer2, layer3]
+              description: Current processing layer
+            queuePosition:
+              type: integer
+              nullable: true
+              description: Position in queue (null if running)
+
+    UrlResult:
+      type: object
+      required:
+        - id
+        - url
+        - jobId
+        - finalDecision
+        - processingTimeMs
+        - totalCost
+        - retryCount
+        - processedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        url:
+          type: string
+          format: uri
+          example: "https://example.com"
+        jobId:
+          type: string
+          format: uuid
+        finalDecision:
+          type: string
+          enum: [accepted, rejected, error, pending_migration]
+        confidenceScore:
+          type: number
+          format: double
+          nullable: true
+          minimum: 0
+          maximum: 1
+          example: 0.875
+        eliminatedAtLayer:
+          type: string
+          enum: [layer1, layer2, layer3, passed_all]
+          nullable: true
+        processingTimeMs:
+          type: integer
+          example: 4523
+        totalCost:
+          type: number
+          format: double
+          example: 0.00145
+        retryCount:
+          type: integer
+          minimum: 0
+          maximum: 3
+        lastError:
+          type: string
+          nullable: true
+        processedAt:
+          type: string
+          format: date-time
+
+    UrlResultDetailed:
+      allOf:
+        - $ref: '#/components/schemas/UrlResult'
+        - type: object
+          properties:
+            layer1Factors:
+              $ref: '#/components/schemas/Layer1Factors'
+            layer2Factors:
+              $ref: '#/components/schemas/Layer2Factors'
+            layer3Factors:
+              $ref: '#/components/schemas/Layer3Factors'
+
+    Layer1Factors:
+      type: object
+      nullable: true
+      properties:
+        tldType:
+          type: string
+          enum: [gtld, cctld, custom]
+        tldValue:
+          type: string
+          example: ".com"
+        domainClassification:
+          type: string
+          enum: [commercial, personal, institutional, spam]
+        patternMatches:
+          type: array
+          items:
+            type: string
+        targetProfile:
+          type: object
+          properties:
+            type:
+              type: string
+            confidence:
+              type: number
+        reasoning:
+          type: string
+        passed:
+          type: boolean
+
+    Layer2Factors:
+      type: object
+      nullable: true
+      properties:
+        publicationScore:
+          type: number
+        moduleScores:
+          type: object
+          properties:
+            productOffering:
+              type: number
+            layoutQuality:
+              type: number
+            navigationComplexity:
+              type: number
+            monetizationIndicators:
+              type: number
+        keywordsFound:
+          type: array
+          items:
+            type: string
+        adNetworksDetected:
+          type: array
+          items:
+            type: string
+        contentSignals:
+          type: object
+          properties:
+            hasBlog:
+              type: boolean
+            hasPressReleases:
+              type: boolean
+            hasWhitepapers:
+              type: boolean
+            hasCaseStudies:
+              type: boolean
+        reasoning:
+          type: string
+        passed:
+          type: boolean
+
+    Layer3Factors:
+      type: object
+      nullable: true
+      properties:
+        classification:
+          type: string
+          enum: [accepted, rejected]
+        sophisticationSignals:
+          type: object
+          properties:
+            designQuality:
+              $ref: '#/components/schemas/SophisticationSignal'
+            authorityIndicators:
+              $ref: '#/components/schemas/SophisticationSignal'
+            professionalPresentation:
+              $ref: '#/components/schemas/SophisticationSignal'
+            contentOriginality:
+              $ref: '#/components/schemas/SophisticationSignal'
+        llmProvider:
+          type: string
+          example: "openai"
+        modelVersion:
+          type: string
+          example: "gpt-4-turbo-preview"
+        costUsd:
+          type: number
+        reasoning:
+          type: string
+        tokensUsed:
+          type: object
+          properties:
+            input:
+              type: integer
+            output:
+              type: integer
+        processingTimeMs:
+          type: integer
+
+    SophisticationSignal:
+      type: object
+      properties:
+        score:
+          type: number
+          minimum: 0
+          maximum: 1
+        indicators:
+          type: array
+          items:
+            type: string
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+        totalCount:
+          type: integer
+
+    Error:
+      type: object
+      required:
+        - statusCode
+        - message
+      properties:
+        statusCode:
+          type: integer
+        message:
+          type: string
+        error:
+          type: string
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Bad request (validation error)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -4,47 +4,12 @@
 -- Task: T001 - Create manual_review_queue table with indexes
 
 -- ============================================================================
--- 1. Extend url_results status enum to include new values
+-- 1. Create manual_review_queue table
 -- ============================================================================
-
--- First, check if 'approved' status already exists (it should from existing schema)
--- Add 'queue_overflow' status for URLs rejected due to queue size limit
-DO $$
-BEGIN
-  -- Check if we need to alter the status column
-  IF NOT EXISTS (
-    SELECT 1
-    FROM information_schema.columns
-    WHERE table_name = 'url_results'
-    AND column_name = 'status'
-    AND data_type = 'text'
-  ) THEN
-    -- If status is an enum, convert to text with check constraint
-    ALTER TABLE url_results ALTER COLUMN status TYPE TEXT;
-  END IF;
-END $$;
-
--- Add 'queue_overflow' to the status values
--- This allows URLs that cannot fit in the manual review queue to be tracked
-ALTER TABLE url_results DROP CONSTRAINT IF EXISTS url_results_status_check;
-ALTER TABLE url_results ADD CONSTRAINT url_results_status_check
-  CHECK (status IN (
-    'pending',
-    'approved',
-    'rejected',
-    'queue_overflow',
-    'processing',  -- Existing statuses (may vary based on your schema)
-    'failed',
-    'timeout'
-  ));
-
--- Add reviewer_notes column if it doesn't exist
--- Used to store notes from manual reviewers or overflow reasons
-ALTER TABLE url_results
-  ADD COLUMN IF NOT EXISTS reviewer_notes TEXT;
-
--- ============================================================================
--- 2. Create manual_review_queue table
+--
+-- NOTE: The url_results table is created in a separate migration
+-- (20251112000000_create_url_results_table.sql) to maintain proper
+-- migration order and avoid ALTER statements on non-existent tables.
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS manual_review_queue (
@@ -60,7 +25,7 @@ CREATE TABLE IF NOT EXISTS manual_review_queue (
   CONSTRAINT fk_manual_review_queue_job
     FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
   CONSTRAINT fk_manual_review_queue_url
-    FOREIGN KEY (url_id) REFERENCES urls(id) ON DELETE CASCADE,
+    FOREIGN KEY (url_id) REFERENCES job_urls(id) ON DELETE CASCADE,
 
   -- Confidence scoring
   confidence_band TEXT NOT NULL,

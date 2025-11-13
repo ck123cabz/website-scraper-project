@@ -93,6 +93,10 @@ let JobsService = class JobsService {
             throw new Error('No data returned from job creation');
         }
         const jobId = data.job_id;
+        const urlIds = data.url_ids;
+        if (!urlIds || urlIds.length === 0) {
+            throw new Error('No URL IDs returned from job creation');
+        }
         const { data: job, error: fetchError } = await client
             .from('jobs')
             .select('*')
@@ -104,7 +108,7 @@ let JobsService = class JobsService {
         if (urls.length > 1000) {
             console.log(`[JobsService] Created job ${job.id} with ${urls.length} URLs using atomic transaction`);
         }
-        return job;
+        return { job, urlIds };
     }
 };
 exports.JobsService = JobsService;

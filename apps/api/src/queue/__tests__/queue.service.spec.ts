@@ -31,6 +31,7 @@ describe('QueueService', () => {
           select: jest.fn().mockReturnThis(),
           update: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
+          in: jest.fn().mockResolvedValue({ data: [], error: null }),
           is: jest.fn().mockResolvedValue({ data: [], error: null }),
         }),
       }),
@@ -58,6 +59,7 @@ describe('QueueService', () => {
       const jobData = {
         jobId: 'job-123',
         url: 'https://example.com',
+        urlId: 'url-123',
       };
 
       await service.addUrlToQueue(jobData);
@@ -71,6 +73,7 @@ describe('QueueService', () => {
       const jobData = {
         jobId: 'job-123',
         url: 'https://example.com',
+        urlId: 'url-123',
         priority: 10,
       };
 
@@ -85,9 +88,9 @@ describe('QueueService', () => {
   describe('addUrlsToQueue', () => {
     it('should add multiple URLs in bulk', async () => {
       const jobs = [
-        { jobId: 'job-123', url: 'https://example.com/1' },
-        { jobId: 'job-123', url: 'https://example.com/2' },
-        { jobId: 'job-123', url: 'https://example.com/3' },
+        { jobId: 'job-123', url: 'https://example.com/1', urlId: 'url-1' },
+        { jobId: 'job-123', url: 'https://example.com/2', urlId: 'url-2' },
+        { jobId: 'job-123', url: 'https://example.com/3', urlId: 'url-3' },
       ];
 
       await service.addUrlsToQueue(jobs);
@@ -196,11 +199,11 @@ describe('QueueService', () => {
       // Mock both the select chain (for unprocessed URLs query) and update chain (for status update)
       const mockFrom = jest.fn();
 
-      // First call to from('results') - for unprocessed URLs query
+      // First call to from('job_urls') - for unprocessed URLs query
       mockFrom.mockReturnValueOnce({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
-        is: jest.fn().mockResolvedValue({ data: [], error: null }),
+        in: jest.fn().mockResolvedValue({ data: [], error: null }),
       });
 
       // Second call to from('jobs') - for status update (this one fails)

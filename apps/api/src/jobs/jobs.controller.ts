@@ -101,7 +101,7 @@ export class JobsController {
       const duplicatesRemovedCount = originalCount - uniqueUrls.length;
 
       // Database insertion (Task 5)
-      const job = await this.jobsService.createJobWithUrls(jobName, uniqueUrls);
+      const { job, urlIds } = await this.jobsService.createJobWithUrls(jobName, uniqueUrls);
 
       // Queue URLs for processing (Story 3.1 fix: auto-start job)
       // Update job status to 'processing' and set started_at timestamp
@@ -110,10 +110,11 @@ export class JobsController {
         started_at: new Date().toISOString(),
       });
 
-      // Add URLs to BullMQ queue for worker processing
-      const queueJobs = uniqueUrls.map((url) => ({
+      // Add URLs to BullMQ queue for worker processing with urlId
+      const queueJobs = uniqueUrls.map((url, index) => ({
         jobId: job.id,
         url,
+        urlId: urlIds[index], // Include urlId from job_urls table
       }));
       await this.queueService.addUrlsToQueue(queueJobs);
 
@@ -244,7 +245,6 @@ export class JobsController {
         .from('results')
         .select('*', { count: 'exact' })
         .eq('job_id', jobId)
-        .not('classification_result', 'is', null) // Only show results with classifications
         .order('processed_at', { ascending: false });
 
       // Apply filters

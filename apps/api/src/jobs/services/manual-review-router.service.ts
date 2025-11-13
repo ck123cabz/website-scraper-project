@@ -58,6 +58,7 @@ export class ManualReviewRouterService {
           await this.finalizeResult(
             urlData.url_id,
             urlData.job_id,
+            urlData.url,
             'approved',
             urlData.confidence_score,
             urlData.confidence_band,
@@ -69,6 +70,7 @@ export class ManualReviewRouterService {
           await this.finalizeResult(
             urlData.url_id,
             urlData.job_id,
+            urlData.url,
             'rejected',
             urlData.confidence_score,
             urlData.confidence_band,
@@ -127,6 +129,7 @@ export class ManualReviewRouterService {
         await this.finalizeResult(
           urlData.url_id,
           urlData.job_id,
+          urlData.url,
           'queue_overflow',
           urlData.confidence_score,
           urlData.confidence_band,
@@ -210,6 +213,7 @@ export class ManualReviewRouterService {
   private async finalizeResult(
     urlId: string,
     jobId: string,
+    url: string,
     status: 'approved' | 'rejected' | 'queue_overflow',
     confidenceScore: number,
     confidenceBand: string,
@@ -248,6 +252,7 @@ export class ManualReviewRouterService {
       const { error } = await client.from('url_results').insert({
         url_id: urlId,
         job_id: jobId,
+        url,
         status,
         confidence_score: confidenceScore,
         confidence_band: confidenceBand,
@@ -384,6 +389,7 @@ export class ManualReviewRouterService {
     await client.from('url_results').insert({
       url_id: queueEntry.url_id,
       job_id: queueEntry.job_id,
+      url: queueEntry.url,
       status: finalDecision,
       confidence_score: queueEntry.confidence_score,
       confidence_band: queueEntry.confidence_band,

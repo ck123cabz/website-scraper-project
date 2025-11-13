@@ -12,6 +12,9 @@ export declare class JobsService {
     getAllJobs(): Promise<JobRow[]>;
     updateJob(id: string, updates: Partial<JobRow>): Promise<JobRow>;
     deleteJob(id: string): Promise<void>;
-    createJobWithUrls(name: string, urls: string[]): Promise<JobRow>;
+    createJobWithUrls(name: string, urls: string[]): Promise<{
+        job: JobRow;
+        urlIds: string[];
+    }>;
 }
 export {};

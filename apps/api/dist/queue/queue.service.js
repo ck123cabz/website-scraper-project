@@ -83,10 +83,10 @@ let QueueService = QueueService_1 = class QueueService {
     async resumeJob(jobId) {
         const { data: unprocessedUrls, error: selectError } = await this.supabase
             .getClient()
-            .from('results')
-            .select('url')
+            .from('job_urls')
+            .select('id, url')
             .eq('job_id', jobId)
-            .is('classification_result', null);
+            .in('status', ['queued', 'processing']);
         if (selectError) {
             this.logger.error(`Failed to query unprocessed URLs for job ${jobId}: ${selectError.message}`);
         }
@@ -95,6 +95,7 @@ let QueueService = QueueService_1 = class QueueService {
             const jobs = unprocessedUrls.map((row) => ({
                 jobId,
                 url: row.url,
+                urlId: row.id,
             }));
             await this.addUrlsToQueue(jobs);
             this.logger.log(`Job ${jobId} resume: ${unprocessedUrls.length} URLs re-queued`);

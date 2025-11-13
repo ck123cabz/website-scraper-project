@@ -126,7 +126,8 @@ export interface RedFlagResult {
 export interface SophisticationSignal {
   score: number;       // Score from 0.0 to 1.0
   detected: boolean;   // Whether signal was detected (above threshold)
-  reasoning?: string;  // LLM explanation for this signal
+  reasoning?: string;  // LLM explanation for this signal (optional)
+  signals?: string[];  // Detailed detector signals (optional)
 }
 
 // ============================================================================

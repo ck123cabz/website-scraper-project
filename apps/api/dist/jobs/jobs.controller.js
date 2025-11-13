@@ -71,14 +71,15 @@ let JobsController = class JobsController {
             }
             const uniqueUrls = Array.from(deduplicationMap.values());
             const duplicatesRemovedCount = originalCount - uniqueUrls.length;
-            const job = await this.jobsService.createJobWithUrls(jobName, uniqueUrls);
+            const { job, urlIds } = await this.jobsService.createJobWithUrls(jobName, uniqueUrls);
             await this.jobsService.updateJob(job.id, {
                 status: 'processing',
                 started_at: new Date().toISOString(),
             });
-            const queueJobs = uniqueUrls.map((url) => ({
+            const queueJobs = uniqueUrls.map((url, index) => ({
                 jobId: job.id,
                 url,
+                urlId: urlIds[index],
             }));
             await this.queueService.addUrlsToQueue(queueJobs);
             return {
@@ -171,7 +172,6 @@ let JobsController = class JobsController {
                 .from('results')
                 .select('*', { count: 'exact' })
                 .eq('job_id', jobId)
-                .not('classification_result', 'is', null)
                 .order('processed_at', { ascending: false });
             if (status && status !== '') {
                 query = query.eq('status', status);

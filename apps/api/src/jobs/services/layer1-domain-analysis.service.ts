@@ -720,4 +720,245 @@ export class Layer1DomainAnalysisService implements OnModuleInit {
       ssl_certificate: { checked: false, passed: false },
     };
   }
+
+  /**
+   * Get complete Layer 1 factor structure for url_results table
+   * Returns JSONB-compatible object with all domain analysis factors
+   *
+   * @param url - URL to analyze
+   * @returns Layer1Factors with complete domain analysis data
+   */
+  getLayer1Factors(url: string): any {
+    try {
+      if (!url || typeof url !== 'string' || url.trim().length === 0) {
+        return this.getEmptyLayer1Factors('Invalid URL input');
+      }
+
+      if (!this.rules) {
+        return this.getEmptyLayer1Factors('Rules not loaded');
+      }
+
+      // Extract domain information from URL
+      let hostname: string;
+      let tld: string;
+      try {
+        const urlObj = new URL(url);
+        hostname = urlObj.hostname || '';
+        tld = this.extractTLD(hostname);
+      } catch {
+        return this.getEmptyLayer1Factors('Invalid URL format');
+      }
+
+      // Run analysis to get pass/fail result
+      const analysisResult = this.analyzeUrl(url);
+
+      // Determine TLD type
+      const tldType = this.determineTLDType(tld);
+
+      // Classify domain
+      const domainClass = this.classifyDomainType(hostname);
+
+      // Get pattern matches
+      const patternMatches = this.getPatternMatches(url, hostname);
+
+      // Get target profile
+      const targetProfile = this.getTargetProfileInfo(hostname, url);
+
+      return {
+        tld_type: tldType,
+        tld_value: tld,
+        domain_classification: domainClass,
+        pattern_matches: patternMatches,
+        target_profile: targetProfile,
+        reasoning: analysisResult.reasoning,
+        passed: analysisResult.passed,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Error getting Layer 1 factors: ${errorMessage}`);
+      return this.getEmptyLayer1Factors('Analysis error');
+    }
+  }
+
+  /**
+   * Determine TLD type classification
+   * @private
+   */
+  private determineTLDType(tld: string): 'gtld' | 'cctld' | 'custom' {
+    const lowerTld = tld.toLowerCase();
+
+    // Common gTLDs
+    const gtlds = ['.com', '.net', '.org', '.info', '.biz', '.edu', '.gov'];
+    if (gtlds.some((g) => lowerTld.endsWith(g))) {
+      return 'gtld';
+    }
+
+    // Common ccTLDs (2-letter country codes)
+    if (lowerTld.match(/\.[a-z]{2}$/)) {
+      return 'cctld';
+    }
+
+    // Custom/new gTLDs
+    return 'custom';
+  }
+
+  /**
+   * Classify domain type based on analysis rules
+   * @private
+   */
+  private classifyDomainType(
+    hostname: string,
+  ): 'commercial' | 'personal' | 'institutional' | 'spam' {
+    if (!this.rules) return 'commercial';
+
+    const lowerHostname = hostname.toLowerCase();
+
+    // Check for spam indicators (blog platforms, etc.)
+    if (
+      this.rules.tld_filtering.blog_platform_domains.some(
+        (domain) => lowerHostname === domain || lowerHostname.endsWith('.' + domain),
+      )
+    ) {
+      return 'spam';
+    }
+
+    // Check for institutional domains
+    if (lowerHostname.includes('.edu') || lowerHostname.includes('.gov')) {
+      return 'institutional';
+    }
+
+    // Check for personal blog indicators
+    if (
+      this.rules.tld_filtering.personal_blog.some((tld) => lowerHostname.endsWith(tld)) ||
+      lowerHostname.includes('blog.') ||
+      lowerHostname.includes('personal.')
+    ) {
+      return 'personal';
+    }
+
+    // Default to commercial
+    return 'commercial';
+  }
+
+  /**
+   * Get all pattern matches for the URL
+   * @private
+   */
+  private getPatternMatches(url: string, hostname: string): string[] {
+    if (!this.rules) return [];
+
+    const matches: string[] = [];
+    const lowerUrl = url.toLowerCase();
+    const lowerHostname = hostname.toLowerCase();
+
+    // Check for blog platform matches
+    for (const domain of this.rules.tld_filtering.blog_platform_domains) {
+      if (lowerHostname === domain || lowerHostname.endsWith('.' + domain)) {
+        matches.push(`blog-platform:${domain}`);
+      }
+    }
+
+    // Check subdomain blog patterns
+    try {
+      const subdomainPart = hostname.split('.')[0].toLowerCase();
+      for (const pattern of this.rules.url_patterns.subdomain_blogs) {
+        const keyword = pattern.replace(/^\^/, '').replace(/\\\./, '').replace(/\.$/, '');
+        if (subdomainPart === keyword || subdomainPart.startsWith(keyword + '.')) {
+          matches.push(`subdomain-blog:${keyword}`);
+        }
+      }
+    } catch {
+      // Ignore subdomain parsing errors
+    }
+
+    // Check tag/category pages
+    for (const pattern of this.rules.url_patterns.tag_pages) {
+      if (lowerUrl.includes(pattern.toLowerCase())) {
+        matches.push(`tag-page:${pattern}`);
+      }
+    }
+
+    // Check user-generated content patterns
+    for (const pattern of this.rules.url_patterns.user_content) {
+      if (lowerUrl.includes(pattern.toLowerCase())) {
+        matches.push(`user-content:${pattern}`);
+      }
+    }
+
+    // Check general keyword patterns
+    for (const keyword of this.rules.url_patterns.general_keywords || []) {
+      if (lowerHostname.includes(keyword.toLowerCase())) {
+        matches.push(`keyword:${keyword}`);
+      }
+    }
+
+    return matches;
+  }
+
+  /**
+   * Get target profile information
+   * @private
+   */
+  private getTargetProfileInfo(
+    hostname: string,
+    url: string,
+  ): { type: string; confidence: number } {
+    if (!this.rules) {
+      return { type: 'unknown', confidence: 0 };
+    }
+
+    const lowerHostname = hostname.toLowerCase();
+    const lowerUrl = url.toLowerCase();
+    const combinedText = `${lowerHostname} ${lowerUrl}`;
+
+    // Check for negative indicators
+    const negativeMatches = this.rules.target_profile.negative_indicators.filter((indicator) =>
+      combinedText.includes(indicator.toLowerCase()),
+    );
+
+    if (negativeMatches.length > 0) {
+      return {
+        type: 'e-commerce',
+        confidence: 0.8,
+      };
+    }
+
+    // Check for positive indicators (digital-native)
+    const positiveMatches = this.rules.target_profile.positive_indicators.filter((indicator) =>
+      combinedText.includes(indicator.toLowerCase()),
+    );
+
+    if (positiveMatches.length > 0) {
+      return {
+        type: 'B2B software',
+        confidence: 0.7 + Math.min(positiveMatches.length * 0.1, 0.3),
+      };
+    }
+
+    // Neutral/unknown
+    return {
+      type: 'unknown',
+      confidence: 0.5,
+    };
+  }
+
+  /**
+   * Return empty Layer1Factors structure when analysis cannot be performed
+   * @private
+   */
+  private getEmptyLayer1Factors(reason: string): any {
+    this.logger.warn(`Returning empty Layer 1 factors: ${reason}`);
+    return {
+      tld_type: 'gtld',
+      tld_value: '.com',
+      domain_classification: 'commercial',
+      pattern_matches: [],
+      target_profile: {
+        type: 'unknown',
+        confidence: 0,
+      },
+      reasoning: reason,
+      passed: false,
+    };
+  }
 }

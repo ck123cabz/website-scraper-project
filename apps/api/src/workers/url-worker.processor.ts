@@ -8,11 +8,11 @@ import { Layer1DomainAnalysisService } from '../jobs/services/layer1-domain-anal
 import { Layer2OperationalFilterService } from '../jobs/services/layer2-operational-filter.service';
 import { LlmService } from '../jobs/services/llm.service';
 import { ConfidenceScoringService } from '../jobs/services/confidence-scoring.service';
-import { ManualReviewRouterService } from '../jobs/services/manual-review-router.service';
 
 /**
  * BullMQ Worker Processor for URL processing with 3-Tier Progressive Filtering
  * Story 2.5-refactored: 3-Tier Pipeline Orchestration & Real-Time Updates
+ * T018-T019: Batch Processing Refactor - writes complete factors to url_results
  *
  * Processing Pipeline (3-Tier Progressive Filtering):
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -39,16 +39,21 @@ import { ManualReviewRouterService } from '../jobs/services/manual-review-router
  *   - Full site content extraction (title, meta, body, structured data)
  *   - LLM classification: Gemini primary, GPT fallback
  *   - Confidence scoring: high/medium/low/auto_reject
- *   - Manual review routing for medium/low confidence
+ *   - Write complete layer1/2/3_factors JSONB to url_results table
  *   - Store all Layer 3 fields (confidence_band, etc.)
  *   - Target: Classify remaining ~28% of original URLs
  *   - Cost: ~$0.002-0.004/URL (ScrapingBee + LLM)
  *   - Throughput: 10-15 URLs/min
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  *
- * Features:
- * - Concurrency: 5 URLs (configured in WorkersModule)
- * - Retry logic with exponential backoff
+ * BullMQ Configuration (T020-T021):
+ * - Concurrency: 5 URLs processed simultaneously
+ * - Retry strategy:
+ *   - Max attempts: 3
+ *   - Initial delay: 1 second
+ *   - Backoff multiplier: 2x (1s → 2s → 4s)
+ *   - Transient errors only (timeouts, rate limits, 503)
+ *   - Permanent errors not retried (401, 400, 403)
  * - Pause/resume support (job status checks)
  * - Graceful shutdown handling
  * - Isolated error handling (one URL failure doesn't stop job)
@@ -56,7 +61,7 @@ import { ManualReviewRouterService } from '../jobs/services/manual-review-router
  * - Cost savings calculation (Layer 1 and Layer 2 eliminations)
  */
 @Processor('url-processing-queue', {
-  concurrency: 5, // Process 5 URLs concurrently (respects ScrapingBee 10 req/sec limit)
+  concurrency: 5, // T020-T021: Process 5 URLs concurrently (respects ScrapingBee 10 req/sec limit)
 })
 @Injectable()
 export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
@@ -74,11 +79,10 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     private readonly layer2Filter: Layer2OperationalFilterService,
     private readonly llm: LlmService,
     private readonly confidenceScoring: ConfidenceScoringService,
-    private readonly manualReviewRouter: ManualReviewRouterService,
   ) {
     super();
     this.logger.log(
-      'UrlWorkerProcessor initialized with 3-tier progressive filtering (Story 2.5-refactored)',
+      'UrlWorkerProcessor initialized with 3-tier progressive filtering (T018-T019: Batch Processing Refactor)',
     );
   }
 
@@ -496,8 +500,9 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
   }
 
   /**
-   * Route Layer 3 result based on confidence band action and store result (T009)
-   * Delegates routing decision to ManualReviewRouterService
+   * Route Layer 3 result and store complete factors to url_results (T018-T019)
+   * Writes ALL factor data to url_results table, no routing to manual_review_queue
+   * Includes backwards compatibility handling for null factors
    * @private
    */
   private async routeAndStoreLayer3Result(
@@ -512,13 +517,131 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     startTime: number,
   ): Promise<void> {
     const processingTimeMs = Date.now() - startTime;
+    const totalCost = this.SCRAPING_COST_PER_URL + layer3Result.classification.cost;
 
-    // Store Layer 3 processing metadata in results table for all routing decisions
+    // Get complete factor structures from each layer service with null safety
+    let layer1Factors: any = null;
+    let layer2Factors: any = null;
+    let layer3Factors: any = null;
+
+    try {
+      layer1Factors = this.layer1Analysis.getLayer1Factors(url);
+      if (!layer1Factors) {
+        this.logger.warn(`Layer 1 factors returned null for ${url}, using empty structure`);
+        layer1Factors = this.getEmptyLayer1Factors();
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error getting Layer 1 factors: ${error instanceof Error ? error.message : 'Unknown'}`,
+      );
+      layer1Factors = this.getEmptyLayer1Factors();
+    }
+
+    try {
+      layer2Factors = await this.layer2Filter.getLayer2Factors(url);
+      if (!layer2Factors) {
+        this.logger.warn(`Layer 2 factors returned null for ${url}, using empty structure`);
+        layer2Factors = this.getEmptyLayer2Factors();
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error getting Layer 2 factors: ${error instanceof Error ? error.message : 'Unknown'}`,
+      );
+      layer2Factors = this.getEmptyLayer2Factors();
+    }
+
+    try {
+      layer3Factors = await this.llm.getLayer3Factors(
+        url,
+        scrapeResult.content || scrapeResult.title || '',
+      );
+      if (!layer3Factors) {
+        this.logger.warn(`Layer 3 factors returned null for ${url}, using empty structure`);
+        layer3Factors = this.getEmptyLayer3Factors();
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error getting Layer 3 factors: ${error instanceof Error ? error.message : 'Unknown'}`,
+      );
+      layer3Factors = this.getEmptyLayer3Factors();
+    }
+
+    // Determine eliminated_at_layer based on classification
+    let eliminatedAtLayer: string | null = null;
+    if (layer3Result.classification.classification === 'not_suitable') {
+      eliminatedAtLayer = 'layer3';
+    } else {
+      eliminatedAtLayer = 'passed_all';
+    }
+
+    // Determine final status based on classification
+    const finalStatus = layer3Result.classification.classification === 'suitable'
+      ? 'approved'
+      : 'rejected';
+
+    // Store complete result in url_results table with all factor data (T018-T019)
+    // Includes backwards compatibility: null factors are allowed for pre-migration data
+    try {
+      await this.supabase.getClient().from('url_results').upsert(
+        {
+          job_id: jobId,
+          url_id: urlId,
+          url: url,
+          status: finalStatus,
+          confidence_score: layer3Result.classification.confidence,
+          confidence_band: layer3Result.confidenceBand,
+          eliminated_at_layer: eliminatedAtLayer,
+          processing_time_ms: processingTimeMs,
+          total_cost: totalCost,
+          retry_count: layer3Result.classification.retryCount || 0,
+          last_error: null, // No error since we reached Layer 3 successfully
+          processed_at: new Date().toISOString(),
+          layer1_factors: layer1Factors,
+          layer2_factors: layer2Factors,
+          layer3_factors: layer3Factors,
+          reviewer_notes: `Auto-${finalStatus}: ${layer3Result.classification.reasoning}`,
+        },
+        {
+          onConflict: 'url_id', // Update if exists based on url_id uniqueness
+        },
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to write url_results with factors: ${error instanceof Error ? error.message : 'Unknown'}. Attempting fallback write with null factors.`,
+      );
+
+      // Fallback: Write without factors if there's an issue
+      await this.supabase.getClient().from('url_results').upsert(
+        {
+          job_id: jobId,
+          url_id: urlId,
+          url: url,
+          status: finalStatus,
+          confidence_score: layer3Result.classification.confidence,
+          confidence_band: layer3Result.confidenceBand,
+          eliminated_at_layer: eliminatedAtLayer,
+          processing_time_ms: processingTimeMs,
+          total_cost: totalCost,
+          retry_count: layer3Result.classification.retryCount || 0,
+          last_error: `Factor write failed: ${error instanceof Error ? error.message : 'Unknown'}`,
+          processed_at: new Date().toISOString(),
+          layer1_factors: null,
+          layer2_factors: null,
+          layer3_factors: null,
+          reviewer_notes: `Auto-${finalStatus} (factors failed): ${layer3Result.classification.reasoning}`,
+        },
+        {
+          onConflict: 'url_id',
+        },
+      );
+    }
+
+    // Store Layer 3 processing metadata in legacy results table for backward compatibility
     await this.supabase.getClient().from('results').upsert(
       {
         job_id: jobId,
         url: url,
-        status: 'processing', // Will be updated by routeUrl() to final status
+        status: finalStatus,
         classification_result: layer3Result.classification.classification,
         classification_score: layer3Result.classification.confidence,
         classification_reasoning: layer3Result.classification.reasoning,
@@ -535,23 +658,6 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
       {
         onConflict: 'job_id,url',
       },
-    );
-
-    // Route URL based on confidence band action (T009: Confidence Band Action Routing)
-    await this.manualReviewRouter.routeUrl(
-      {
-        url_id: urlId,
-        url,
-        job_id: jobId,
-        confidence_score: layer3Result.classification.confidence,
-        confidence_band: layer3Result.confidenceBand,
-        action: layer3Result.action,
-        reasoning: layer3Result.classification.reasoning,
-        sophistication_signals: layer3Result.layer3Results,
-      },
-      layer3Result.layer1Results,
-      layer3Result.layer2Results,
-      layer3Result.layer3Results,
     );
 
     // Update job counters
@@ -583,7 +689,7 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
       .single();
 
     const processedUrls = (job as any)?.processed_urls || 0;
-    const totalCost = (job as any)?.total_cost || 0;
+    const totalJobCost = (job as any)?.total_cost || 0;
     const progressPercentage = ((processedUrls / jobMeta.total_urls) * 100).toFixed(2);
 
     await this.supabase
@@ -597,20 +703,20 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
       .eq('id', jobId);
 
     this.logger.log(
-      `[Job ${jobId}] Layer 3 ROUTED ${url.slice(0, 100)} to ${layer3Result.action} (${processedUrls}/${jobMeta.total_urls}, $${totalCost.toFixed(6)})`,
+      `[Job ${jobId}] Layer 3 STORED ${url.slice(0, 100)} as ${finalStatus} (${processedUrls}/${jobMeta.total_urls}, $${totalJobCost.toFixed(6)})`,
     );
 
     await this.insertActivityLog(
       jobId,
       'success',
-      `Layer 3 CLASSIFIED & ROUTED - ${layer3Result.classification.classification} (confidence: ${layer3Result.classification.confidence.toFixed(2)}, action: ${layer3Result.action})`,
+      `Layer 3 CLASSIFIED - ${layer3Result.classification.classification} (confidence: ${layer3Result.classification.confidence.toFixed(2)}, status: ${finalStatus})`,
       {
         url,
         layer: 3,
         provider: layer3Result.classification.provider,
         confidence: layer3Result.classification.confidence,
         confidenceBand: layer3Result.confidenceBand,
-        action: layer3Result.action,
+        status: finalStatus,
         cost: layer3Result.classification.cost,
       },
     );
@@ -832,8 +938,16 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
   }
 
   /**
-   * Retry logic with exponential backoff
+   * Retry logic with exponential backoff (T020-T021: BullMQ Retry Configuration)
    * Handles transient errors (timeouts, rate limits, 503)
+   *
+   * Retry Strategy:
+   * - Max attempts: 3
+   * - Initial delay: 1 second
+   * - Backoff multiplier: 2x (1s → 2s → 4s)
+   * - Special handling: 429 rate limit errors get 30s delay
+   * - Transient errors only: Permanent errors (401, 400, 403) are not retried
+   *
    * @private
    */
   private async retryWithBackoff<T>(
@@ -841,7 +955,8 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     maxAttempts: number,
     url: string,
   ): Promise<T> {
-    const delays = [1000, 2000, 4000]; // Exponential backoff: 1s, 2s, 4s
+    // Exponential backoff delays: 1s → 2s → 4s (2x multiplier)
+    const delays = [1000, 2000, 4000];
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
@@ -910,6 +1025,91 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
 
     // Default: treat as transient
     return true;
+  }
+
+  /**
+   * Get empty Layer 1 factors structure for backwards compatibility
+   * Used when Layer 1 analysis fails or returns null
+   * @private
+   */
+  private getEmptyLayer1Factors(): any {
+    return {
+      tld_type: 'gtld',
+      tld_value: 'unknown',
+      domain_classification: 'personal',
+      pattern_matches: [],
+      target_profile: {
+        type: 'unknown',
+        confidence: 0,
+      },
+      reasoning: 'Empty factors - Layer 1 analysis not available',
+      passed: false,
+    };
+  }
+
+  /**
+   * Get empty Layer 2 factors structure for backwards compatibility
+   * Used when Layer 2 analysis fails or returns null
+   * @private
+   */
+  private getEmptyLayer2Factors(): any {
+    return {
+      publication_score: 0,
+      module_scores: {
+        product_offering: 0,
+        layout_quality: 0,
+        navigation_complexity: 0,
+        monetization_indicators: 0,
+      },
+      keywords_found: [],
+      ad_networks_detected: [],
+      content_signals: {
+        has_blog: false,
+        has_press_releases: false,
+        has_whitepapers: false,
+        has_case_studies: false,
+      },
+      reasoning: 'Empty factors - Layer 2 analysis not available',
+      passed: false,
+    };
+  }
+
+  /**
+   * Get empty Layer 3 factors structure for backwards compatibility
+   * Used when Layer 3 analysis fails or returns null
+   * @private
+   */
+  private getEmptyLayer3Factors(): any {
+    return {
+      classification: 'rejected',
+      sophistication_signals: {
+        design_quality: {
+          score: 0,
+          indicators: [],
+        },
+        authority_indicators: {
+          score: 0,
+          indicators: [],
+        },
+        professional_presentation: {
+          score: 0,
+          indicators: [],
+        },
+        content_originality: {
+          score: 0,
+          indicators: [],
+        },
+      },
+      llm_provider: 'none',
+      model_version: 'unknown',
+      cost_usd: 0,
+      reasoning: 'Empty factors - Layer 3 analysis not available',
+      tokens_used: {
+        input: 0,
+        output: 0,
+      },
+      processing_time_ms: 0,
+    };
   }
 
   /**

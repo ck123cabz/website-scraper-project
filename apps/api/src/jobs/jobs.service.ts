@@ -88,10 +88,14 @@ export class JobsService {
   }
 
   /**
-   * Create a job with URLs and bulk insert them into the results table
+   * Create a job with URLs and bulk insert them into the job_urls table
    * M1 Fix: Uses Postgres RPC function for true atomic transaction
+   * Returns both job and urlIds for queue processing
    */
-  async createJobWithUrls(name: string, urls: string[]): Promise<JobRow> {
+  async createJobWithUrls(
+    name: string,
+    urls: string[],
+  ): Promise<{ job: JobRow; urlIds: string[] }> {
     const client = this.supabase.getClient();
 
     // Use RPC function with proper Postgres transaction for atomicity
@@ -112,6 +116,11 @@ export class JobsService {
 
     // TypeScript doesn't know the RPC return type, so we cast it
     const jobId = (data as any).job_id as string;
+    const urlIds = (data as any).url_ids as string[];
+
+    if (!urlIds || urlIds.length === 0) {
+      throw new Error('No URL IDs returned from job creation');
+    }
 
     // Fetch the complete job record to get all fields
     const { data: job, error: fetchError } = await client
@@ -131,6 +140,6 @@ export class JobsService {
       );
     }
 
-    return job;
+    return { job, urlIds };
   }
 }
