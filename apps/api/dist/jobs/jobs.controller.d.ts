@@ -4,6 +4,7 @@ import { FileParserService } from './services/file-parser.service';
 import { UrlValidationService } from './services/url-validation.service';
 import { QueueService } from '../queue/queue.service';
 import { SupabaseService } from '../supabase/supabase.service';
+import { ExportService } from './services/export.service';
 import { CreateJobDto } from './dto/create-job.dto';
 export declare class JobsController {
     private readonly jobsService;
@@ -11,7 +12,8 @@ export declare class JobsController {
     private readonly urlValidationService;
     private readonly queueService;
     private readonly supabase;
-    constructor(jobsService: JobsService, fileParserService: FileParserService, urlValidationService: UrlValidationService, queueService: QueueService, supabase: SupabaseService);
+    private readonly exportService;
+    constructor(jobsService: JobsService, fileParserService: FileParserService, urlValidationService: UrlValidationService, queueService: QueueService, supabase: SupabaseService, exportService: ExportService);
     createJobWithUrls(file: Express.Multer.File | undefined, body: CreateJobDto, contentType: string, req: Request): Promise<{
         success: boolean;
         data: {
@@ -127,7 +129,7 @@ export declare class JobsController {
         success: boolean;
         data: any;
     }>;
-    exportJobResults(jobId: string, format: string | undefined, status: string | undefined, classification: string | undefined, search: string | undefined, res: Response): Promise<void>;
+    exportJobResults(jobId: string, res: Response, format?: string, filter?: string, layer?: string, confidence?: string): Promise<void>;
     pauseJob(jobId: string): Promise<{
         success: boolean;
         data: {

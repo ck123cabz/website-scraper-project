@@ -7,6 +7,7 @@ import { SupabaseService } from '../../supabase/supabase.service';
 import { FileParserService } from '../services/file-parser.service';
 import { UrlValidationService } from '../services/url-validation.service';
 import { QueueService } from '../../queue/queue.service';
+import { ExportService } from '../services/export.service';
 
 /**
  * Contract Tests for JobsController
@@ -78,6 +79,10 @@ describe('JobsController - GET /jobs/:jobId/results/:resultId (T038)', () => {
       getResultDetails: jest.fn(),
     };
 
+    const mockExportService = {
+      streamCSVExport: jest.fn(),
+    };
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [JobsController],
       providers: [
@@ -100,6 +105,10 @@ describe('JobsController - GET /jobs/:jobId/results/:resultId (T038)', () => {
         {
           provide: QueueService,
           useValue: mockQueueService,
+        },
+        {
+          provide: ExportService,
+          useValue: mockExportService,
         },
       ],
     }).compile();
@@ -394,6 +403,10 @@ describe('JobsController - POST /jobs/:jobId/export (T056)', () => {
       getResultDetails: jest.fn(),
     };
 
+    const mockExportService = {
+      streamCSVExport: jest.fn(),
+    };
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [JobsController],
       providers: [
@@ -416,6 +429,10 @@ describe('JobsController - POST /jobs/:jobId/export (T056)', () => {
         {
           provide: QueueService,
           useValue: mockQueueService,
+        },
+        {
+          provide: ExportService,
+          useValue: mockExportService,
         },
       ],
     }).compile();

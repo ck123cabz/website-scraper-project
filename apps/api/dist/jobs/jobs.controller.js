@@ -20,15 +20,17 @@ const file_parser_service_1 = require("./services/file-parser.service");
 const url_validation_service_1 = require("./services/url-validation.service");
 const queue_service_1 = require("../queue/queue.service");
 const supabase_service_1 = require("../supabase/supabase.service");
+const export_service_1 = require("./services/export.service");
 const create_job_dto_1 = require("./dto/create-job.dto");
 const path_1 = require("path");
 let JobsController = class JobsController {
-    constructor(jobsService, fileParserService, urlValidationService, queueService, supabase) {
+    constructor(jobsService, fileParserService, urlValidationService, queueService, supabase, exportService) {
         this.jobsService = jobsService;
         this.fileParserService = fileParserService;
         this.urlValidationService = urlValidationService;
         this.queueService = queueService;
         this.supabase = supabase;
+        this.exportService = exportService;
     }
     async createJobWithUrls(file, body, contentType, req) {
         try {
@@ -212,97 +214,51 @@ let JobsController = class JobsController {
             }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    async exportJobResults(jobId, format = 'csv', status = '', classification = '', search = '', res) {
+    async exportJobResults(jobId, res, format = 'complete', filter, layer, confidence) {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(jobId)) {
+            throw new common_1.BadRequestException('Invalid job ID format. Must be a valid UUID.');
+        }
+        const validFormats = ['complete', 'summary', 'layer1', 'layer2', 'layer3'];
+        if (!validFormats.includes(format)) {
+            throw new common_1.BadRequestException(`Invalid format: ${format}. Must be one of: ${validFormats.join(', ')}`);
+        }
+        if (filter && !['approved', 'rejected', 'all'].includes(filter)) {
+            throw new common_1.BadRequestException(`Invalid filter value: ${filter}. Must be one of: approved, rejected, all`);
+        }
+        if (layer && !['layer1', 'layer2', 'layer3', 'passed_all', 'all'].includes(layer)) {
+            throw new common_1.BadRequestException(`Invalid layer value: ${layer}. Must be one of: layer1, layer2, layer3, passed_all, all`);
+        }
+        if (confidence && !['high', 'medium', 'low', 'all'].includes(confidence)) {
+            throw new common_1.BadRequestException(`Invalid confidence value: ${confidence}. Must be one of: high, medium, low, all`);
+        }
         try {
-            let query = this.supabase
-                .getClient()
-                .from('results')
-                .select('*')
-                .eq('job_id', jobId)
-                .order('processed_at', { ascending: false });
-            if (status && status !== '') {
-                query = query.eq('status', status);
-            }
-            if (classification && classification !== '') {
-                query = query.eq('classification_result', classification);
-            }
-            if (search && search !== '') {
-                query = query.ilike('url', `%${search}%`);
-            }
-            const { data: results, error } = await query;
-            if (error) {
-                throw new Error(error.message);
-            }
-            if (!results || results.length === 0) {
-                throw new common_1.HttpException({
-                    success: false,
-                    error: 'No results found to export',
-                }, common_1.HttpStatus.NOT_FOUND);
-            }
-            const { data: job } = await this.supabase
-                .getClient()
-                .from('jobs')
-                .select('name')
-                .eq('id', jobId)
-                .single();
-            const jobName = job?.name || 'job';
-            const timestamp = new Date().toISOString().split('T')[0];
-            const filename = `${jobName.replace(/[^a-z0-9]/gi, '_')}_${timestamp}`;
-            if (format === 'json') {
-                res.setHeader('Content-Type', 'application/json');
-                res.setHeader('Content-Disposition', `attachment; filename="${filename}.json"`);
-                res.send(JSON.stringify(results, null, 2));
-            }
-            else {
-                const headers = [
-                    'URL',
-                    'Status',
-                    'Classification',
-                    'Score',
-                    'Reasoning',
-                    'LLM Provider',
-                    'Cost',
-                    'Processing Time (ms)',
-                    'Retry Count',
-                    'Error Message',
-                    'Prefilter Passed',
-                    'Prefilter Reasoning',
-                    'Processed At',
-                ];
-                const csvRows = [headers.join(',')];
-                for (const result of results) {
-                    const row = [
-                        `"${(result.url || '').replace(/"/g, '""')}"`,
-                        result.status || '',
-                        result.classification_result || '',
-                        result.classification_score || '',
-                        `"${(result.classification_reasoning || '').replace(/"/g, '""')}"`,
-                        result.llm_provider || '',
-                        result.llm_cost || '0',
-                        result.processing_time_ms || '',
-                        result.retry_count || '0',
-                        `"${(result.error_message || '').replace(/"/g, '""')}"`,
-                        result.prefilter_passed !== null ? result.prefilter_passed : '',
-                        `"${(result.prefilter_reasoning || '').replace(/"/g, '""')}"`,
-                        result.processed_at || '',
-                    ];
-                    csvRows.push(row.join(','));
+            const stream = await this.exportService.streamCSVExport(jobId, format, {
+                filter: filter,
+                layer: layer,
+                confidence: confidence,
+            });
+            res.set({
+                'Content-Type': 'text/csv; charset=utf-8',
+                'Content-Disposition': `attachment; filename="job-${jobId}-${format}.csv"`,
+            });
+            stream.pipe(res);
+            stream.on('error', (error) => {
+                console.error('[JobsController] Export stream error:', error);
+                if (!res.headersSent) {
+                    throw new common_1.InternalServerErrorException('Export stream failed');
                 }
-                const csvContent = csvRows.join('\n');
-                res.setHeader('Content-Type', 'text/csv');
-                res.setHeader('Content-Disposition', `attachment; filename="${filename}.csv"`);
-                res.send(csvContent);
-            }
+            });
         }
         catch (error) {
-            if (error instanceof common_1.HttpException) {
+            if (error instanceof common_1.BadRequestException) {
                 throw error;
             }
+            if (error instanceof Error && error.message.includes('Job not found')) {
+                throw new common_1.NotFoundException(`Job not found: ${jobId}`);
+            }
             console.error('[JobsController] Error exporting results:', error);
-            throw new common_1.HttpException({
-                success: false,
-                error: 'Failed to export results. Please try again.',
-            }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new common_1.InternalServerErrorException('Failed to export results. Please try again.');
         }
     }
     async pauseJob(jobId) {
@@ -413,15 +369,15 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], JobsController.prototype, "getResultDetails", null);
 __decorate([
-    (0, common_1.Get)(':id/export'),
+    (0, common_1.Post)(':id/export'),
     __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Query)('format')),
-    __param(2, (0, common_1.Query)('status')),
-    __param(3, (0, common_1.Query)('classification')),
-    __param(4, (0, common_1.Query)('search')),
-    __param(5, (0, common_1.Res)()),
+    __param(1, (0, common_1.Res)()),
+    __param(2, (0, common_1.Query)('format')),
+    __param(3, (0, common_1.Query)('filter')),
+    __param(4, (0, common_1.Query)('layer')),
+    __param(5, (0, common_1.Query)('confidence')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, String, String, Object]),
+    __metadata("design:paramtypes", [String, Object, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], JobsController.prototype, "exportJobResults", null);
 __decorate([
@@ -451,6 +407,7 @@ exports.JobsController = JobsController = __decorate([
         file_parser_service_1.FileParserService,
         url_validation_service_1.UrlValidationService,
         queue_service_1.QueueService,
-        supabase_service_1.SupabaseService])
+        supabase_service_1.SupabaseService,
+        export_service_1.ExportService])
 ], JobsController);
 //# sourceMappingURL=jobs.controller.js.map
