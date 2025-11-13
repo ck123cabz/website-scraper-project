@@ -17,30 +17,31 @@ interface ManualReviewTabProps {
 }
 
 export function ManualReviewTab({ settings, onChange, errors }: ManualReviewTabProps) {
-  const handleQueueLimitChange = (unlimited: boolean, limit?: number) => {
+  const handleEnabledChange = (enabled: boolean) => {
     onChange({
       ...settings,
-      queue_size_limit: unlimited ? null : limit || 100,
+      enabled,
     });
   };
 
-  const handleTimeoutChange = (enabled: boolean, days?: number) => {
+  const handleQueueSizeChange = (size: number) => {
     onChange({
       ...settings,
-      auto_review_timeout_days: enabled ? (days || 7) : null,
+      max_queue_size: size,
     });
   };
 
-  const handleNotificationChange = (
-    key: keyof ManualReviewSettings['notifications'],
-    value: number | boolean
-  ) => {
+  const handleTimeoutChange = (hours: number) => {
     onChange({
       ...settings,
-      notifications: {
-        ...settings.notifications,
-        [key]: value,
-      },
+      auto_review_timeout_hours: hours,
+    });
+  };
+
+  const handleSlackChange = (enabled: boolean) => {
+    onChange({
+      ...settings,
+      enable_slack_notifications: enabled,
     });
   };
 
@@ -50,40 +51,22 @@ export function ManualReviewTab({ settings, onChange, errors }: ManualReviewTabP
       <Card>
         <CardHeader>
           <CardTitle>Queue Size Limit</CardTitle>
-          <CardDescription>Maximum number of URLs in manual review queue</CardDescription>
+          <CardDescription>Maximum number of URLs in manual review queue (0 = unlimited)</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <RadioGroup
-            value={settings.queue_size_limit === null ? 'unlimited' : 'limited'}
-            onValueChange={(value) =>
-              handleQueueLimitChange(value === 'unlimited', settings.queue_size_limit || 100)
-            }
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="unlimited" id="queue-unlimited" />
-              <Label htmlFor="queue-unlimited" className="font-normal cursor-pointer">
-                Unlimited (no cap on queue size)
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="limited" id="queue-limited" />
-              <Label htmlFor="queue-limited" className="font-normal cursor-pointer">
-                Maximum:
-              </Label>
-              <Input
-                type="number"
-                min={1}
-                max={10000}
-                value={settings.queue_size_limit || ''}
-                onChange={(e) =>
-                  handleQueueLimitChange(false, Number(e.target.value))
-                }
-                disabled={settings.queue_size_limit === null}
-                className="w-24 h-8"
-              />
-              <span className="text-sm text-muted-foreground">URLs</span>
-            </div>
-          </RadioGroup>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="queue-size">Maximum Queue Size:</Label>
+            <Input
+              id="queue-size"
+              type="number"
+              min={0}
+              max={10000}
+              value={settings.max_queue_size || 0}
+              onChange={(e) => handleQueueSizeChange(Number(e.target.value))}
+              className="w-24 h-8"
+            />
+            <span className="text-sm text-muted-foreground">URLs (0 = unlimited)</span>
+          </div>
         </CardContent>
       </Card>
 
@@ -94,105 +77,46 @@ export function ManualReviewTab({ settings, onChange, errors }: ManualReviewTabP
           <CardDescription>Automatically approve URLs if not reviewed within timeframe</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <RadioGroup
-            value={settings.auto_review_timeout_days === null ? 'disabled' : 'enabled'}
-            onValueChange={(value) =>
-              handleTimeoutChange(value === 'enabled', settings.auto_review_timeout_days || 7)
-            }
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="disabled" id="timeout-disabled" />
-              <Label htmlFor="timeout-disabled" className="font-normal cursor-pointer">
-                Disabled (manual review only)
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="enabled" id="timeout-enabled" />
-              <Label htmlFor="timeout-enabled" className="font-normal cursor-pointer">
-                Auto-approve after:
-              </Label>
-              <Input
-                type="number"
-                min={1}
-                max={90}
-                value={settings.auto_review_timeout_days || ''}
-                onChange={(e) =>
-                  handleTimeoutChange(true, Number(e.target.value))
-                }
-                disabled={settings.auto_review_timeout_days === null}
-                className="w-20 h-8"
-              />
-              <span className="text-sm text-muted-foreground">days</span>
-            </div>
-          </RadioGroup>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="timeout-hours">Auto-approve after:</Label>
+            <Input
+              id="timeout-hours"
+              type="number"
+              min={0}
+              max={2160}
+              value={settings.auto_review_timeout_hours || 0}
+              onChange={(e) => handleTimeoutChange(Number(e.target.value))}
+              className="w-20 h-8"
+            />
+            <span className="text-sm text-muted-foreground">hours (0 = disabled)</span>
+          </div>
           <p className="text-xs text-muted-foreground">
             Helps prevent stale manual reviews from blocking pipeline
           </p>
         </CardContent>
       </Card>
 
-      {/* Notification Preferences */}
+      {/* Slack Integration */}
       <Card>
         <CardHeader>
-          <CardTitle>Notification Preferences</CardTitle>
-          <CardDescription>Configure how you are notified about manual review queue</CardDescription>
+          <CardTitle>Slack Integration</CardTitle>
+          <CardDescription>Send notifications to Slack for manual review queue updates</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Email Notifications */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="font-medium">Email Notifications</Label>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Send email when queue reaches</span>
-                <Input
-                  type="number"
-                  min={1}
-                  max={1000}
-                  value={settings.notifications.email_threshold}
-                  onChange={(e) =>
-                    handleNotificationChange('email_threshold', Number(e.target.value))
-                  }
-                  className="w-20 h-8"
-                />
-                <span className="text-sm text-muted-foreground">URLs</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Dashboard Badge */}
           <div className="flex items-center justify-between">
             <div>
-              <Label htmlFor="dashboard-badge" className="font-medium cursor-pointer">
-                Dashboard Badge
+              <Label htmlFor="slack-notifications" className="font-medium cursor-pointer">
+                Enable Slack Notifications
               </Label>
               <p className="text-xs text-muted-foreground mt-1">
-                Show badge on dashboard when queue has pending items
+                Receive Slack alerts when URLs are added to manual review queue
               </p>
             </div>
             <Checkbox
-              id="dashboard-badge"
-              checked={settings.notifications.dashboard_badge}
+              id="slack-notifications"
+              checked={settings.enable_slack_notifications}
               onCheckedChange={(checked) =>
-                handleNotificationChange('dashboard_badge', checked === true)
-              }
-            />
-          </div>
-
-          {/* Slack Integration */}
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="slack-integration" className="font-medium cursor-pointer">
-                Slack Integration
-              </Label>
-              <p className="text-xs text-muted-foreground mt-1">
-                Send Slack notifications for manual review queue updates
-              </p>
-            </div>
-            <Checkbox
-              id="slack-integration"
-              checked={settings.notifications.slack_integration}
-              onCheckedChange={(checked) =>
-                handleNotificationChange('slack_integration', checked === true)
+                handleSlackChange(checked === true)
               }
             />
           </div>

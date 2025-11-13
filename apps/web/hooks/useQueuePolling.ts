@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { jobsApi } from '@/lib/api-client';
-import type { Job } from '@website-scraper/shared';
+import type { BatchJob as Job } from '@website-scraper/shared';
 import { transformJobFromDB } from './job-transform';
 
 const POLL_INTERVAL_MS = 5000;

@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatDuration, formatNumber, calculateProcessingRate } from "@website-scraper/shared"
-import type { Job } from "@website-scraper/shared"
+import type { BatchJob as Job } from "@website-scraper/shared"
 
 export interface MetricsPanelProps {
   /**

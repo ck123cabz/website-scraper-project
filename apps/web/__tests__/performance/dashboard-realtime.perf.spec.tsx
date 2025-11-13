@@ -27,7 +27,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import { jobsApi } from '@/lib/api-client';
 import { useQueuePolling } from '@/hooks/useQueuePolling';
-import type { Job } from '@website-scraper/shared';
+import type { BatchJob as Job } from '@website-scraper/shared';
 
 // Mock the API client
 jest.mock('@/lib/api-client', () => ({

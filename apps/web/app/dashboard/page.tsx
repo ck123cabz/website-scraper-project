@@ -39,15 +39,15 @@ export default function DashboardPage() {
 
   // Separate active and completed jobs
   const allJobs = jobs || [];
-  const activeJobs = allJobs.filter(j => j.status === 'processing' || j.status === 'pending');
+  const activeJobs = allJobs.filter(j => j.status === 'running' || j.status === 'queued' || j.status === 'paused');
   const completedJobs: CompletedJob[] = allJobs
     .filter(j => j.status === 'completed')
     .map(job => ({
       id: job.id,
-      name: job.name || 'Untitled Job',
-      completedAt: job.completedAt || new Date().toISOString(),
-      urlCount: job.totalUrls || 0,
-      totalCost: job.totalCost || 0,
+      name: job.job_name || 'Untitled Job',
+      completedAt: (job.completed_at instanceof Date ? job.completed_at.toISOString() : job.completed_at) || new Date().toISOString(),
+      urlCount: job.total_urls || 0,
+      totalCost: job.total_cost || 0,
     }));
 
   return (

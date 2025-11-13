@@ -208,7 +208,7 @@ export function ResultsTable({ jobId, jobName }: ResultsTableProps) {
     manualPagination: true,
   });
 
-  const handleExport = (format: 'csv' | 'json') => {
+  const handleExport = (format: 'complete' | 'summary' | 'layer1' | 'layer2' | 'layer3') => {
     exportMutation.mutate({
       format,
       status: statusFilter as 'success' | 'rejected' | 'failed' | undefined,
@@ -318,20 +318,20 @@ export function ResultsTable({ jobId, jobName }: ResultsTableProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleExport('csv')}
+            onClick={() => handleExport('complete')}
             disabled={exportMutation.isPending}
           >
             <Download className="h-4 w-4 mr-1" />
-            CSV
+            Complete CSV
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleExport('json')}
+            onClick={() => handleExport('summary')}
             disabled={exportMutation.isPending}
           >
             <Download className="h-4 w-4 mr-1" />
-            JSON
+            Summary CSV
           </Button>
         </div>
       </div>

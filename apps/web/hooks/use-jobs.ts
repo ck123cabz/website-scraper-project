@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase-client';
 import { jobsApi } from '@/lib/api-client';
 import { subscribeToJob, unsubscribe } from '@/lib/realtime-service';
-import type { Job } from '@website-scraper/shared';
+import type { BatchJob as Job } from '@website-scraper/shared';
 import { transformJobFromDB } from './job-transform';
 
 // Constants for cache management and polling configuration

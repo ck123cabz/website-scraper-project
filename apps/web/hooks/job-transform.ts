@@ -1,4 +1,4 @@
-import type { Job } from '@website-scraper/shared';
+import type { BatchJob as Job } from '@website-scraper/shared';
 
 export function transformJobFromDB(dbJob: any): Job {
   const processedUrls = dbJob.processed_urls || 0;
