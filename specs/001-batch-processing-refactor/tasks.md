@@ -27,17 +27,17 @@ This is a **monorepo** project with three workspaces:
 
 **Purpose**: Database migrations and shared type definitions that all user stories depend on
 
-- [ ] T001 Create migration to add JSONB columns to url_results table in supabase/migrations/20251113000001_add_layer_factors.sql
-- [ ] T002 Create migration to add GIN indexes on JSONB columns in supabase/migrations/20251113000002_add_jsonb_indexes.sql
-- [ ] T003 Create migration to add retry tracking columns in supabase/migrations/20251113000003_add_retry_tracking.sql
-- [ ] T004 Create migration to add archived_at and update status enum for jobs table in supabase/migrations/20251113000004_add_job_archival.sql
-- [ ] T005 Apply all migrations locally and verify schema changes with supabase db push
-- [ ] T006 [P] Define Layer1Factors interface in packages/shared/src/types/url-results.ts
-- [ ] T007 [P] Define Layer2Factors interface in packages/shared/src/types/url-results.ts
-- [ ] T008 [P] Define Layer3Factors interface in packages/shared/src/types/url-results.ts
-- [ ] T009 [P] Define UrlResult interface in packages/shared/src/types/url-results.ts
-- [ ] T010 [P] Define Job interface with archival support in packages/shared/src/types/jobs.ts
-- [ ] T011 Export all types from packages/shared/src/index.ts
+- [X] T001 Create migration to add JSONB columns to url_results table in supabase/migrations/20251113000001_add_layer_factors.sql
+- [X] T002 Create migration to add GIN indexes on JSONB columns in supabase/migrations/20251113000002_add_jsonb_indexes.sql
+- [X] T003 Create migration to add retry tracking columns in supabase/migrations/20251113000003_add_retry_tracking.sql
+- [X] T004 Create migration to add archived_at and update status enum for jobs table in supabase/migrations/20251113000004_add_job_archival.sql
+- [X] T005 Apply all migrations locally and verify schema changes with supabase db push
+- [X] T006 [P] Define Layer1Factors interface in packages/shared/src/types/url-results.ts
+- [X] T007 [P] Define Layer2Factors interface in packages/shared/src/types/url-results.ts
+- [X] T008 [P] Define Layer3Factors interface in packages/shared/src/types/url-results.ts
+- [X] T009 [P] Define UrlResult interface in packages/shared/src/types/url-results.ts
+- [X] T010 [P] Define Job interface with archival support in packages/shared/src/types/jobs.ts
+- [X] T011 Export all types from packages/shared/src/index.ts
 
 ---
 
@@ -47,16 +47,16 @@ This is a **monorepo** project with three workspaces:
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T012 Create Layer1FactorsDto with class-validator decorators in apps/api/src/queue/dto/layer1-factors.dto.ts
-- [ ] T013 Create Layer2FactorsDto with class-validator decorators in apps/api/src/queue/dto/layer2-factors.dto.ts
-- [ ] T014 Create Layer3FactorsDto with class-validator decorators in apps/api/src/queue/dto/layer3-factors.dto.ts
-- [ ] T015 Update Layer 1 processor to return complete Layer1Factors structure in apps/api/src/queue/processors/layer1-processor.ts
-- [ ] T016 Update Layer 2 processor to return complete Layer2Factors structure with module scores in apps/api/src/queue/processors/layer2-processor.ts
-- [ ] T017 Update Layer 3 processor to return complete Layer3Factors structure with sophistication signals in apps/api/src/queue/processors/layer3-processor.ts
-- [ ] T018 Update QueueService to remove manual_review_queue routing logic in apps/api/src/queue/queue.service.ts
-- [ ] T019 Update QueueService.processUrl() to always write to url_results with layer factors in apps/api/src/queue/queue.service.ts
-- [ ] T020 Configure BullMQ worker with max concurrency of 5 in apps/api/src/jobs/jobs.module.ts
-- [ ] T021 Configure BullMQ retry strategy with exponential backoff in apps/api/src/queue/queue.service.ts
+- [X] T012 Create Layer1FactorsDto with class-validator decorators in apps/api/src/queue/dto/layer1-factors.dto.ts
+- [X] T013 Create Layer2FactorsDto with class-validator decorators in apps/api/src/queue/dto/layer2-factors.dto.ts
+- [X] T014 Create Layer3FactorsDto with class-validator decorators in apps/api/src/queue/dto/layer3-factors.dto.ts
+- [X] T015 Update Layer 1 processor to return complete Layer1Factors structure in apps/api/src/queue/processors/layer1-processor.ts
+- [X] T016 Update Layer 2 processor to return complete Layer2Factors structure with module scores in apps/api/src/queue/processors/layer2-processor.ts
+- [X] T017 Update Layer 3 processor to return complete Layer3Factors structure with sophistication signals in apps/api/src/queue/processors/layer3-processor.ts
+- [X] T018 Update QueueService to remove manual_review_queue routing logic in apps/api/src/queue/queue.service.ts
+- [X] T019 Update QueueService.processUrl() to always write to url_results with layer factors in apps/api/src/queue/queue.service.ts
+- [X] T020 Configure BullMQ worker with max concurrency of 5 in apps/api/src/jobs/jobs.module.ts
+- [X] T021 Configure BullMQ retry strategy with exponential backoff in apps/api/src/queue/queue.service.ts
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -72,24 +72,24 @@ This is a **monorepo** project with three workspaces:
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T022 [P] [US1] Write unit test for Layer1Processor returning complete factors in apps/api/src/queue/__tests__/layer1-processor.spec.ts
-- [ ] T023 [P] [US1] Write unit test for Layer2Processor returning complete factors in apps/api/src/queue/__tests__/layer2-processor.spec.ts
-- [ ] T024 [P] [US1] Write unit test for Layer3Processor returning complete factors in apps/api/src/queue/__tests__/layer3-processor.spec.ts
-- [ ] T025 [P] [US1] Write integration test for QueueService.processUrl() writing to url_results in apps/api/src/queue/__tests__/queue.service.spec.ts
-- [ ] T026 [P] [US1] Write integration test verifying no writes to manual_review_queue in apps/api/src/queue/__tests__/queue.service.spec.ts
-- [ ] T027 [P] [US1] Write test for retry logic with exponential backoff in apps/api/src/queue/__tests__/retry-logic.spec.ts
-- [ ] T028 [P] [US1] Write test for permanent failure after 3 retry attempts in apps/api/src/queue/__tests__/retry-logic.spec.ts
+- [X] T022 [P] [US1] Write unit test for Layer1Processor returning complete factors in apps/api/src/queue/__tests__/layer1-processor.spec.ts
+- [X] T023 [P] [US1] Write unit test for Layer2Processor returning complete factors in apps/api/src/queue/__tests__/layer2-processor.spec.ts
+- [X] T024 [P] [US1] Write unit test for Layer3Processor returning complete factors in apps/api/src/queue/__tests__/layer3-processor.spec.ts
+- [X] T025 [P] [US1] Write integration test for QueueService.processUrl() writing to url_results in apps/api/src/queue/__tests__/queue.service.spec.ts
+- [X] T026 [P] [US1] Write integration test verifying no writes to manual_review_queue in apps/api/src/queue/__tests__/queue.service.spec.ts
+- [X] T027 [P] [US1] Write test for retry logic with exponential backoff in apps/api/src/queue/__tests__/retry-logic.spec.ts
+- [X] T028 [P] [US1] Write test for permanent failure after 3 retry attempts in apps/api/src/queue/__tests__/retry-logic.spec.ts
 
 ### Implementation for User Story 1
 
-- [ ] T029 [US1] Implement error classification helper isTransientError() in apps/api/src/queue/utils/error-classifier.ts
-- [ ] T030 [US1] Update Layer 1 processor implementation to pass T022 test
-- [ ] T031 [US1] Update Layer 2 processor implementation to pass T023 test
-- [ ] T032 [US1] Update Layer 3 processor implementation to pass T024 test
-- [ ] T033 [US1] Update QueueService to write complete factor structures to url_results
-- [ ] T034 [US1] Implement retry tracking (increment retry_count, store last_error) in apps/api/src/queue/queue.service.ts
-- [ ] T035 [US1] Add exponential backoff configuration to BullMQ job options
-- [ ] T036 [US1] Verify all Unit Story 1 tests pass (T022-T028)
+- [X] T029 [US1] Implement error classification helper isTransientError() in apps/api/src/queue/utils/error-classifier.ts
+- [X] T030 [US1] Update Layer 1 processor implementation to pass T022 test
+- [X] T031 [US1] Update Layer 2 processor implementation to pass T023 test
+- [X] T032 [US1] Update Layer 3 processor implementation to pass T024 test
+- [X] T033 [US1] Update QueueService to write complete factor structures to url_results
+- [X] T034 [US1] Implement retry tracking (increment retry_count, store last_error) in apps/api/src/queue/queue.service.ts
+- [X] T035 [US1] Add exponential backoff configuration to BullMQ job options
+- [X] T036 [US1] Verify all Unit Story 1 tests pass (T022-T028)
 
 **Checkpoint**: Automated batch processing complete - URLs process through all layers without manual review
 
@@ -103,28 +103,28 @@ This is a **monorepo** project with three workspaces:
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T037 [P] [US2] Write contract test for GET /jobs/:jobId/results endpoint in apps/api/src/jobs/__tests__/jobs.controller.spec.ts
-- [ ] T038 [P] [US2] Write contract test for GET /jobs/:jobId/results/:resultId endpoint in apps/api/src/jobs/__tests__/jobs.controller.spec.ts
-- [ ] T039 [P] [US2] Write React test for ResultsTable pagination in apps/web/components/results/__tests__/ResultsTable.test.tsx
-- [ ] T040 [P] [US2] Write React test for expandable row showing factor breakdown in apps/web/components/results/__tests__/ResultRow.test.tsx
-- [ ] T041 [P] [US2] Write React test for Layer1Factors component in apps/web/components/results/__tests__/Layer1Factors.test.tsx
+- [X] T037 [P] [US2] Write contract test for GET /jobs/:jobId/results endpoint in apps/api/src/jobs/__tests__/jobs.controller.spec.ts
+- [X] T038 [P] [US2] Write contract test for GET /jobs/:jobId/results/:resultId endpoint in apps/api/src/jobs/__tests__/jobs.controller.spec.ts
+- [X] T039 [P] [US2] Write React test for ResultsTable pagination in apps/web/components/results/__tests__/ResultsTable.test.tsx
+- [X] T040 [P] [US2] Write React test for expandable row showing factor breakdown in apps/web/components/results/__tests__/ResultRow.test.tsx
+- [X] T041 [P] [US2] Write React test for Layer1Factors component in apps/web/components/results/__tests__/Layer1Factors.test.tsx
 
 ### Implementation for User Story 2
 
-- [ ] T042 [P] [US2] Implement GET /jobs/:jobId/results with pagination and filters in apps/api/src/jobs/jobs.controller.ts
-- [ ] T043 [P] [US2] Implement GET /jobs/:jobId/results/:resultId with complete factor data in apps/api/src/jobs/jobs.controller.ts
-- [ ] T044 [US2] Implement JobsService.getJobResults() with filter logic in apps/api/src/jobs/jobs.service.ts
-- [ ] T045 [US2] Implement JobsService.getResultDetails() in apps/api/src/jobs/jobs.service.ts
-- [ ] T046 [P] [US2] Create ResultsTable component with pagination controls in apps/web/components/results/ResultsTable.tsx
-- [ ] T047 [P] [US2] Create ResultRow component with expand/collapse button in apps/web/components/results/ResultRow.tsx
-- [ ] T048 [P] [US2] Create FactorBreakdown component container in apps/web/components/results/FactorBreakdown.tsx
-- [ ] T049 [P] [US2] Create Layer1Factors display component in apps/web/components/results/Layer1Factors.tsx
-- [ ] T050 [P] [US2] Create Layer2Factors display component in apps/web/components/results/Layer2Factors.tsx
-- [ ] T051 [P] [US2] Create Layer3Factors display component in apps/web/components/results/Layer3Factors.tsx
-- [ ] T052 [US2] Integrate ResultsTable with React Query for data fetching
-- [ ] T053 [US2] Add filter dropdowns (decision, layer, confidence band) to ResultsTable
-- [ ] T054 [US2] Implement graceful handling of NULL factor values for pre-migration data
-- [ ] T055 [US2] Verify all User Story 2 tests pass (T037-T041)
+- [X] T042 [P] [US2] Implement GET /jobs/:jobId/results with pagination and filters in apps/api/src/jobs/jobs.controller.ts
+- [X] T043 [P] [US2] Implement GET /jobs/:jobId/results/:resultId with complete factor data in apps/api/src/jobs/jobs.controller.ts
+- [X] T044 [US2] Implement JobsService.getJobResults() with filter logic in apps/api/src/jobs/jobs.service.ts
+- [X] T045 [US2] Implement JobsService.getResultDetails() in apps/api/src/jobs/jobs.service.ts
+- [X] T046 [P] [US2] Create ResultsTable component with pagination controls in apps/web/components/results/ResultsTable.tsx
+- [X] T047 [P] [US2] Create ResultRow component with expand/collapse button in apps/web/components/results/ResultRow.tsx
+- [X] T048 [P] [US2] Create FactorBreakdown component container in apps/web/components/results/FactorBreakdown.tsx
+- [X] T049 [P] [US2] Create Layer1Factors display component in apps/web/components/results/Layer1Factors.tsx
+- [X] T050 [P] [US2] Create Layer2Factors display component in apps/web/components/results/Layer2Factors.tsx
+- [X] T051 [P] [US2] Create Layer3Factors display component in apps/web/components/results/Layer3Factors.tsx
+- [X] T052 [US2] Integrate ResultsTable with React Query for data fetching
+- [X] T053 [US2] Add filter dropdowns (decision, layer, confidence band) to ResultsTable
+- [X] T054 [US2] Implement graceful handling of NULL factor values for pre-migration data
+- [X] T055 [US2] Verify all User Story 2 tests pass (T037-T055)
 
 **Checkpoint**: Factor transparency complete - users can view complete Layer 1/2/3 decision paths
 

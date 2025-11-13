@@ -229,57 +229,41 @@ export class JobsController {
   async getJobResults(
     @Param('id') jobId: string,
     @Query('page') page: string = '1',
-    @Query('limit') limit: string = '50',
-    @Query('status') status?: string,
-    @Query('classification') classification?: string,
-    @Query('search') search?: string,
+    @Query('pageSize') pageSize: string = '20',
+    @Query('filter') filter?: 'approved' | 'rejected' | 'all',
+    @Query('layer') layer?: 'layer1' | 'layer2' | 'layer3' | 'passed_all' | 'all',
+    @Query('confidence') confidence?: 'high' | 'medium' | 'low' | 'very-high' | 'very-low' | 'all',
   ) {
     try {
       const pageNum = parseInt(page, 10) || 1;
-      const limitNum = Math.min(parseInt(limit, 10) || 50, 1000); // Max 1000
-      const offset = (pageNum - 1) * limitNum;
+      const pageSizeNum = parseInt(pageSize, 10) || 20;
 
-      // Build query
-      let query = this.supabase
-        .getClient()
-        .from('results')
-        .select('*', { count: 'exact' })
-        .eq('job_id', jobId)
-        .order('processed_at', { ascending: false });
-
-      // Apply filters
-      if (status && status !== '') {
-        query = query.eq('status', status);
-      }
-      if (classification && classification !== '') {
-        query = query.eq('classification_result', classification);
-      }
-      if (search && search !== '') {
-        query = query.ilike('url', `%${search}%`);
-      }
-
-      // Apply pagination
-      query = query.range(offset, offset + limitNum - 1);
-
-      const { data: results, error, count } = await query;
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      const totalPages = Math.ceil((count || 0) / limitNum);
+      // Call JobsService method
+      const result = await this.jobsService.getJobResults(
+        jobId,
+        pageNum,
+        pageSizeNum,
+        filter,
+        layer,
+        confidence,
+      );
 
       return {
         success: true,
-        data: results || [],
-        pagination: {
-          page: pageNum,
-          limit: limitNum,
-          total: count || 0,
-          totalPages,
-        },
+        data: result.results,
+        pagination: result.pagination,
       };
     } catch (error) {
+      if (error instanceof Error && error.message.includes('Job not found')) {
+        throw new HttpException(
+          {
+            success: false,
+            error: 'Job not found',
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
       console.error('[JobsController] Error fetching job results:', error);
       throw new HttpException(
         {

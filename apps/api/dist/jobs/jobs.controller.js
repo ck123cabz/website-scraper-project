@@ -162,44 +162,24 @@ let JobsController = class JobsController {
             }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    async getJobResults(jobId, page = '1', limit = '50', status, classification, search) {
+    async getJobResults(jobId, page = '1', pageSize = '20', filter, layer, confidence) {
         try {
             const pageNum = parseInt(page, 10) || 1;
-            const limitNum = Math.min(parseInt(limit, 10) || 50, 1000);
-            const offset = (pageNum - 1) * limitNum;
-            let query = this.supabase
-                .getClient()
-                .from('results')
-                .select('*', { count: 'exact' })
-                .eq('job_id', jobId)
-                .order('processed_at', { ascending: false });
-            if (status && status !== '') {
-                query = query.eq('status', status);
-            }
-            if (classification && classification !== '') {
-                query = query.eq('classification_result', classification);
-            }
-            if (search && search !== '') {
-                query = query.ilike('url', `%${search}%`);
-            }
-            query = query.range(offset, offset + limitNum - 1);
-            const { data: results, error, count } = await query;
-            if (error) {
-                throw new Error(error.message);
-            }
-            const totalPages = Math.ceil((count || 0) / limitNum);
+            const pageSizeNum = parseInt(pageSize, 10) || 20;
+            const result = await this.jobsService.getJobResults(jobId, pageNum, pageSizeNum, filter, layer, confidence);
             return {
                 success: true,
-                data: results || [],
-                pagination: {
-                    page: pageNum,
-                    limit: limitNum,
-                    total: count || 0,
-                    totalPages,
-                },
+                data: result.results,
+                pagination: result.pagination,
             };
         }
         catch (error) {
+            if (error instanceof Error && error.message.includes('Job not found')) {
+                throw new common_1.HttpException({
+                    success: false,
+                    error: 'Job not found',
+                }, common_1.HttpStatus.NOT_FOUND);
+            }
             console.error('[JobsController] Error fetching job results:', error);
             throw new common_1.HttpException({
                 success: false,
@@ -416,10 +396,10 @@ __decorate([
     (0, common_1.Get)(':id/results'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Query)('page')),
-    __param(2, (0, common_1.Query)('limit')),
-    __param(3, (0, common_1.Query)('status')),
-    __param(4, (0, common_1.Query)('classification')),
-    __param(5, (0, common_1.Query)('search')),
+    __param(2, (0, common_1.Query)('pageSize')),
+    __param(3, (0, common_1.Query)('filter')),
+    __param(4, (0, common_1.Query)('layer')),
+    __param(5, (0, common_1.Query)('confidence')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String, String, String, String, String]),
     __metadata("design:returntype", Promise)

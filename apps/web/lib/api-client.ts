@@ -89,6 +89,10 @@ export interface GetResultsParams {
   status?: 'success' | 'rejected' | 'failed';
   classification?: 'suitable' | 'not_suitable' | 'rejected_prefilter';
   search?: string;
+  // T053: New filter parameters
+  filter?: 'all' | 'approved' | 'rejected';
+  layer?: 'all' | 'layer1' | 'layer2' | 'layer3' | 'passed_all';
+  confidence?: 'all' | 'high' | 'medium' | 'low';
 }
 
 export interface ExportResultsParams {

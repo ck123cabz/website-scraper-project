@@ -113,14 +113,14 @@ export declare class JobsController {
             updated_at: string;
         }[];
     }>;
-    getJobResults(jobId: string, page?: string, limit?: string, status?: string, classification?: string, search?: string): Promise<{
+    getJobResults(jobId: string, page?: string, pageSize?: string, filter?: 'approved' | 'rejected' | 'all', layer?: 'layer1' | 'layer2' | 'layer3' | 'passed_all' | 'all', confidence?: 'high' | 'medium' | 'low' | 'very-high' | 'very-low' | 'all'): Promise<{
         success: boolean;
-        data: any[];
+        data: import("@website-scraper/shared").UrlResult[];
         pagination: {
-            page: number;
-            limit: number;
             total: number;
-            totalPages: number;
+            page: number;
+            pageSize: number;
+            pages: number;
         };
     }>;
     getResultDetails(jobId: string, resultId: string): Promise<{
