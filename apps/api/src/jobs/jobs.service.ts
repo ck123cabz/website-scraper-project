@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { Database, UrlResult } from '@website-scraper/shared';
 
@@ -7,30 +7,53 @@ type JobRow = Database['public']['Tables']['jobs']['Row'];
 
 @Injectable()
 export class JobsService {
+  private readonly logger = new Logger(JobsService.name);
+
   constructor(private readonly supabase: SupabaseService) {}
 
   async createJob(data: { name?: string; totalUrls?: number }): Promise<JobRow> {
-    const jobData: JobInsert = {
-      name: data.name || 'Untitled Job',
-      total_urls: data.totalUrls || 0,
-      status: 'pending',
-    };
+    this.logger.log(
+      `Creating new job: name="${data.name || 'Untitled Job'}", totalUrls=${data.totalUrls || 0}`,
+    );
 
-    const { data: job, error } = await this.supabase
-      .getClient()
-      .from('jobs')
-      .insert(jobData)
-      .select()
-      .single();
+    try {
+      const jobData: JobInsert = {
+        name: data.name || 'Untitled Job',
+        total_urls: data.totalUrls || 0,
+        status: 'pending',
+      };
 
-    if (error) {
-      throw new Error(`Failed to create job: ${error.message}`);
+      const { data: job, error } = await this.supabase
+        .getClient()
+        .from('jobs')
+        .insert(jobData)
+        .select()
+        .single();
+
+      if (error) {
+        this.logger.error(`Failed to create job: ${error.message}`, error.stack);
+        throw new Error(`Failed to create job: ${error.message}`);
+      }
+
+      this.logger.log(
+        `Job created successfully: id=${job.id}, status=${job.status}, totalUrls=${job.total_urls}`,
+      );
+      this.logger.debug(`Job details: createdAt=${job.created_at}`);
+
+      return job;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(
+        `Failed to create job: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw error;
     }
-
-    return job;
   }
 
   async getJobById(id: string): Promise<JobRow | null> {
+    this.logger.debug(`Fetching job: ${id}`);
+
     const { data: job, error } = await this.supabase
       .getClient()
       .from('jobs')
@@ -41,10 +64,19 @@ export class JobsService {
     if (error) {
       if (error.code === 'PGRST116') {
         // Not found
+        this.logger.warn(`Job not found: ${id}`);
         return null;
       }
+      this.logger.error(`Failed to fetch job ${id}: ${error.message}`);
       throw new Error(`Failed to fetch job: ${error.message}`);
     }
+
+    const progress =
+      job.total_urls > 0 ? Math.round(((job.processed_urls || 0) / job.total_urls) * 100) : 0;
+
+    this.logger.debug(
+      `Job fetched: ${id}, status=${job.status}, progress=${progress}%, ${job.processed_urls || 0}/${job.total_urls} URLs`,
+    );
 
     return job;
   }
@@ -64,26 +96,60 @@ export class JobsService {
   }
 
   async updateJob(id: string, updates: Partial<JobRow>): Promise<JobRow> {
-    const { data: job, error } = await this.supabase
-      .getClient()
-      .from('jobs')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
+    const updateFields = Object.keys(updates).join(', ');
+    this.logger.log(`Updating job: id=${id}, fields=[${updateFields}]`);
 
-    if (error) {
-      throw new Error(`Failed to update job: ${error.message}`);
+    try {
+      const { data: job, error } = await this.supabase
+        .getClient()
+        .from('jobs')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        this.logger.error(`Failed to update job ${id}: ${error.message}`);
+        throw new Error(`Failed to update job: ${error.message}`);
+      }
+
+      // Log specific important updates
+      if (updates.status) {
+        this.logger.log(`Job status updated: id=${id}, newStatus=${updates.status}`);
+      }
+
+      this.logger.debug(`Job updated successfully: id=${id}`);
+
+      return job;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(
+        `Failed to update job ${id}: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw error;
     }
-
-    return job;
   }
 
   async deleteJob(id: string): Promise<void> {
-    const { error } = await this.supabase.getClient().from('jobs').delete().eq('id', id);
+    this.logger.log(`Deleting job: ${id}`);
 
-    if (error) {
-      throw new Error(`Failed to delete job: ${error.message}`);
+    try {
+      const { error } = await this.supabase.getClient().from('jobs').delete().eq('id', id);
+
+      if (error) {
+        this.logger.error(`Failed to delete job ${id}: ${error.message}`);
+        throw new Error(`Failed to delete job: ${error.message}`);
+      }
+
+      this.logger.log(`Job deleted successfully: ${id}`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(
+        `Failed to delete job ${id}: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw error;
     }
   }
 
@@ -96,56 +162,82 @@ export class JobsService {
     name: string,
     urls: string[],
   ): Promise<{ job: JobRow; urlIds: string[] }> {
-    const client = this.supabase.getClient();
+    const startTime = performance.now();
+    this.logger.log(`Creating job with URLs: name="${name}", urlCount=${urls.length}`);
 
-    // Use RPC function with proper Postgres transaction for atomicity
-    const { data, error } = await client
-      .rpc('create_job_with_urls', {
-        p_name: name || 'Untitled Job',
-        p_urls: urls,
-      })
-      .single();
+    try {
+      const client = this.supabase.getClient();
 
-    if (error) {
-      throw new Error(`Failed to create job with URLs: ${error.message}`);
-    }
+      // Use RPC function with proper Postgres transaction for atomicity
+      const { data, error } = await client
+        .rpc('create_job_with_urls', {
+          p_name: name || 'Untitled Job',
+          p_urls: urls,
+        })
+        .single();
 
-    if (!data) {
-      throw new Error('No data returned from job creation');
-    }
+      if (error) {
+        this.logger.error(`Failed to create job with URLs: ${error.message}`);
+        throw new Error(`Failed to create job with URLs: ${error.message}`);
+      }
 
-    // TypeScript doesn't know the RPC return type, so we cast it
-    const jobId = (data as any).job_id as string;
-    const urlIds = (data as any).url_ids as string[];
+      if (!data) {
+        this.logger.error('No data returned from job creation');
+        throw new Error('No data returned from job creation');
+      }
 
-    if (!urlIds || urlIds.length === 0) {
-      throw new Error('No URL IDs returned from job creation');
-    }
+      // TypeScript doesn't know the RPC return type, so we cast it
+      const jobId = (data as any).job_id as string;
+      const urlIds = (data as any).url_ids as string[];
 
-    // Fetch the complete job record to get all fields
-    const { data: job, error: fetchError } = await client
-      .from('jobs')
-      .select('*')
-      .eq('id', jobId)
-      .single();
+      if (!urlIds || urlIds.length === 0) {
+        this.logger.error(`No URL IDs returned from job creation for job ${jobId}`);
+        throw new Error('No URL IDs returned from job creation');
+      }
 
-    if (fetchError || !job) {
-      throw new Error(`Failed to fetch created job: ${fetchError?.message || 'Job not found'}`);
-    }
+      // Fetch the complete job record to get all fields
+      const { data: job, error: fetchError } = await client
+        .from('jobs')
+        .select('*')
+        .eq('id', jobId)
+        .single();
 
-    // Log success for large uploads
-    if (urls.length > 1000) {
-      console.log(
-        `[JobsService] Created job ${job.id} with ${urls.length} URLs using atomic transaction`,
+      if (fetchError || !job) {
+        this.logger.error(`Failed to fetch created job: ${fetchError?.message || 'Job not found'}`);
+        throw new Error(`Failed to fetch created job: ${fetchError?.message || 'Job not found'}`);
+      }
+
+      const duration = performance.now() - startTime;
+
+      this.logger.log(
+        `Job with URLs created successfully: id=${job.id}, status=${job.status}, urlCount=${urls.length}, urlIdsCount=${urlIds.length} (${duration.toFixed(0)}ms)`,
       );
-    }
 
-    return { job, urlIds };
+      // Log success for large uploads (more detailed than before)
+      if (urls.length > 1000) {
+        this.logger.log(
+          `Large batch job created: ${job.id} with ${urls.length} URLs using atomic transaction (${duration.toFixed(0)}ms)`,
+        );
+      }
+
+      return { job, urlIds };
+    } catch (error) {
+      const duration = performance.now() - startTime;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(
+        `Failed to create job with URLs after ${duration.toFixed(0)}ms: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw error;
+    }
   }
 
   /**
    * Get paginated and filtered results for a job from url_results table
    * Task T044 [Phase 4 - User Story 2]
+   * Task T107 [Phase 8 - Performance Monitoring]
+   *
+   * Performance target: <500ms for query execution
    *
    * @param jobId - Job ID to fetch results for
    * @param page - Page number (1-indexed), defaults to 1
@@ -172,6 +264,10 @@ export class JobsService {
       pages: number;
     };
   }> {
+    this.logger.debug(
+      `Querying job results: jobId=${jobId}, page=${page}, pageSize=${pageSize}, filter=${filter || 'all'}, layer=${layer || 'all'}, confidence=${confidence || 'all'}`,
+    );
+
     // Validation: Verify job exists
     const job = await this.getJobById(jobId);
     if (!job) {
@@ -188,10 +284,7 @@ export class JobsService {
     const client = this.supabase.getClient();
 
     // Build query with count
-    let query = client
-      .from('url_results')
-      .select('*', { count: 'exact' })
-      .eq('job_id', jobId);
+    let query = client.from('url_results').select('*', { count: 'exact' }).eq('job_id', jobId);
 
     // Apply filter: status
     if (filter && filter !== 'all') {
@@ -214,10 +307,25 @@ export class JobsService {
     // Apply pagination
     query = query.range(offset, offset + normalizedPageSize - 1);
 
-    // Execute query
+    // Execute query with timing
+    const queryStart = performance.now();
     const { data: results, error, count } = await query;
+    const queryDuration = performance.now() - queryStart;
+
+    // Log query performance
+    const target = 500; // 500ms target
+    if (queryDuration > target) {
+      this.logger.warn(
+        `Query slow - getJobResults took ${queryDuration.toFixed(0)}ms (target: ${target}ms, returned ${results?.length || 0} rows)`,
+      );
+    } else {
+      this.logger.debug(
+        `Query fast - getJobResults took ${queryDuration.toFixed(0)}ms (returned ${results?.length || 0} rows)`,
+      );
+    }
 
     if (error) {
+      this.logger.error(`Query failed: ${error.message}`);
       throw new Error(`Failed to fetch job results: ${error.message}`);
     }
 

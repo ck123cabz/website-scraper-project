@@ -18,7 +18,8 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import { jobsApi } from '@/lib/api-client';
-import type { Job, JobProgress } from '@website-scraper/shared';
+import { useQueuePolling } from '@/hooks/useQueuePolling';
+import type { Job } from '@website-scraper/shared';
 
 // Mock the API client
 jest.mock('@/lib/api-client', () => ({
@@ -26,35 +27,6 @@ jest.mock('@/lib/api-client', () => ({
     getAll: jest.fn(),
   },
 }));
-
-// Type definitions for the hook (expected interface)
-interface UseQueuePollingOptions {
-  includeCompleted?: boolean;
-  limit?: number;
-}
-
-interface UseQueuePollingReturn {
-  jobs: JobProgress[];
-  completedJobs?: Job[];
-  isLoading: boolean;
-  isError: boolean;
-  error: Error | null;
-  refetch: () => Promise<any>;
-}
-
-// STUB: The hook we're testing (will be implemented later in useQueuePolling.ts)
-// This stub allows tests to run and fail properly (TDD approach)
-function useQueuePolling(options?: UseQueuePollingOptions): UseQueuePollingReturn {
-  // Placeholder return - all tests should fail until real implementation exists
-  return {
-    jobs: [],
-    completedJobs: [],
-    isLoading: false,
-    isError: false,
-    error: null,
-    refetch: async () => ({}),
-  };
-}
 
 // Test wrapper with React Query provider
 function createWrapper() {
@@ -101,29 +73,6 @@ function createMockJob(overrides: Partial<Job> = {}): Job {
   };
 }
 
-// Helper to create mock job progress data
-function createMockJobProgress(overrides: Partial<JobProgress> = {}): JobProgress {
-  return {
-    job_id: '123e4567-e89b-12d3-a456-426614174000',
-    job_name: 'Test Job',
-    status: 'processing' as any,
-    progress_percentage: 50,
-    processing_rate: 10,
-    estimated_time_remaining: 300,
-    queue_position: null,
-    layer_breakdown: {
-      layer1_eliminated: 10,
-      layer2_eliminated: 5,
-      layer3_classified: 35,
-    },
-    cost_metrics: {
-      total_cost: 5.50,
-      avg_cost_per_url: 0.11,
-      projected_total_cost: 11.00,
-    },
-    ...overrides,
-  };
-}
 
 describe('useQueuePolling', () => {
   let mockJobsApi: jest.Mocked<typeof jobsApi>;
@@ -131,7 +80,7 @@ describe('useQueuePolling', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     mockJobsApi = jobsApi as jest.Mocked<typeof jobsApi>;
-    mockJobsApi.getAll.mockClear();
+    mockJobsApi.getAll = jest.fn();
   });
 
   afterEach(() => {
@@ -175,8 +124,13 @@ describe('useQueuePolling', () => {
         wrapper: createWrapper(),
       });
 
+      // eslint-disable-next-line no-console
+      console.log('[debug] test2 call count', mockJobsApi.getAll.mock.calls.length);
+
       // Wait for initial fetch
       await waitFor(() => {
+        // eslint-disable-next-line no-console
+        console.log('[debug] inside waitFor', mockJobsApi.getAll.mock.calls.length);
         expect(mockJobsApi.getAll).toHaveBeenCalledTimes(1);
       });
 
@@ -186,6 +140,8 @@ describe('useQueuePolling', () => {
       });
 
       await waitFor(() => {
+        // eslint-disable-next-line no-console
+        console.log('[debug] inside second waitFor', mockJobsApi.getAll.mock.calls.length);
         expect(mockJobsApi.getAll).toHaveBeenCalledTimes(2);
       });
 
@@ -274,6 +230,9 @@ describe('useQueuePolling', () => {
       const { rerender } = renderHook(() => useQueuePolling(), {
         wrapper: createWrapper(),
       });
+
+      // eslint-disable-next-line no-console
+      console.log('[debug] call count after render', mockJobsApi.getAll.mock.calls.length);
 
       // Wait for initial fetch
       await waitFor(() => {

@@ -3,6 +3,7 @@ import { Database, UrlResult } from '@website-scraper/shared';
 type JobRow = Database['public']['Tables']['jobs']['Row'];
 export declare class JobsService {
     private readonly supabase;
+    private readonly logger;
     constructor(supabase: SupabaseService);
     createJob(data: {
         name?: string;

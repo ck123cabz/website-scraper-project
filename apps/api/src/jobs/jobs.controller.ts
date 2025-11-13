@@ -295,9 +295,24 @@ export class JobsController {
         );
       }
 
+      // Handle NULL factors gracefully for pre-migration data
       return {
         success: true,
-        data: result,
+        data: {
+          ...result,
+          layer1_factors: result.layer1_factors || {
+            message: 'Factor data not available (processed before schema migration)',
+            reason: 'Layer 1 analysis not completed',
+          },
+          layer2_factors: result.layer2_factors || {
+            message: 'Factor data not available',
+            reason: 'Layer 2 analysis not completed or error occurred',
+          },
+          layer3_factors: result.layer3_factors || {
+            message: 'Factor data not available',
+            reason: 'Layer 3 analysis not completed or error occurred',
+          },
+        },
       };
     } catch (error) {
       if (error instanceof HttpException) {

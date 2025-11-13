@@ -11,6 +11,8 @@ import { LlmService } from './services/llm.service';
 import { MockLlmService } from './services/llm.service.mock';
 import { ConfidenceScoringService } from './services/confidence-scoring.service';
 import { ExportService } from './services/export.service';
+import { ArchivalService } from './services/archival.service';
+import { CleanupService } from './services/cleanup.service';
 import { QueueModule } from '../queue/queue.module';
 import { SettingsModule } from '../settings/settings.module';
 import { ScraperModule } from '../scraper/scraper.module';
@@ -57,6 +59,8 @@ import { extname } from 'path';
     Layer2OperationalFilterService, // Story 2.6: Layer 2 operational filtering (homepage scraping & validation)
     ConfidenceScoringService, // Story 2.4-refactored: Confidence band calculation
     ExportService, // T061: CSV export service with streaming
+    ArchivalService, // T109: Auto-archive completed jobs older than 90 days
+    CleanupService, // T110: Hard-delete archived jobs older than 180 days
     {
       provide: LlmService,
       useClass: process.env.USE_MOCK_SERVICES === 'true' ? MockLlmService : LlmService,

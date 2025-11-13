@@ -88,9 +88,13 @@ export function FactorBreakdown({
 
   if (!hasAnyData) {
     return (
-      <div className="w-full bg-muted/30 rounded-lg p-8 text-center">
-        <p className="text-muted-foreground">
-          No factor data available. This may be a pre-migration record.
+      <div className="p-4 bg-blue-50 border border-blue-200 rounded">
+        <p className="text-sm text-blue-700">
+          Factor data not available for this URL
+        </p>
+        <p className="text-xs text-blue-600 mt-1">
+          This URL was processed before the analysis system was upgraded.
+          The decision was made based on Layer 1 & 2 analysis only.
         </p>
       </div>
     );

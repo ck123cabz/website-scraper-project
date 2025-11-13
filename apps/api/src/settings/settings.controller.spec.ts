@@ -67,15 +67,10 @@ describe('SettingsController', () => {
       auto_reject: { min: 0.0, max: 0.29, action: 'reject' },
     },
     manual_review_settings: {
-      queue_size_limit: null,
-      auto_review_timeout_days: null,
-      notifications: {
-        email_threshold: 100,
-        email_recipient: 'test@example.com',
-        slack_webhook_url: null,
-        slack_threshold: 100,
-        dashboard_badge: true,
-      },
+      enabled: true,
+      auto_review_timeout_hours: 72,
+      max_queue_size: 1000,
+      enable_slack_notifications: false,
     },
     updated_at: new Date().toISOString(),
   };

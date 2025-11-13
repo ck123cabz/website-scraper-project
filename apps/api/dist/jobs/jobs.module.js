@@ -20,6 +20,8 @@ const llm_service_1 = require("./services/llm.service");
 const llm_service_mock_1 = require("./services/llm.service.mock");
 const confidence_scoring_service_1 = require("./services/confidence-scoring.service");
 const export_service_1 = require("./services/export.service");
+const archival_service_1 = require("./services/archival.service");
+const cleanup_service_1 = require("./services/cleanup.service");
 const queue_module_1 = require("../queue/queue.module");
 const settings_module_1 = require("../settings/settings.module");
 const scraper_module_1 = require("../scraper/scraper.module");
@@ -61,6 +63,8 @@ exports.JobsModule = JobsModule = __decorate([
             layer2_operational_filter_service_1.Layer2OperationalFilterService,
             confidence_scoring_service_1.ConfidenceScoringService,
             export_service_1.ExportService,
+            archival_service_1.ArchivalService,
+            cleanup_service_1.CleanupService,
             {
                 provide: llm_service_1.LlmService,
                 useClass: process.env.USE_MOCK_SERVICES === 'true' ? llm_service_mock_1.MockLlmService : llm_service_1.LlmService,

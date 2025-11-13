@@ -8,32 +8,46 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var JobsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.JobsService = void 0;
 const common_1 = require("@nestjs/common");
 const supabase_service_1 = require("../supabase/supabase.service");
-let JobsService = class JobsService {
+let JobsService = JobsService_1 = class JobsService {
     constructor(supabase) {
         this.supabase = supabase;
+        this.logger = new common_1.Logger(JobsService_1.name);
     }
     async createJob(data) {
-        const jobData = {
-            name: data.name || 'Untitled Job',
-            total_urls: data.totalUrls || 0,
-            status: 'pending',
-        };
-        const { data: job, error } = await this.supabase
-            .getClient()
-            .from('jobs')
-            .insert(jobData)
-            .select()
-            .single();
-        if (error) {
-            throw new Error(`Failed to create job: ${error.message}`);
+        this.logger.log(`Creating new job: name="${data.name || 'Untitled Job'}", totalUrls=${data.totalUrls || 0}`);
+        try {
+            const jobData = {
+                name: data.name || 'Untitled Job',
+                total_urls: data.totalUrls || 0,
+                status: 'pending',
+            };
+            const { data: job, error } = await this.supabase
+                .getClient()
+                .from('jobs')
+                .insert(jobData)
+                .select()
+                .single();
+            if (error) {
+                this.logger.error(`Failed to create job: ${error.message}`, error.stack);
+                throw new Error(`Failed to create job: ${error.message}`);
+            }
+            this.logger.log(`Job created successfully: id=${job.id}, status=${job.status}, totalUrls=${job.total_urls}`);
+            this.logger.debug(`Job details: createdAt=${job.created_at}`);
+            return job;
         }
-        return job;
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            this.logger.error(`Failed to create job: ${errorMessage}`, error instanceof Error ? error.stack : undefined);
+            throw error;
+        }
     }
     async getJobById(id) {
+        this.logger.debug(`Fetching job: ${id}`);
         const { data: job, error } = await this.supabase
             .getClient()
             .from('jobs')
@@ -42,10 +56,14 @@ let JobsService = class JobsService {
             .single();
         if (error) {
             if (error.code === 'PGRST116') {
+                this.logger.warn(`Job not found: ${id}`);
                 return null;
             }
+            this.logger.error(`Failed to fetch job ${id}: ${error.message}`);
             throw new Error(`Failed to fetch job: ${error.message}`);
         }
+        const progress = job.total_urls > 0 ? Math.round(((job.processed_urls || 0) / job.total_urls) * 100) : 0;
+        this.logger.debug(`Job fetched: ${id}, status=${job.status}, progress=${progress}%, ${job.processed_urls || 0}/${job.total_urls} URLs`);
         return job;
     }
     async getAllJobs() {
@@ -60,57 +78,98 @@ let JobsService = class JobsService {
         return jobs || [];
     }
     async updateJob(id, updates) {
-        const { data: job, error } = await this.supabase
-            .getClient()
-            .from('jobs')
-            .update(updates)
-            .eq('id', id)
-            .select()
-            .single();
-        if (error) {
-            throw new Error(`Failed to update job: ${error.message}`);
+        const updateFields = Object.keys(updates).join(', ');
+        this.logger.log(`Updating job: id=${id}, fields=[${updateFields}]`);
+        try {
+            const { data: job, error } = await this.supabase
+                .getClient()
+                .from('jobs')
+                .update(updates)
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) {
+                this.logger.error(`Failed to update job ${id}: ${error.message}`);
+                throw new Error(`Failed to update job: ${error.message}`);
+            }
+            if (updates.status) {
+                this.logger.log(`Job status updated: id=${id}, newStatus=${updates.status}`);
+            }
+            this.logger.debug(`Job updated successfully: id=${id}`);
+            return job;
         }
-        return job;
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            this.logger.error(`Failed to update job ${id}: ${errorMessage}`, error instanceof Error ? error.stack : undefined);
+            throw error;
+        }
     }
     async deleteJob(id) {
-        const { error } = await this.supabase.getClient().from('jobs').delete().eq('id', id);
-        if (error) {
-            throw new Error(`Failed to delete job: ${error.message}`);
+        this.logger.log(`Deleting job: ${id}`);
+        try {
+            const { error } = await this.supabase.getClient().from('jobs').delete().eq('id', id);
+            if (error) {
+                this.logger.error(`Failed to delete job ${id}: ${error.message}`);
+                throw new Error(`Failed to delete job: ${error.message}`);
+            }
+            this.logger.log(`Job deleted successfully: ${id}`);
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            this.logger.error(`Failed to delete job ${id}: ${errorMessage}`, error instanceof Error ? error.stack : undefined);
+            throw error;
         }
     }
     async createJobWithUrls(name, urls) {
-        const client = this.supabase.getClient();
-        const { data, error } = await client
-            .rpc('create_job_with_urls', {
-            p_name: name || 'Untitled Job',
-            p_urls: urls,
-        })
-            .single();
-        if (error) {
-            throw new Error(`Failed to create job with URLs: ${error.message}`);
+        const startTime = performance.now();
+        this.logger.log(`Creating job with URLs: name="${name}", urlCount=${urls.length}`);
+        try {
+            const client = this.supabase.getClient();
+            const { data, error } = await client
+                .rpc('create_job_with_urls', {
+                p_name: name || 'Untitled Job',
+                p_urls: urls,
+            })
+                .single();
+            if (error) {
+                this.logger.error(`Failed to create job with URLs: ${error.message}`);
+                throw new Error(`Failed to create job with URLs: ${error.message}`);
+            }
+            if (!data) {
+                this.logger.error('No data returned from job creation');
+                throw new Error('No data returned from job creation');
+            }
+            const jobId = data.job_id;
+            const urlIds = data.url_ids;
+            if (!urlIds || urlIds.length === 0) {
+                this.logger.error(`No URL IDs returned from job creation for job ${jobId}`);
+                throw new Error('No URL IDs returned from job creation');
+            }
+            const { data: job, error: fetchError } = await client
+                .from('jobs')
+                .select('*')
+                .eq('id', jobId)
+                .single();
+            if (fetchError || !job) {
+                this.logger.error(`Failed to fetch created job: ${fetchError?.message || 'Job not found'}`);
+                throw new Error(`Failed to fetch created job: ${fetchError?.message || 'Job not found'}`);
+            }
+            const duration = performance.now() - startTime;
+            this.logger.log(`Job with URLs created successfully: id=${job.id}, status=${job.status}, urlCount=${urls.length}, urlIdsCount=${urlIds.length} (${duration.toFixed(0)}ms)`);
+            if (urls.length > 1000) {
+                this.logger.log(`Large batch job created: ${job.id} with ${urls.length} URLs using atomic transaction (${duration.toFixed(0)}ms)`);
+            }
+            return { job, urlIds };
         }
-        if (!data) {
-            throw new Error('No data returned from job creation');
+        catch (error) {
+            const duration = performance.now() - startTime;
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            this.logger.error(`Failed to create job with URLs after ${duration.toFixed(0)}ms: ${errorMessage}`, error instanceof Error ? error.stack : undefined);
+            throw error;
         }
-        const jobId = data.job_id;
-        const urlIds = data.url_ids;
-        if (!urlIds || urlIds.length === 0) {
-            throw new Error('No URL IDs returned from job creation');
-        }
-        const { data: job, error: fetchError } = await client
-            .from('jobs')
-            .select('*')
-            .eq('id', jobId)
-            .single();
-        if (fetchError || !job) {
-            throw new Error(`Failed to fetch created job: ${fetchError?.message || 'Job not found'}`);
-        }
-        if (urls.length > 1000) {
-            console.log(`[JobsService] Created job ${job.id} with ${urls.length} URLs using atomic transaction`);
-        }
-        return { job, urlIds };
     }
     async getJobResults(jobId, page = 1, pageSize = 20, filter, layer, confidence) {
+        this.logger.debug(`Querying job results: jobId=${jobId}, page=${page}, pageSize=${pageSize}, filter=${filter || 'all'}, layer=${layer || 'all'}, confidence=${confidence || 'all'}`);
         const job = await this.getJobById(jobId);
         if (!job) {
             throw new Error(`Job not found: ${jobId}`);
@@ -119,10 +178,7 @@ let JobsService = class JobsService {
         const normalizedPage = Math.max(page || 1, 1);
         const offset = (normalizedPage - 1) * normalizedPageSize;
         const client = this.supabase.getClient();
-        let query = client
-            .from('url_results')
-            .select('*', { count: 'exact' })
-            .eq('job_id', jobId);
+        let query = client.from('url_results').select('*', { count: 'exact' }).eq('job_id', jobId);
         if (filter && filter !== 'all') {
             query = query.eq('status', filter);
         }
@@ -134,8 +190,18 @@ let JobsService = class JobsService {
         }
         query = query.order('processed_at', { ascending: false });
         query = query.range(offset, offset + normalizedPageSize - 1);
+        const queryStart = performance.now();
         const { data: results, error, count } = await query;
+        const queryDuration = performance.now() - queryStart;
+        const target = 500;
+        if (queryDuration > target) {
+            this.logger.warn(`Query slow - getJobResults took ${queryDuration.toFixed(0)}ms (target: ${target}ms, returned ${results?.length || 0} rows)`);
+        }
+        else {
+            this.logger.debug(`Query fast - getJobResults took ${queryDuration.toFixed(0)}ms (returned ${results?.length || 0} rows)`);
+        }
         if (error) {
+            this.logger.error(`Query failed: ${error.message}`);
             throw new Error(`Failed to fetch job results: ${error.message}`);
         }
         const total = count || 0;
@@ -344,7 +410,7 @@ let JobsService = class JobsService {
     }
 };
 exports.JobsService = JobsService;
-exports.JobsService = JobsService = __decorate([
+exports.JobsService = JobsService = JobsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [supabase_service_1.SupabaseService])
 ], JobsService);

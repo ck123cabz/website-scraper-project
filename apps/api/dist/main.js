@@ -37,6 +37,7 @@ const dotenv = __importStar(require("dotenv"));
 dotenv.config();
 const core_1 = require("@nestjs/core");
 const app_module_1 = require("./app.module");
+const swagger_1 = require("@nestjs/swagger");
 const api_1 = require("@bull-board/api");
 const bullMQAdapter_1 = require("@bull-board/api/bullMQAdapter");
 const express_1 = require("@bull-board/express");
@@ -102,10 +103,22 @@ async function bootstrap() {
         serverAdapter,
     });
     app.use('/admin/queues', serverAdapter.getRouter());
+    const config = new swagger_1.DocumentBuilder()
+        .setTitle('Batch Processing Workflow API')
+        .setDescription('RESTful API for automated batch URL processing and analysis using Layer 1/2/3 evaluation framework')
+        .setVersion('1.0.0')
+        .addServer(process.env.API_URL || 'http://localhost:3001', 'API Server')
+        .addTag('Jobs', 'Job management endpoints')
+        .addTag('Results', 'Result retrieval and export endpoints')
+        .addTag('Queue', 'Queue status and monitoring endpoints')
+        .build();
+    const document = swagger_1.SwaggerModule.createDocument(app, config);
+    swagger_1.SwaggerModule.setup('api/docs', app, document);
     const port = process.env.PORT || 3001;
     await app.listen(port);
     console.log(`API server running on http://localhost:${port}`);
     console.log(`Bull Board dashboard available at http://localhost:${port}/admin/queues`);
+    console.log(`Swagger documentation available at http://localhost:${port}/api/docs`);
 }
 bootstrap();
 //# sourceMappingURL=main.js.map

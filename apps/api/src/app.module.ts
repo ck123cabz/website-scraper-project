@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { QueueModule } from './queue/queue.module';
 import { SupabaseModule } from './supabase/supabase.module';
 import { HealthController } from './health/health.controller';
@@ -14,6 +15,7 @@ import { SettingsModule } from './settings/settings.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    ScheduleModule.forRoot(), // Enable cron jobs for ArchivalService and CleanupService
     SupabaseModule,
     QueueModule,
     SettingsModule,

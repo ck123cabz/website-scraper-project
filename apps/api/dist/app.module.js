@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
+const schedule_1 = require("@nestjs/schedule");
 const queue_module_1 = require("./queue/queue.module");
 const supabase_module_1 = require("./supabase/supabase.module");
 const health_controller_1 = require("./health/health.controller");
@@ -26,6 +27,7 @@ exports.AppModule = AppModule = __decorate([
                 isGlobal: true,
                 envFilePath: '.env',
             }),
+            schedule_1.ScheduleModule.forRoot(),
             supabase_module_1.SupabaseModule,
             queue_module_1.QueueModule,
             settings_module_1.SettingsModule,

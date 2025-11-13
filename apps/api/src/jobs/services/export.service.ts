@@ -20,6 +20,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Readable } from 'stream';
 import { JobsService } from '../jobs.service';
 import { UrlResult, Layer3Factors } from '@website-scraper/shared';
+import { PerfMonitor } from '../../common/decorators/perf-monitor.decorator';
+import { StreamMonitor } from '../../common/decorators/stream-monitor.decorator';
 
 /**
  * Export options interface
@@ -42,6 +44,8 @@ export class ExportService {
   /**
    * Stream CSV export with batch processing
    * Main export method that returns a Node.js ReadableStream
+   *
+   * Performance monitoring: Manual tracking in processStreamExport tracks throughput
    *
    * @param jobId - Job UUID to export
    * @param format - Export format (complete, summary, layer1, layer2, layer3)
@@ -88,6 +92,7 @@ export class ExportService {
 
   /**
    * Internal method to process export in batches and stream to output
+   * Includes performance monitoring for row throughput
    */
   private async processStreamExport(
     stream: Readable,
@@ -99,6 +104,12 @@ export class ExportService {
       confidence?: 'high' | 'medium' | 'low' | 'all';
     },
   ): Promise<void> {
+    // Performance tracking
+    const startTime = Date.now();
+    let rowCount = 0;
+    let lastLogTime = Date.now();
+    const logInterval = 2000; // Log progress every 2 seconds
+
     try {
       // Verify job exists
       const job = await this.jobsService.getJobById(jobId);
@@ -136,6 +147,18 @@ export class ExportService {
             const rowValues = this.generateRowValues(urlResult, format);
             const rowString = this.formatCSVRow(rowValues);
             stream.push(rowString + '\r\n');
+            rowCount++;
+
+            // Log progress at intervals
+            const now = Date.now();
+            if (now - lastLogTime > logInterval) {
+              const elapsed = now - startTime;
+              const throughput = ((rowCount / elapsed) * 1000).toFixed(0);
+              this.logger.debug(
+                `CSV Export (${format}, job=${jobId}): ${rowCount} rows, ${throughput} rows/sec`,
+              );
+              lastLogTime = now;
+            }
           }
 
           // Check if more pages exist
@@ -150,7 +173,13 @@ export class ExportService {
 
       // End stream
       stream.push(null);
-      this.logger.log(`CSV export completed for job ${jobId}`);
+
+      // Final performance log
+      const duration = Date.now() - startTime;
+      const throughput = ((rowCount / duration) * 1000).toFixed(0);
+      this.logger.log(
+        `CSV export completed: ${rowCount} rows in ${duration}ms (${throughput} rows/sec)`,
+      );
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       const errorStack = error instanceof Error ? error.stack : undefined;
@@ -302,10 +331,52 @@ export class ExportService {
    * T062: Generate complete format columns (48 columns)
    * 10 core + 5 L1 + 10 L2 + 15 L3 + 8 metadata
    *
+   * Handles NULL factor values gracefully for pre-migration data.
+   *
    * @param result - URL result record
    * @returns Array of values for all 48 columns
    */
   private generateCompleteColumns(result: UrlResult): Array<string | null | undefined> {
+    // Handle NULL factors for each layer
+    const layer1Fields = this.handleNullFactor(result.layer1_factors, {
+      tld_type: 'N/A',
+      tld_value: 'N/A',
+      domain_classification: 'N/A',
+      pattern_matches: 'N/A',
+      target_profile_type: 'N/A',
+    });
+
+    const layer2Fields = this.handleNullFactor(result.layer2_factors, {
+      publication_score: 'N/A',
+      product_offering: 'N/A',
+      layout_quality: 'N/A',
+      navigation_complexity: 'N/A',
+      monetization_indicators: 'N/A',
+      keywords_found: 'N/A',
+      ad_networks_detected: 'N/A',
+      has_blog: 'N/A',
+      has_press_releases: 'N/A',
+      reasoning: 'N/A',
+    });
+
+    const layer3Fields = this.handleNullFactor(result.layer3_factors, {
+      classification: 'N/A',
+      design_quality_score: 'N/A',
+      design_quality_indicators: 'N/A',
+      authority_indicators_score: 'N/A',
+      authority_indicators: 'N/A',
+      professional_presentation_score: 'N/A',
+      presentation_indicators: 'N/A',
+      content_originality_score: 'N/A',
+      originality_indicators: 'N/A',
+      llm_provider: 'N/A',
+      model_version: 'N/A',
+      cost_usd: 'N/A',
+      reasoning: 'N/A',
+      tokens_input: 'N/A',
+      tokens_output: 'N/A',
+    });
+
     return [
       // Core columns (10)
       ...this.generateCoreColumns(result),
@@ -324,6 +395,8 @@ export class ExportService {
    * T063: Generate summary format columns (7 columns)
    * Core info + summary reason
    *
+   * Handles NULL factors gracefully by providing fallback message.
+   *
    * @param result - URL result record
    * @returns Array of values for 7 summary columns
    */
@@ -336,6 +409,9 @@ export class ExportService {
       summaryReason = result.layer2_factors.reasoning;
     } else if (result.layer3_factors) {
       summaryReason = result.layer3_factors.reasoning;
+    } else {
+      // Handle NULL factors - provide fallback message
+      summaryReason = 'Factor data not available (processed before schema migration)';
     }
 
     return [
@@ -377,6 +453,27 @@ export class ExportService {
     }
 
     return columns;
+  }
+
+  /**
+   * Helper method to handle NULL factor values gracefully
+   * Returns default message for pre-migration data or error cases
+   *
+   * @param factor - The factor object to check (Layer1/2/3Factors)
+   * @param defaultValue - Default values to return if factor is NULL
+   * @returns Either the original factor or default values
+   */
+  private handleNullFactor<T>(
+    factor: T | null,
+    defaultValue: Record<string, string>,
+  ): Record<string, string> {
+    if (!factor) {
+      return {
+        ...defaultValue,
+        reason: 'Factor data not available (processed before schema migration)',
+      };
+    }
+    return factor as unknown as Record<string, string>;
   }
 
   /**

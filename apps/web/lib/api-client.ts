@@ -75,6 +75,26 @@ export const jobsApi = {
     return response.data;
   },
 
+  // Queue status for dashboard polling
+  getQueueStatus: async (params?: { includeCompleted?: boolean; limit?: number; offset?: number }) => {
+    const queryParams: Record<string, string | number | boolean> = {};
+
+    if (typeof params?.includeCompleted === 'boolean') {
+      queryParams.includeCompleted = params.includeCompleted;
+    }
+    if (typeof params?.limit === 'number') {
+      queryParams.limit = params.limit;
+    }
+    if (typeof params?.offset === 'number') {
+      queryParams.offset = params.offset;
+    }
+
+    const response = await apiClient.get('/jobs/queue/status', {
+      params: Object.keys(queryParams).length ? queryParams : undefined,
+    });
+    return response.data;
+  },
+
   // Get single result details with full factor data
   getResultDetails: async (jobId: string, resultId: string) => {
     const response = await apiClient.get(`/jobs/${jobId}/results/${resultId}`);
