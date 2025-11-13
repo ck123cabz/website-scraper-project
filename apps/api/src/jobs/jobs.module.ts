@@ -11,6 +11,7 @@ import { Layer2OperationalFilterService } from './services/layer2-operational-fi
 import { LlmService } from './services/llm.service';
 import { MockLlmService } from './services/llm.service.mock';
 import { ConfidenceScoringService } from './services/confidence-scoring.service';
+import { ExportService } from './services/export.service';
 import { StaleQueueMarkerProcessor } from './processors/stale-queue-marker.processor';
 import { QueueModule } from '../queue/queue.module';
 import { SettingsModule } from '../settings/settings.module';
@@ -60,6 +61,7 @@ import { extname } from 'path';
     Layer1DomainAnalysisService,
     Layer2OperationalFilterService, // Story 2.6: Layer 2 operational filtering (homepage scraping & validation)
     ConfidenceScoringService, // Story 2.4-refactored: Confidence band calculation
+    ExportService, // T061: CSV export service with streaming
     StaleQueueMarkerProcessor, // Story 001-manual-review-system T030: Stale queue marking (daily cron job)
     {
       provide: LlmService,
@@ -73,6 +75,7 @@ import { extname } from 'path';
     Layer2OperationalFilterService, // Export for worker integration (Story 2.5-refactored)
     LlmService,
     ConfidenceScoringService, // Export for worker integration
+    ExportService, // Export for controller integration
   ],
 })
 export class JobsModule {}

@@ -20,6 +20,7 @@ const layer2_operational_filter_service_1 = require("./services/layer2-operation
 const llm_service_1 = require("./services/llm.service");
 const llm_service_mock_1 = require("./services/llm.service.mock");
 const confidence_scoring_service_1 = require("./services/confidence-scoring.service");
+const export_service_1 = require("./services/export.service");
 const stale_queue_marker_processor_1 = require("./processors/stale-queue-marker.processor");
 const queue_module_1 = require("../queue/queue.module");
 const settings_module_1 = require("../settings/settings.module");
@@ -64,6 +65,7 @@ exports.JobsModule = JobsModule = __decorate([
             layer1_domain_analysis_service_1.Layer1DomainAnalysisService,
             layer2_operational_filter_service_1.Layer2OperationalFilterService,
             confidence_scoring_service_1.ConfidenceScoringService,
+            export_service_1.ExportService,
             stale_queue_marker_processor_1.StaleQueueMarkerProcessor,
             {
                 provide: llm_service_1.LlmService,
@@ -77,6 +79,7 @@ exports.JobsModule = JobsModule = __decorate([
             layer2_operational_filter_service_1.Layer2OperationalFilterService,
             llm_service_1.LlmService,
             confidence_scoring_service_1.ConfidenceScoringService,
+            export_service_1.ExportService,
         ],
     })
 ], JobsModule);
