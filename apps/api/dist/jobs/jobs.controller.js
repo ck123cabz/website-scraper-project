@@ -315,6 +315,38 @@ let JobsController = class JobsController {
             }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    async getQueueStatus(includeCompleted, limit, offset) {
+        try {
+            const parsedLimit = limit ? parseInt(limit, 10) : 50;
+            const parsedOffset = offset ? parseInt(offset, 10) : 0;
+            const parsedIncludeCompleted = includeCompleted === 'true';
+            if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 100) {
+                throw new common_1.BadRequestException('Limit must be a number between 1 and 100');
+            }
+            if (isNaN(parsedOffset) || parsedOffset < 0) {
+                throw new common_1.BadRequestException('Offset must be a non-negative number');
+            }
+            const activeJobs = await this.jobsService.getActiveJobs(parsedLimit, parsedOffset);
+            const responseData = {
+                activeJobs,
+            };
+            if (parsedIncludeCompleted) {
+                const completedJobs = await this.jobsService.getCompletedJobs();
+                responseData.completedJobs = completedJobs;
+            }
+            return {
+                success: true,
+                data: responseData,
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.BadRequestException) {
+                throw error;
+            }
+            console.error('[JobsController] Error fetching queue status:', error);
+            throw new common_1.InternalServerErrorException('Failed to retrieve queue status. Please try again.');
+        }
+    }
 };
 exports.JobsController = JobsController;
 __decorate([
@@ -401,6 +433,15 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], JobsController.prototype, "cancelJob", null);
+__decorate([
+    (0, common_1.Get)('queue/status'),
+    __param(0, (0, common_1.Query)('includeCompleted')),
+    __param(1, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('offset')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:returntype", Promise)
+], JobsController.prototype, "getQueueStatus", null);
 exports.JobsController = JobsController = __decorate([
     (0, common_1.Controller)('jobs'),
     __metadata("design:paramtypes", [jobs_service_1.JobsService,

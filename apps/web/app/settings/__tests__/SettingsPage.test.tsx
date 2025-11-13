@@ -113,15 +113,14 @@ describe('Settings Page - Tab Validation Tests', () => {
   });
 
   describe('1. Tab Navigation & State Preservation', () => {
-    it('should render all five tabs', async () => {
+    it('should render all four tabs', async () => {
       renderWithQueryClient(<SettingsPage />);
 
       await waitFor(() => {
         expect(screen.getByRole('tab', { name: /layer 1 domain/i })).toBeInTheDocument();
-        expect(screen.getByRole('tab', { name: /layer 2 operational/i })).toBeInTheDocument();
+        expect(screen.getByRole('tab', { name: /layer 2.*publication detection/i })).toBeInTheDocument();
         expect(screen.getByRole('tab', { name: /layer 3 llm/i })).toBeInTheDocument();
         expect(screen.getByRole('tab', { name: /confidence bands/i })).toBeInTheDocument();
-        expect(screen.getByRole('tab', { name: /manual review/i })).toBeInTheDocument();
       });
     });
 

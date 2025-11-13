@@ -2,15 +2,12 @@
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Plus, Settings, ClipboardList, AlertTriangle, Loader2 } from 'lucide-react';
+import { Plus, Settings, AlertTriangle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useDashboardBadge } from '@/hooks/useDashboardBadge';
 import { useJobs } from '@/hooks/use-jobs';
 import { JobProgressCard } from '@/components/dashboard/JobProgressCard';
 import { CompletedJobsSection, type CompletedJob } from '@/components/dashboard/CompletedJobsSection';
-import type { Job } from '@website-scraper/shared';
 
 // Force dynamic rendering - don't prerender at build time
 // Supabase env vars are only available at runtime in Railway
@@ -26,7 +23,6 @@ export const dynamic = 'force-dynamic';
  * - Real-time progress updates (polled automatically via React Query)
  * - Active jobs section with JobProgressCard components
  * - Completed jobs section (last 24 hours) with quick download
- * - Manual review queue badge (when enabled)
  * - Error handling with retry capability
  * - Loading states with skeleton loaders
  * - Responsive layout
@@ -39,7 +35,6 @@ export const dynamic = 'force-dynamic';
  * - 21 passing tests verify complete data flow from API to UI
  */
 export default function DashboardPage() {
-  const { queueCount, isEnabled } = useDashboardBadge();
   const { data: jobs, isLoading, error, refetch } = useJobs();
 
   // Separate active and completed jobs
@@ -66,21 +61,6 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <Link href="/manual-review">
-            <Button size="lg" variant="outline" className="gap-2 relative" data-testid="manual-review-button">
-              <ClipboardList className="h-5 w-5" />
-              Manual Review
-              {/* Dashboard Badge - shows when enabled and queue has items */}
-              {isEnabled && queueCount > 0 && (
-                <Badge
-                  className="ml-2 bg-red-500 text-white hover:bg-red-600"
-                  data-testid="manual-review-badge"
-                >
-                  {queueCount}
-                </Badge>
-              )}
-            </Button>
-          </Link>
           <Link href="/settings">
             <Button size="lg" variant="outline" className="gap-2" data-testid="settings-button">
               <Settings className="h-5 w-5" />

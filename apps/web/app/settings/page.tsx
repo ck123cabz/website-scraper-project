@@ -7,7 +7,6 @@ import { Layer1DomainTab } from '@/components/settings/Layer1DomainTab';
 import { Layer2PublicationTab } from '@/components/settings/Layer2PublicationTab';
 import { Layer3LlmTab } from '@/components/settings/Layer3LlmTab';
 import { ConfidenceBandsTab } from '@/components/settings/ConfidenceBandsTab';
-import { ManualReviewTab } from '@/components/settings/ManualReviewTab';
 import { useSettings, useUpdateSettings, useResetSettings } from '@/hooks/useSettings';
 import { ClassificationSettings } from '@website-scraper/shared';
 import { toast } from 'sonner';
@@ -206,12 +205,11 @@ export default function SettingsPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="layer1">Layer 1 Domain</TabsTrigger>
           <TabsTrigger value="layer2">Layer 2: Publication Detection</TabsTrigger>
           <TabsTrigger value="layer3">Layer 3 LLM</TabsTrigger>
           <TabsTrigger value="confidence">Confidence Bands</TabsTrigger>
-          <TabsTrigger value="manual">Manual Review</TabsTrigger>
         </TabsList>
 
         {/* Layer 1 Tab */}
@@ -261,19 +259,6 @@ export default function SettingsPage() {
               handleSettingsChange((prev) => ({
                 ...prev,
                 confidence_bands: bands,
-              }))
-            }
-          />
-        </TabsContent>
-
-        {/* Manual Review Tab */}
-        <TabsContent value="manual" className="space-y-4">
-          <ManualReviewTab
-            settings={formData.manual_review_settings}
-            onChange={(settings) =>
-              handleSettingsChange((prev) => ({
-                ...prev,
-                manual_review_settings: settings,
               }))
             }
           />

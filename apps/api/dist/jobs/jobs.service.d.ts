@@ -26,5 +26,14 @@ export declare class JobsService {
         };
     }>;
     getResultDetails(jobId: string, resultId: string): Promise<any | null>;
+    getQueuePosition(jobId: string): Promise<number | null>;
+    getEstimatedWaitTime(jobId: string): Promise<number | null>;
+    private getAverageSecondsPerUrl;
+    calculateProgress(job: {
+        urlCount: number;
+        completedCount: number;
+    }): number;
+    getActiveJobs(limit?: number, offset?: number): Promise<any[]>;
+    getCompletedJobs(): Promise<any[]>;
 }
 export {};

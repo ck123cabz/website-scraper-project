@@ -166,6 +166,182 @@ let JobsService = class JobsService {
         }
         return result;
     }
+    async getQueuePosition(jobId) {
+        const client = this.supabase.getClient();
+        const { data: queuedJobs, error } = await client
+            .from('jobs')
+            .select('id')
+            .eq('status', 'queued')
+            .order('created_at', { ascending: true });
+        if (error) {
+            throw new Error(`Failed to fetch queued jobs: ${error.message}`);
+        }
+        if (!queuedJobs || queuedJobs.length === 0) {
+            return null;
+        }
+        const jobIndex = queuedJobs.findIndex((job) => job.id === jobId);
+        if (jobIndex === -1) {
+            return null;
+        }
+        return jobIndex + 1;
+    }
+    async getEstimatedWaitTime(jobId) {
+        const queuePosition = await this.getQueuePosition(jobId);
+        if (!queuePosition) {
+            return null;
+        }
+        const job = await this.getJobById(jobId);
+        if (!job) {
+            return null;
+        }
+        if (job.total_urls === 0) {
+            return 60;
+        }
+        const avgSecondsPerUrl = await this.getAverageSecondsPerUrl();
+        const estimatedJobTime = job.total_urls * avgSecondsPerUrl;
+        const jobsAhead = queuePosition - 1;
+        if (jobsAhead === 0) {
+            return 60;
+        }
+        const waitSeconds = jobsAhead * estimatedJobTime * 1.05;
+        return Math.min(Math.round(waitSeconds), 86400);
+    }
+    async getAverageSecondsPerUrl() {
+        const client = this.supabase.getClient();
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const { data: completedJobs, error } = await client
+            .from('jobs')
+            .select('created_at, completed_at, total_urls')
+            .eq('status', 'completed')
+            .gte('completed_at', twentyFourHoursAgo)
+            .not('completed_at', 'is', null)
+            .gt('total_urls', 0);
+        if (error) {
+            console.warn(`Failed to fetch completed jobs for estimation: ${error.message}`);
+            return 30;
+        }
+        if (!completedJobs || completedJobs.length === 0) {
+            return 30;
+        }
+        let totalSecondsPerUrl = 0;
+        let validJobCount = 0;
+        for (const job of completedJobs) {
+            if (!job.completed_at || !job.created_at) {
+                continue;
+            }
+            const createdAt = new Date(job.created_at).getTime();
+            const completedAt = new Date(job.completed_at).getTime();
+            const processingTimeMs = completedAt - createdAt;
+            if (processingTimeMs <= 0) {
+                continue;
+            }
+            const processingTimeSeconds = processingTimeMs / 1000;
+            const secondsPerUrl = processingTimeSeconds / job.total_urls;
+            totalSecondsPerUrl += secondsPerUrl;
+            validJobCount++;
+        }
+        if (validJobCount === 0) {
+            return 30;
+        }
+        const average = totalSecondsPerUrl / validJobCount;
+        return Math.max(Math.round(average), 1);
+    }
+    calculateProgress(job) {
+        const { urlCount, completedCount } = job;
+        if (urlCount < 0 || completedCount < 0) {
+            return 0;
+        }
+        if (urlCount === 0) {
+            return 0;
+        }
+        if (completedCount >= urlCount) {
+            return 100;
+        }
+        const progress = (completedCount / urlCount) * 100;
+        return Math.round(progress);
+    }
+    async getActiveJobs(limit = 50, offset = 0) {
+        const client = this.supabase.getClient();
+        const { data: jobs, error } = await client
+            .from('jobs')
+            .select('*')
+            .in('status', ['processing', 'pending'])
+            .order('status', { ascending: false })
+            .order('created_at', { ascending: true })
+            .range(offset, offset + limit - 1);
+        if (error) {
+            throw new Error(`Failed to fetch active jobs: ${error.message}`);
+        }
+        if (!jobs || jobs.length === 0) {
+            return [];
+        }
+        const { data: allQueuedJobs, error: queueError } = await client
+            .from('jobs')
+            .select('id, created_at')
+            .eq('status', 'pending')
+            .order('created_at', { ascending: true });
+        if (queueError) {
+            throw new Error(`Failed to fetch queued jobs: ${queueError.message}`);
+        }
+        const queuePositions = new Map();
+        if (allQueuedJobs) {
+            allQueuedJobs.forEach((job, index) => {
+                queuePositions.set(job.id, index + 1);
+            });
+        }
+        return jobs.map((job) => {
+            const isQueued = job.status === 'pending';
+            const status = isQueued ? 'queued' : 'processing';
+            const urlCount = job.total_urls || 0;
+            const completedCount = job.processed_urls || 0;
+            const progress = urlCount > 0 ? Math.round((completedCount / urlCount) * 100) : 0;
+            const layer1 = job.layer1_eliminated || 0;
+            const layer2 = job.layer2_eliminated || 0;
+            const layer3 = job.layer3_classified || 0;
+            const queuePosition = isQueued ? queuePositions.get(job.id) || null : null;
+            const estimatedWaitTime = isQueued && queuePosition ? queuePosition * 300 : null;
+            return {
+                id: job.id,
+                name: job.name || 'Untitled Job',
+                status,
+                progress,
+                layerBreakdown: {
+                    layer1,
+                    layer2,
+                    layer3,
+                },
+                queuePosition,
+                estimatedWaitTime,
+                urlCount,
+                completedCount,
+                createdAt: job.created_at,
+            };
+        });
+    }
+    async getCompletedJobs() {
+        const client = this.supabase.getClient();
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const { data: jobs, error } = await client
+            .from('jobs')
+            .select('*')
+            .eq('status', 'completed')
+            .gte('completed_at', twentyFourHoursAgo)
+            .order('completed_at', { ascending: false })
+            .limit(10);
+        if (error) {
+            throw new Error(`Failed to fetch completed jobs: ${error.message}`);
+        }
+        if (!jobs || jobs.length === 0) {
+            return [];
+        }
+        return jobs.map((job) => ({
+            id: job.id,
+            name: job.name || 'Untitled Job',
+            completedAt: job.completed_at,
+            urlCount: job.total_urls || 0,
+            totalCost: job.total_cost || 0,
+        }));
+    }
 };
 exports.JobsService = JobsService;
 exports.JobsService = JobsService = __decorate([

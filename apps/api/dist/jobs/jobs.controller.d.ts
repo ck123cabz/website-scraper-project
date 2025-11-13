@@ -220,4 +220,8 @@ export declare class JobsController {
         } | null;
         message: string;
     }>;
+    getQueueStatus(includeCompleted?: string, limit?: string, offset?: string): Promise<{
+        success: boolean;
+        data: any;
+    }>;
 }

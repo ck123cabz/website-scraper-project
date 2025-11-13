@@ -32,16 +32,6 @@ export type {
   Layer2Rules,
 } from './types/layer2';
 export type {
-  ManualReviewQueueEntry,
-  Layer1Results,
-  Layer2Results,
-  Layer3Results,
-  ReviewDecision,
-  FactorResult,
-  RedFlagResult,
-  SophisticationSignal,
-} from './types/manual-review';
-export type {
   Layer3AnalysisResult,
 } from './types/layer3-analysis';
 
