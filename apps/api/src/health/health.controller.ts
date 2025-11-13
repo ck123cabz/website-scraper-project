@@ -22,10 +22,7 @@ export class HealthController {
     // Check database connection
     let databaseStatus = 'unknown';
     try {
-      const { data, error } = await this.supabaseService.getClient()
-        .from('jobs')
-        .select('id')
-        .limit(1);
+      const { error } = await this.supabaseService.getClient().from('jobs').select('id').limit(1);
       databaseStatus = error ? 'error' : 'connected';
     } catch (error) {
       databaseStatus = 'error';

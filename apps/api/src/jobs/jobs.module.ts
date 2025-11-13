@@ -10,7 +10,9 @@ import { Layer2OperationalFilterService } from './services/layer2-operational-fi
 import { LlmService } from './services/llm.service';
 import { MockLlmService } from './services/llm.service.mock';
 import { ConfidenceScoringService } from './services/confidence-scoring.service';
-import { ManualReviewRouterService } from './services/manual-review-router.service';
+import { ExportService } from './services/export.service';
+import { ArchivalService } from './services/archival.service';
+import { CleanupService } from './services/cleanup.service';
 import { QueueModule } from '../queue/queue.module';
 import { SettingsModule } from '../settings/settings.module';
 import { ScraperModule } from '../scraper/scraper.module';
@@ -56,7 +58,9 @@ import { extname } from 'path';
     Layer1DomainAnalysisService,
     Layer2OperationalFilterService, // Story 2.6: Layer 2 operational filtering (homepage scraping & validation)
     ConfidenceScoringService, // Story 2.4-refactored: Confidence band calculation
-    ManualReviewRouterService, // Story 2.4-refactored: Manual review routing
+    ExportService, // T061: CSV export service with streaming
+    ArchivalService, // T109: Auto-archive completed jobs older than 90 days
+    CleanupService, // T110: Hard-delete archived jobs older than 180 days
     {
       provide: LlmService,
       useClass: process.env.USE_MOCK_SERVICES === 'true' ? MockLlmService : LlmService,
@@ -69,7 +73,7 @@ import { extname } from 'path';
     Layer2OperationalFilterService, // Export for worker integration (Story 2.5-refactored)
     LlmService,
     ConfidenceScoringService, // Export for worker integration
-    ManualReviewRouterService, // Export for worker integration
+    ExportService, // Export for controller integration
   ],
 })
 export class JobsModule {}

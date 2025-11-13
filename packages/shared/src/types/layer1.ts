@@ -52,6 +52,8 @@ export interface URLPatterns {
   tag_pages: string[];
   /** URL path patterns indicating user-generated content */
   user_content: string[];
+  /** General keyword filters that match anywhere in hostname (e.g., "news", "sports") */
+  general_keywords?: string[];
 }
 
 /**

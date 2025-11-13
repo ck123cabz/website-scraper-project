@@ -6,6 +6,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 export interface UrlProcessingJob {
   jobId: string;
   url: string;
+  urlId: string;
   priority?: number;
 }
 
@@ -25,21 +26,59 @@ export class QueueService {
   }
 
   async addUrlToQueue(data: UrlProcessingJob): Promise<void> {
-    await this.urlProcessingQueue.add('process-url', data, {
-      priority: data.priority || 0,
-    });
+    this.logger.debug(
+      `Adding URL to queue: jobId=${data.jobId}, url=${data.url.slice(0, 100)}, priority=${data.priority || 0}`,
+    );
+
+    try {
+      await this.urlProcessingQueue.add('process-url', data, {
+        priority: data.priority || 0,
+      });
+
+      this.logger.debug(`URL queued successfully: ${data.url.slice(0, 100)}`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(
+        `Failed to add URL to queue: ${data.url.slice(0, 100)}, error: ${errorMessage}`,
+      );
+      throw error;
+    }
   }
 
   async addUrlsToQueue(jobs: UrlProcessingJob[]): Promise<void> {
-    const bulkJobs = jobs.map((job) => ({
-      name: 'process-url',
-      data: job,
-      opts: {
-        priority: job.priority || 0,
-      },
-    }));
+    const startTime = performance.now();
+    this.logger.log(`Adding ${jobs.length} URLs to queue (bulk operation)`);
 
-    await this.urlProcessingQueue.addBulk(bulkJobs);
+    try {
+      const bulkJobs = jobs.map((job) => ({
+        name: 'process-url',
+        data: job,
+        opts: {
+          priority: job.priority || 0,
+        },
+      }));
+
+      await this.urlProcessingQueue.addBulk(bulkJobs);
+
+      const duration = performance.now() - startTime;
+      this.logger.log(
+        `Successfully queued ${jobs.length} URLs for processing (${duration.toFixed(0)}ms)`,
+      );
+
+      // Log details for large batches
+      if (jobs.length > 1000) {
+        this.logger.log(
+          `Large batch queued: ${jobs.length} URLs in ${duration.toFixed(0)}ms (${(jobs.length / (duration / 1000)).toFixed(0)} URLs/sec)`,
+        );
+      }
+    } catch (error) {
+      const duration = performance.now() - startTime;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(
+        `Failed to add ${jobs.length} URLs to queue after ${duration.toFixed(0)}ms: ${errorMessage}`,
+      );
+      throw error;
+    }
   }
 
   async getQueueStats() {
@@ -99,13 +138,13 @@ export class QueueService {
    * Story 2.5: Task 9 - Pause/Resume Job Controls
    */
   async resumeJob(jobId: string): Promise<void> {
-    // 1. Find URLs that were never processed (classification_result is NULL)
+    // 1. Find URLs from job_urls table that haven't been completed
     const { data: unprocessedUrls, error: selectError } = await this.supabase
       .getClient()
-      .from('results')
-      .select('url')
+      .from('job_urls')
+      .select('id, url')
       .eq('job_id', jobId)
-      .is('classification_result', null);
+      .in('status', ['queued', 'processing']); // Re-queue URLs that are still pending or stuck
 
     if (selectError) {
       this.logger.error(
@@ -123,6 +162,7 @@ export class QueueService {
       const jobs = unprocessedUrls.map((row) => ({
         jobId,
         url: row.url,
+        urlId: row.id, // Include urlId from job_urls table
       }));
 
       await this.addUrlsToQueue(jobs);

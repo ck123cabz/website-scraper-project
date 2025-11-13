@@ -61,8 +61,7 @@ export class MockLlmService {
       pattern: /news|breaking.*news|latest.*news|editorial.*team/i,
       classification: 'not_suitable',
       confidence: 0.73,
-      reasoning:
-        'News site with internal editorial team. Limited guest post opportunities.',
+      reasoning: 'News site with internal editorial team. Limited guest post opportunities.',
     },
     {
       pattern: /paid.*guest.*post|get paid.*write/i,

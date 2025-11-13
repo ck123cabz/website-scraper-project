@@ -4,6 +4,7 @@ dotenv.config();
 
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { createBullBoard } from '@bull-board/api';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter } from '@bull-board/express';
@@ -69,7 +70,7 @@ async function bootstrap() {
       // Allow requests with no origin (mobile apps, Postman, etc.)
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.some(allowed => origin.startsWith(allowed))) {
+      if (allowedOrigins.some((allowed) => origin.startsWith(allowed))) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
@@ -97,11 +98,31 @@ async function bootstrap() {
 
   app.use('/admin/queues', serverAdapter.getRouter());
 
+  // Swagger/OpenAPI Setup (T106: API Documentation)
+  const config = new DocumentBuilder()
+    .setTitle('Batch Processing Workflow API')
+    .setDescription(
+      'RESTful API for automated batch URL processing and analysis using Layer 1/2/3 evaluation framework'
+    )
+    .setVersion('1.0.0')
+    .addServer(
+      process.env.API_URL || 'http://localhost:3001',
+      'API Server'
+    )
+    .addTag('Jobs', 'Job management endpoints')
+    .addTag('Results', 'Result retrieval and export endpoints')
+    .addTag('Queue', 'Queue status and monitoring endpoints')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+
   const port = process.env.PORT || 3001;
   await app.listen(port);
 
   console.log(`API server running on http://localhost:${port}`);
   console.log(`Bull Board dashboard available at http://localhost:${port}/admin/queues`);
+  console.log(`Swagger documentation available at http://localhost:${port}/api/docs`);
 }
 
 bootstrap();

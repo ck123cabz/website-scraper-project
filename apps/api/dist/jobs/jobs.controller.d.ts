@@ -4,6 +4,7 @@ import { FileParserService } from './services/file-parser.service';
 import { UrlValidationService } from './services/url-validation.service';
 import { QueueService } from '../queue/queue.service';
 import { SupabaseService } from '../supabase/supabase.service';
+import { ExportService } from './services/export.service';
 import { CreateJobDto } from './dto/create-job.dto';
 export declare class JobsController {
     private readonly jobsService;
@@ -11,7 +12,8 @@ export declare class JobsController {
     private readonly urlValidationService;
     private readonly queueService;
     private readonly supabase;
-    constructor(jobsService: JobsService, fileParserService: FileParserService, urlValidationService: UrlValidationService, queueService: QueueService, supabase: SupabaseService);
+    private readonly exportService;
+    constructor(jobsService: JobsService, fileParserService: FileParserService, urlValidationService: UrlValidationService, queueService: QueueService, supabase: SupabaseService, exportService: ExportService);
     createJobWithUrls(file: Express.Multer.File | undefined, body: CreateJobDto, contentType: string, req: Request): Promise<{
         success: boolean;
         data: {
@@ -39,6 +41,7 @@ export declare class JobsController {
             gemini_cost: number;
             gpt_cost: number;
             id: string;
+            layer1_eliminated_count: number | null;
             name: string | null;
             prefilter_passed_count: number | null;
             prefilter_rejected_count: number | null;
@@ -67,6 +70,7 @@ export declare class JobsController {
             gemini_cost: number;
             gpt_cost: number;
             id: string;
+            layer1_eliminated_count: number | null;
             name: string | null;
             prefilter_passed_count: number | null;
             prefilter_rejected_count: number | null;
@@ -95,6 +99,7 @@ export declare class JobsController {
             gemini_cost: number;
             gpt_cost: number;
             id: string;
+            layer1_eliminated_count: number | null;
             name: string | null;
             prefilter_passed_count: number | null;
             prefilter_rejected_count: number | null;
@@ -110,17 +115,21 @@ export declare class JobsController {
             updated_at: string;
         }[];
     }>;
-    getJobResults(jobId: string, page?: string, limit?: string, status?: string, classification?: string, search?: string): Promise<{
+    getJobResults(jobId: string, page?: string, pageSize?: string, filter?: 'approved' | 'rejected' | 'all', layer?: 'layer1' | 'layer2' | 'layer3' | 'passed_all' | 'all', confidence?: 'high' | 'medium' | 'low' | 'very-high' | 'very-low' | 'all'): Promise<{
         success: boolean;
-        data: any[];
+        data: import("@website-scraper/shared").UrlResult[];
         pagination: {
-            page: number;
-            limit: number;
             total: number;
-            totalPages: number;
+            page: number;
+            pageSize: number;
+            pages: number;
         };
     }>;
-    exportJobResults(jobId: string, format: string | undefined, status: string | undefined, classification: string | undefined, search: string | undefined, res: Response): Promise<void>;
+    getResultDetails(jobId: string, resultId: string): Promise<{
+        success: boolean;
+        data: any;
+    }>;
+    exportJobResults(jobId: string, res: Response, format?: string, filter?: string, layer?: string, confidence?: string): Promise<void>;
     pauseJob(jobId: string): Promise<{
         success: boolean;
         data: {
@@ -134,6 +143,7 @@ export declare class JobsController {
             gemini_cost: number;
             gpt_cost: number;
             id: string;
+            layer1_eliminated_count: number | null;
             name: string | null;
             prefilter_passed_count: number | null;
             prefilter_rejected_count: number | null;
@@ -163,6 +173,7 @@ export declare class JobsController {
             gemini_cost: number;
             gpt_cost: number;
             id: string;
+            layer1_eliminated_count: number | null;
             name: string | null;
             prefilter_passed_count: number | null;
             prefilter_rejected_count: number | null;
@@ -192,6 +203,7 @@ export declare class JobsController {
             gemini_cost: number;
             gpt_cost: number;
             id: string;
+            layer1_eliminated_count: number | null;
             name: string | null;
             prefilter_passed_count: number | null;
             prefilter_rejected_count: number | null;
@@ -207,5 +219,9 @@ export declare class JobsController {
             updated_at: string;
         } | null;
         message: string;
+    }>;
+    getQueueStatus(includeCompleted?: string, limit?: string, offset?: string): Promise<{
+        success: boolean;
+        data: any;
     }>;
 }

@@ -15,13 +15,10 @@ import type { Job } from 'bullmq';
  */
 describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
   let processor: UrlWorkerProcessor;
-  let supabaseService: jest.Mocked<SupabaseService>;
   let scraperService: jest.Mocked<ScraperService>;
   let layer1AnalysisService: jest.Mocked<Layer1DomainAnalysisService>;
   let layer2FilterService: jest.Mocked<Layer2OperationalFilterService>;
   let llmService: jest.Mocked<LlmService>;
-  let confidenceScoringService: jest.Mocked<ConfidenceScoringService>;
-  let manualReviewRouterService: jest.Mocked<ManualReviewRouterService>;
 
   // Mock Supabase client
   const mockSupabaseClient = {
@@ -86,13 +83,14 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
     }).compile();
 
     processor = module.get<UrlWorkerProcessor>(UrlWorkerProcessor);
-    supabaseService = module.get(SupabaseService) as jest.Mocked<SupabaseService>;
     scraperService = module.get(ScraperService) as jest.Mocked<ScraperService>;
-    layer1AnalysisService = module.get(Layer1DomainAnalysisService) as jest.Mocked<Layer1DomainAnalysisService>;
-    layer2FilterService = module.get(Layer2OperationalFilterService) as jest.Mocked<Layer2OperationalFilterService>;
+    layer1AnalysisService = module.get(
+      Layer1DomainAnalysisService,
+    ) as jest.Mocked<Layer1DomainAnalysisService>;
+    layer2FilterService = module.get(
+      Layer2OperationalFilterService,
+    ) as jest.Mocked<Layer2OperationalFilterService>;
     llmService = module.get(LlmService) as jest.Mocked<LlmService>;
-    confidenceScoringService = module.get(ConfidenceScoringService) as jest.Mocked<ConfidenceScoringService>;
-    manualReviewRouterService = module.get(ManualReviewRouterService) as jest.Mocked<ManualReviewRouterService>;
 
     jest.clearAllMocks();
   });
@@ -135,12 +133,31 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
 
       layer2FilterService.filterUrl.mockResolvedValue({
         passed: true,
-        reasoning: 'PASS - Operational signals valid',
+        reasoning: 'PASS - Business signals detected, publication score below threshold',
         signals: {
-          company_pages: { has_about: true, has_team: true, has_contact: true, count: 3 },
-          blog_data: { has_blog: true, last_post_date: '2025-10-01', days_since_last_post: 15, passes_freshness: true },
-          tech_stack: { tools_detected: ['Google Analytics', 'HubSpot'], count: 2 },
-          design_quality: { score: 8, has_modern_framework: true, is_responsive: true, has_professional_imagery: true },
+          has_product_offering: true,
+          product_confidence: 0.85,
+          detected_product_keywords: ['pricing', 'demo', 'free trial'],
+          homepage_is_blog: false,
+          layout_type: 'marketing',
+          layout_confidence: 0.9,
+          has_business_nav: true,
+          business_nav_percentage: 0.6,
+          nav_items_classified: {
+            business: ['product', 'pricing', 'about', 'contact'],
+            content: ['blog'],
+            other: [],
+          },
+          monetization_type: 'business',
+          ad_networks_detected: [],
+          affiliate_patterns_detected: [],
+          publication_score: 0.25,
+          module_scores: {
+            product_offering: 0.85,
+            layout: 0.9,
+            navigation: 0.6,
+            monetization: 1.0,
+          },
         },
         processingTimeMs: 100,
       });
@@ -327,12 +344,31 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
       // Layer 2: Operational filter REJECT
       layer2FilterService.filterUrl.mockResolvedValue({
         passed: false,
-        reasoning: 'REJECT - No company page found',
+        reasoning: 'REJECT - Publication score above threshold (0.85 >= 0.65)',
         signals: {
-          company_pages: { has_about: false, has_team: false, has_contact: false, count: 0 },
-          blog_data: { has_blog: false, last_post_date: null, days_since_last_post: null, passes_freshness: false },
-          tech_stack: { tools_detected: [], count: 0 },
-          design_quality: { score: 3, has_modern_framework: false, is_responsive: false, has_professional_imagery: false },
+          has_product_offering: false,
+          product_confidence: 0.1,
+          detected_product_keywords: [],
+          homepage_is_blog: true,
+          layout_type: 'blog',
+          layout_confidence: 0.95,
+          has_business_nav: false,
+          business_nav_percentage: 0.1,
+          nav_items_classified: {
+            business: [],
+            content: ['articles', 'blog', 'archives', 'topics'],
+            other: [],
+          },
+          monetization_type: 'ads',
+          ad_networks_detected: ['googlesyndication', 'adsense'],
+          affiliate_patterns_detected: ['amazon', 'aff='],
+          publication_score: 0.85,
+          module_scores: {
+            product_offering: 0.1,
+            layout: 0.95,
+            navigation: 0.1,
+            monetization: 0.9,
+          },
         },
         processingTimeMs: 100,
       });
@@ -381,11 +417,22 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
       },
     };
 
+    beforeEach(() => {
+      // Clear all mocks including Supabase client
+      jest.clearAllMocks();
+      mockSupabaseClient.single.mockReset();
+    });
+
     it('should skip processing when job is paused', async () => {
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: { status: 'paused' },
-        error: null,
-      });
+      mockSupabaseClient.single
+        .mockResolvedValueOnce({
+          data: { status: 'paused' },
+          error: null,
+        })
+        .mockResolvedValueOnce({
+          data: {},
+          error: null,
+        });
 
       await processor.process(mockJob as Job);
 

@@ -6,10 +6,7 @@ import type {
   Layer2FilterResult,
   Layer2Signals,
   Layer2Rules,
-  CompanyPageSignals,
-  BlogDataSignals,
-  TechStackSignals,
-  DesignQualitySignals,
+  Layer2Results,
 } from '@website-scraper/shared';
 
 /**
@@ -29,14 +26,34 @@ import type {
 export class Layer2OperationalFilterService {
   private readonly logger = new Logger(Layer2OperationalFilterService.name);
   private readonly DEFAULT_RULES: Layer2Rules = {
-    blog_freshness_days: 90,
-    required_pages_count: 2,
-    min_tech_stack_tools: 2,
-    tech_stack_tools: {
-      analytics: ['google-analytics', 'mixpanel', 'amplitude'],
-      marketing: ['hubspot', 'marketo', 'activecampaign', 'mailchimp'],
+    publication_score_threshold: 0.65,
+    product_keywords: {
+      commercial: ['pricing', 'buy', 'demo', 'plans', 'free trial', 'get started'],
+      features: ['features', 'capabilities', 'solutions', 'product'],
+      cta: ['sign up', 'start free', 'book a call', 'request demo'],
     },
-    min_design_quality_score: 6,
+    business_nav_keywords: [
+      'product',
+      'pricing',
+      'solutions',
+      'about',
+      'careers',
+      'customers',
+      'contact',
+    ],
+    content_nav_keywords: [
+      'articles',
+      'blog',
+      'news',
+      'topics',
+      'categories',
+      'archives',
+      'authors',
+    ],
+    min_business_nav_percentage: 0.3,
+    ad_network_patterns: ['googlesyndication', 'adsense', 'doubleclick', 'media.net'],
+    affiliate_patterns: ['amazon', 'affiliate', 'aff=', 'ref=', 'amzn'],
+    payment_provider_patterns: ['stripe', 'paypal', 'braintree', 'square'],
   };
 
   constructor(
@@ -47,8 +64,8 @@ export class Layer2OperationalFilterService {
   }
 
   /**
-   * Main entry point: Filter URL through Layer 2 operational checks
-   * Scrapes homepage and validates company infrastructure signals
+   * Main entry point: Filter URL through Layer 2 publication detection
+   * Scrapes homepage and aggregates 4 detection modules into publication score
    *
    * @param url - URL to filter (must have passed Layer 1)
    * @returns Layer2FilterResult with passed flag, signals, and reasoning
@@ -73,7 +90,9 @@ export class Layer2OperationalFilterService {
       const scrapeResult = await this.scraperService.fetchUrl(url);
 
       if (!scrapeResult.success || !scrapeResult.content) {
-        this.logger.warn(`Scraping failed for ${url.slice(0, 100)}: ${scrapeResult.error || 'Unknown error'}`);
+        this.logger.warn(
+          `Scraping failed for ${url.slice(0, 100)}: ${scrapeResult.error || 'Unknown error'}`,
+        );
         return this.createPassThroughResult(
           `PASS Layer 2 - Scraping failed (${scrapeResult.error}), defaulting to next layer`,
           startTime,
@@ -83,30 +102,58 @@ export class Layer2OperationalFilterService {
       const html = scrapeResult.content;
       const $ = cheerio.load(html);
 
-      // Detect all Layer 2 signals
-      const companyPages = this.detectCompanyPages($, html);
-      const blogData = this.detectBlogData($, html, rules.blog_freshness_days);
-      const techStack = this.detectTechStack($, html);
-      const designQuality = this.assessDesignQuality($, html);
+      // Run 4 detection modules
+      const productSignals = this.detectProductOffering($, html, rules);
+      const layoutSignals = this.analyzeHomepageLayout($, html);
+      const navSignals = this.parseNavigation($, html, rules);
+      const monetizationSignals = this.detectMonetization($, html, rules);
 
+      // Calculate module scores (0-1 scale, higher = more "publication-like")
+      const productScore = 1 - productSignals.product_confidence; // Invert: no product = high pub score
+      const layoutScore = layoutSignals.homepage_is_blog
+        ? layoutSignals.layout_confidence
+        : 1 - layoutSignals.layout_confidence;
+      const navScore = 1 - navSignals.business_nav_percentage; // Invert: low business nav = high pub score
+      const monetizationScore =
+        monetizationSignals.monetization_type === 'ads' ||
+        monetizationSignals.monetization_type === 'affiliates'
+          ? 1.0
+          : monetizationSignals.monetization_type === 'business'
+            ? 0.0
+            : 0.5; // mixed or unknown
+
+      // Aggregate into publication_score
+      const publication_score = (productScore + layoutScore + navScore + monetizationScore) / 4;
+
+      // Build complete signals object
       const signals: Layer2Signals = {
-        company_pages: companyPages,
-        blog_data: blogData,
-        tech_stack: techStack,
-        design_quality: designQuality,
+        ...productSignals,
+        ...layoutSignals,
+        ...navSignals,
+        ...monetizationSignals,
+        publication_score,
+        module_scores: {
+          product_offering: productScore,
+          layout: layoutScore,
+          navigation: navScore,
+          monetization: monetizationScore,
+        },
       };
 
-      // Evaluate pass/fail criteria
-      const decision = this.evaluateSignals(signals, rules);
+      // Make decision
+      const passed = publication_score < rules.publication_score_threshold;
       const processingTimeMs = Date.now() - startTime;
 
       this.logger.log(
-        `Layer 2 result for ${url.slice(0, 100)}: ${decision.passed ? 'PASS' : 'REJECT'} (${processingTimeMs}ms)`,
+        `Layer 2 result for ${url.slice(0, 100)}: ${passed ? 'PASS' : 'REJECT'} ` +
+          `(publication_score: ${publication_score.toFixed(2)}, ${processingTimeMs}ms)`,
       );
 
       return {
-        passed: decision.passed,
-        reasoning: decision.reasoning,
+        passed,
+        reasoning: passed
+          ? `PASS Layer 2 - Company site detected (publication_score: ${publication_score.toFixed(2)})`
+          : `REJECT Layer 2 - Pure publication detected (publication_score: ${publication_score.toFixed(2)})`,
         signals,
         processingTimeMs,
       };
@@ -131,11 +178,23 @@ export class Layer2OperationalFilterService {
 
       if (layer2Rules && typeof layer2Rules === 'object') {
         return {
-          blog_freshness_days: layer2Rules.blog_freshness_days ?? this.DEFAULT_RULES.blog_freshness_days,
-          required_pages_count: layer2Rules.required_pages_count ?? this.DEFAULT_RULES.required_pages_count,
-          min_tech_stack_tools: layer2Rules.min_tech_stack_tools ?? this.DEFAULT_RULES.min_tech_stack_tools,
-          tech_stack_tools: layer2Rules.tech_stack_tools ?? this.DEFAULT_RULES.tech_stack_tools,
-          min_design_quality_score: layer2Rules.min_design_quality_score ?? this.DEFAULT_RULES.min_design_quality_score,
+          publication_score_threshold:
+            layer2Rules.publication_score_threshold ??
+            this.DEFAULT_RULES.publication_score_threshold,
+          product_keywords: layer2Rules.product_keywords ?? this.DEFAULT_RULES.product_keywords,
+          business_nav_keywords:
+            layer2Rules.business_nav_keywords ?? this.DEFAULT_RULES.business_nav_keywords,
+          content_nav_keywords:
+            layer2Rules.content_nav_keywords ?? this.DEFAULT_RULES.content_nav_keywords,
+          min_business_nav_percentage:
+            layer2Rules.min_business_nav_percentage ??
+            this.DEFAULT_RULES.min_business_nav_percentage,
+          ad_network_patterns:
+            layer2Rules.ad_network_patterns ?? this.DEFAULT_RULES.ad_network_patterns,
+          affiliate_patterns:
+            layer2Rules.affiliate_patterns ?? this.DEFAULT_RULES.affiliate_patterns,
+          payment_provider_patterns:
+            layer2Rules.payment_provider_patterns ?? this.DEFAULT_RULES.payment_provider_patterns,
         };
       }
     } catch (error) {
@@ -148,8 +207,9 @@ export class Layer2OperationalFilterService {
   /**
    * Detect company infrastructure pages (About, Team, Contact)
    * Minimum 2 of 3 required to pass
+   * TODO: Remove or refactor in future tasks
    */
-  private detectCompanyPages($: any, html: string): CompanyPageSignals {
+  private detectCompanyPages($: any, html: string): any {
     const lowerHtml = html.toLowerCase();
 
     // Detect About page
@@ -218,8 +278,9 @@ export class Layer2OperationalFilterService {
   /**
    * Detect blog section and validate freshness
    * Requires at least 1 post within threshold (default: 90 days)
+   * TODO: Remove or refactor in future tasks
    */
-  private detectBlogData($: any, html: string, thresholdDays: number): BlogDataSignals {
+  private detectBlogData($: any, html: string, thresholdDays: number): any {
     const lowerHtml = html.toLowerCase();
 
     // Detect blog section
@@ -235,7 +296,7 @@ export class Layer2OperationalFilterService {
     }
 
     // Extract blog post dates
-    const postDates = this.extractBlogPostDates($, html);
+    const postDates = this.extractBlogPostDates($);
 
     if (postDates.length === 0) {
       return {
@@ -267,9 +328,7 @@ export class Layer2OperationalFilterService {
     const blogKeywords = ['blog', 'news', 'articles', 'insights', 'resources', 'latest posts'];
 
     // Check navigation links
-    const navText = $('nav, header, [class*="menu"], [class*="nav"]')
-      .text()
-      .toLowerCase();
+    const navText = $('nav, header, [class*="menu"], [class*="nav"]').text().toLowerCase();
 
     // Check section headings
     const headings = $('h1, h2, h3, h4')
@@ -292,7 +351,7 @@ export class Layer2OperationalFilterService {
    * Extract blog post publish dates from HTML
    * Parses common date formats and time tags
    */
-  private extractBlogPostDates($: any, html: string): Date[] {
+  private extractBlogPostDates($: any): Date[] {
     const dates: Date[] = [];
 
     // Extract dates from <time> tags
@@ -330,7 +389,20 @@ export class Layer2OperationalFilterService {
       }
 
       // Try common formats: "Jan 15, 2024", "15 January 2024", etc.
-      const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+      const monthNames = [
+        'jan',
+        'feb',
+        'mar',
+        'apr',
+        'may',
+        'jun',
+        'jul',
+        'aug',
+        'sep',
+        'oct',
+        'nov',
+        'dec',
+      ];
       const lower = dateStr.toLowerCase();
 
       for (let i = 0; i < monthNames.length; i++) {
@@ -351,14 +423,17 @@ export class Layer2OperationalFilterService {
   /**
    * Detect professional tech stack tools
    * Minimum 2 tools required (analytics + marketing platforms)
+   * TODO: Remove or refactor in future tasks
    */
-  private detectTechStack($: any, html: string): TechStackSignals {
+  private detectTechStack($: any, html: string): any {
     const detectedTools: string[] = [];
 
     // Google Analytics
-    if (html.includes('google-analytics.com/ga.js') ||
-        html.includes('googletagmanager.com/gtag/js') ||
-        html.match(/ga\(['"]create/)) {
+    if (
+      html.includes('google-analytics.com/ga.js') ||
+      html.includes('googletagmanager.com/gtag/js') ||
+      html.match(/ga\(['"]create/)
+    ) {
       detectedTools.push('Google Analytics');
     }
 
@@ -368,9 +443,11 @@ export class Layer2OperationalFilterService {
     }
 
     // HubSpot
-    if (html.includes('js.hs-scripts.com') ||
-        html.includes('forms.hubspot.com') ||
-        html.match(/hbspt\./)) {
+    if (
+      html.includes('js.hs-scripts.com') ||
+      html.includes('forms.hubspot.com') ||
+      html.match(/hbspt\./)
+    ) {
       detectedTools.push('HubSpot');
     }
 
@@ -403,8 +480,9 @@ export class Layer2OperationalFilterService {
   /**
    * Assess professional design quality indicators
    * Scores on 1-10 scale based on modern frameworks, responsive design, imagery
+   * TODO: Remove or refactor in future tasks
    */
-  private assessDesignQuality($: any, html: string): DesignQualitySignals {
+  private assessDesignQuality($: any, html: string): any {
     let score = 5; // Base score
 
     // Modern CSS framework detection
@@ -441,7 +519,11 @@ export class Layer2OperationalFilterService {
     }
 
     // Modern features (lazy loading, srcset, picture tags)
-    if ($('img[loading="lazy"]').length > 0 || $('img[srcset]').length > 0 || $('picture').length > 0) {
+    if (
+      $('img[loading="lazy"]').length > 0 ||
+      $('img[srcset]').length > 0 ||
+      $('picture').length > 0
+    ) {
       score += 1;
     }
 
@@ -454,80 +536,349 @@ export class Layer2OperationalFilterService {
   }
 
   /**
+   * Detect product/service offering from homepage
+   * Scans for commercial keywords, pricing mentions, CTAs, and payment providers
+   */
+  private detectProductOffering(
+    $: any,
+    html: string,
+    rules: Layer2Rules,
+  ): {
+    has_product_offering: boolean;
+    product_confidence: number;
+    detected_product_keywords: string[];
+  } {
+    const lowerHtml = html.toLowerCase();
+    const bodyText = $('body').text().toLowerCase();
+    const detectedKeywords: string[] = [];
+    let score = 0;
+    let signalCount = 0;
+
+    // Check commercial keywords
+    const commercialKeywords = rules.product_keywords.commercial;
+    const commercialMatches = commercialKeywords.filter((kw) =>
+      bodyText.includes(kw.toLowerCase()),
+    );
+    if (commercialMatches.length > 0) {
+      score += Math.min(commercialMatches.length * 0.2, 0.4);
+      signalCount++;
+      detectedKeywords.push(...commercialMatches);
+    }
+
+    // Check feature keywords
+    const featureKeywords = rules.product_keywords.features;
+    const featureMatches = featureKeywords.filter((kw) => bodyText.includes(kw.toLowerCase()));
+    if (featureMatches.length > 0) {
+      score += Math.min(featureMatches.length * 0.15, 0.3);
+      signalCount++;
+      detectedKeywords.push(...featureMatches);
+    }
+
+    // Check CTA keywords
+    const ctaKeywords = rules.product_keywords.cta;
+    const ctaMatches = ctaKeywords.filter((kw) => bodyText.includes(kw.toLowerCase()));
+    if (ctaMatches.length > 0) {
+      score += Math.min(ctaMatches.length * 0.15, 0.3);
+      signalCount++;
+      detectedKeywords.push(...ctaMatches);
+    }
+
+    // Check for price mentions ($XX, pricing tables)
+    const pricePatterns = [/\$\d+/, /\d+\/month/, /\d+\/year/, /<table[^>]*pricing/i];
+    const hasPricing = pricePatterns.some((pattern) => pattern.test(html));
+    if (hasPricing) {
+      score += 0.3;
+      signalCount++;
+      detectedKeywords.push('pricing_pattern');
+    }
+
+    // Check for payment provider scripts
+    const paymentProviders = rules.payment_provider_patterns;
+    const hasPaymentProvider = paymentProviders.some((provider) =>
+      lowerHtml.includes(provider.toLowerCase()),
+    );
+    if (hasPaymentProvider) {
+      score += 0.4;
+      signalCount++;
+      detectedKeywords.push('payment_provider');
+    }
+
+    // Normalize score to 0-1 range
+    const confidence = signalCount > 0 ? Math.min(score, 1.0) : 0;
+
+    return {
+      has_product_offering: confidence > 0.5,
+      product_confidence: confidence,
+      detected_product_keywords: detectedKeywords,
+    };
+  }
+
+  /**
+   * Analyze homepage layout to distinguish blog vs marketing landing page
+   */
+  private analyzeHomepageLayout(
+    $: any,
+    html: string,
+  ): {
+    homepage_is_blog: boolean;
+    layout_type: 'blog' | 'marketing' | 'mixed';
+    layout_confidence: number;
+  } {
+    let blogSignals = 0;
+    let marketingSignals = 0;
+
+    // Blog-style signals
+    const articleCount = $('article').length;
+    if (articleCount >= 3) blogSignals += 2;
+    else if (articleCount >= 1) blogSignals += 1;
+
+    const dateStamps = $('time, .date, .published').length;
+    if (dateStamps >= 3) blogSignals += 2;
+    else if (dateStamps >= 1) blogSignals += 1;
+
+    const authorBylines = $('.author, .byline, [rel="author"]').length;
+    if (authorBylines >= 2) blogSignals += 1;
+
+    const pagination = $('.pagination, .pager, [rel="next"]').length > 0;
+    if (pagination) blogSignals += 1;
+
+    const latestPostsHeading = /latest posts?|recent articles?|blog/i.test($('h1, h2, h3').text());
+    if (latestPostsHeading) blogSignals += 2;
+
+    // Marketing-style signals
+    const heroSection = $('.hero, .banner, .jumbotron').length > 0;
+    if (heroSection) marketingSignals += 2;
+
+    const ctaButtons = $('button, .cta, .btn').filter((_: any, el: any) => {
+      const text = $(el).text().toLowerCase();
+      return (
+        text.includes('start') ||
+        text.includes('get') ||
+        text.includes('try') ||
+        text.includes('demo') ||
+        text.includes('sign up')
+      );
+    }).length;
+    if (ctaButtons >= 2) marketingSignals += 2;
+    else if (ctaButtons >= 1) marketingSignals += 1;
+
+    const featureSections = $('[class*="feature"], [class*="benefit"]').length;
+    if (featureSections >= 3) marketingSignals += 2;
+    else if (featureSections >= 1) marketingSignals += 1;
+
+    const testimonials = $('.testimonial, blockquote, .review').length;
+    if (testimonials >= 1) marketingSignals += 1;
+
+    const productImagery = $('img[alt*="product"], img[alt*="screenshot"]').length;
+    if (productImagery >= 2) marketingSignals += 1;
+
+    // Calculate layout type and confidence
+    const totalSignals = blogSignals + marketingSignals;
+    if (totalSignals === 0) {
+      return {
+        homepage_is_blog: false,
+        layout_type: 'mixed',
+        layout_confidence: 0.5,
+      };
+    }
+
+    const blogRatio = blogSignals / totalSignals;
+    const marketingRatio = marketingSignals / totalSignals;
+
+    if (blogRatio >= 0.7) {
+      return {
+        homepage_is_blog: true,
+        layout_type: 'blog',
+        layout_confidence: blogRatio,
+      };
+    } else if (marketingRatio >= 0.7) {
+      return {
+        homepage_is_blog: false,
+        layout_type: 'marketing',
+        layout_confidence: marketingRatio,
+      };
+    } else {
+      return {
+        homepage_is_blog: blogSignals > marketingSignals,
+        layout_type: 'mixed',
+        layout_confidence: Math.abs(blogRatio - marketingRatio),
+      };
+    }
+  }
+
+  /**
+   * Parse navigation to classify business vs content focus
+   */
+  private parseNavigation(
+    $: any,
+    html: string,
+    rules: Layer2Rules,
+  ): {
+    has_business_nav: boolean;
+    business_nav_percentage: number;
+    nav_items_classified: {
+      business: string[];
+      content: string[];
+      other: string[];
+    };
+  } {
+    const businessKeywords = rules.business_nav_keywords.map((k) => k.toLowerCase());
+    const contentKeywords = rules.content_nav_keywords.map((k) => k.toLowerCase());
+
+    const classified = {
+      business: [] as string[],
+      content: [] as string[],
+      other: [] as string[],
+    };
+
+    // Extract navigation links
+    const navLinks = $('nav a, header a, [role="navigation"] a');
+
+    if (navLinks.length === 0) {
+      return {
+        has_business_nav: false,
+        business_nav_percentage: 0,
+        nav_items_classified: classified,
+      };
+    }
+
+    navLinks.each((_: any, el: any) => {
+      const text = $(el).text().trim().toLowerCase();
+      const href = $(el).attr('href') || '';
+      const combinedText = `${text} ${href}`.toLowerCase();
+
+      if (businessKeywords.some((kw) => combinedText.includes(kw))) {
+        classified.business.push(text);
+      } else if (contentKeywords.some((kw) => combinedText.includes(kw))) {
+        classified.content.push(text);
+      } else {
+        classified.other.push(text);
+      }
+    });
+
+    const totalClassified =
+      classified.business.length + classified.content.length + classified.other.length;
+    const businessPercentage =
+      totalClassified > 0 ? classified.business.length / totalClassified : 0;
+
+    return {
+      has_business_nav: businessPercentage >= rules.min_business_nav_percentage,
+      business_nav_percentage: businessPercentage,
+      nav_items_classified: classified,
+    };
+  }
+
+  /**
+   * Detect revenue model: ads, affiliates, or business
+   */
+  private detectMonetization(
+    $: any,
+    html: string,
+    rules: Layer2Rules,
+  ): {
+    monetization_type: 'ads' | 'affiliates' | 'business' | 'mixed' | 'unknown';
+    ad_networks_detected: string[];
+    affiliate_patterns_detected: string[];
+  } {
+    const lowerHtml = html.toLowerCase();
+    const adNetworks: string[] = [];
+    const affiliatePatterns: string[] = [];
+
+    // Detect ad networks
+    rules.ad_network_patterns.forEach((pattern) => {
+      if (lowerHtml.includes(pattern.toLowerCase())) {
+        adNetworks.push(pattern);
+      }
+    });
+
+    // Detect affiliate patterns
+    rules.affiliate_patterns.forEach((pattern) => {
+      if (lowerHtml.includes(pattern.toLowerCase())) {
+        affiliatePatterns.push(pattern);
+      }
+    });
+
+    // Detect payment providers (business signal)
+    const hasPaymentProvider = rules.payment_provider_patterns.some((provider) =>
+      lowerHtml.includes(provider.toLowerCase()),
+    );
+
+    // Check for explicit ad containers
+    const hasAdContainers =
+      $('.ad, [class*="ad-"], [id*="ad-"]').length > 0 ||
+      /advertisement|sponsored/i.test($('body').text());
+
+    const hasAds = adNetworks.length > 0 || hasAdContainers;
+    const hasAffiliates = affiliatePatterns.length > 0;
+    const hasBusiness = hasPaymentProvider;
+
+    // Determine monetization type
+    let monetizationType: 'ads' | 'affiliates' | 'business' | 'mixed' | 'unknown';
+
+    if (hasBusiness && (hasAds || hasAffiliates)) {
+      monetizationType = 'mixed';
+    } else if (hasBusiness) {
+      monetizationType = 'business';
+    } else if (hasAds && hasAffiliates) {
+      monetizationType = 'mixed';
+    } else if (hasAds) {
+      monetizationType = 'ads';
+    } else if (hasAffiliates) {
+      monetizationType = 'affiliates';
+    } else {
+      monetizationType = 'unknown';
+    }
+
+    return {
+      monetization_type: monetizationType,
+      ad_networks_detected: adNetworks,
+      affiliate_patterns_detected: affiliatePatterns,
+    };
+  }
+
+  /**
    * Evaluate all signals against Layer 2 pass/fail criteria
-   * Scoring system: Must pass at least 2 of 4 criteria
-   *
-   * REFACTORED: Changed from strict ALL-must-pass to flexible scoring
-   * Rationale: Homepage scraping cannot reliably detect blog post dates
-   * (blog dates typically appear on /blog page, not homepage)
+   * TODO: Will be replaced with new publication detection logic in Task 7
    */
   private evaluateSignals(
     signals: Layer2Signals,
     rules: Layer2Rules,
   ): { passed: boolean; reasoning: string } {
-    const failures: string[] = [];
-    const passes: string[] = [];
-    let passCount = 0;
-
-    // Check company pages (minimum 2 of 3)
-    if (signals.company_pages.count >= rules.required_pages_count) {
-      passes.push(`Company pages (${signals.company_pages.count}/3)`);
-      passCount++;
-    } else {
-      failures.push(
-        `Missing required pages (${signals.company_pages.count}/${rules.required_pages_count} found)`,
-      );
-    }
-
-    // Check blog freshness (optional - difficult to detect from homepage)
-    if (signals.blog_data.passes_freshness) {
-      passes.push('Fresh blog detected');
-      passCount++;
-    } else {
-      if (!signals.blog_data.has_blog) {
-        failures.push('No blog section detected');
-      } else if (signals.blog_data.days_since_last_post === null) {
-        failures.push('Blog dates not found on homepage');
-      } else {
-        failures.push(
-          `Blog not fresh (${signals.blog_data.days_since_last_post} days since last post)`,
-        );
-      }
-    }
-
-    // Check tech stack
-    if (signals.tech_stack.count >= rules.min_tech_stack_tools) {
-      passes.push(`Professional tech stack (${signals.tech_stack.count} tools)`);
-      passCount++;
-    } else {
-      failures.push(
-        `Insufficient tech stack (${signals.tech_stack.count}/${rules.min_tech_stack_tools} tools detected)`,
-      );
-    }
-
-    // Check design quality
-    if (signals.design_quality.score >= rules.min_design_quality_score) {
-      passes.push(`Design quality (${signals.design_quality.score}/10)`);
-      passCount++;
-    } else {
-      failures.push(
-        `Low design quality (score: ${signals.design_quality.score}/${rules.min_design_quality_score})`,
-      );
-    }
-
-    // Final decision: Must pass at least 2 of 4 criteria
-    const REQUIRED_PASS_COUNT = 2;
-
-    if (passCount >= REQUIRED_PASS_COUNT) {
-      return {
-        passed: true,
-        reasoning: `PASS Layer 2 - ${passes.join(', ')} (${passCount}/4 criteria met)`,
-      };
-    }
-
+    // Temporarily stubbed during refactor
     return {
-      passed: false,
-      reasoning: `REJECT Layer 2 - Only ${passCount}/${REQUIRED_PASS_COUNT} required criteria met. Failures: ${failures.join('; ')}`,
+      passed: true,
+      reasoning: 'PASS Layer 2 - Evaluation temporarily disabled during refactor',
+    };
+  }
+
+  /**
+   * Create empty signals object for pass-through cases
+   */
+  private createEmptySignals(): Layer2Signals {
+    return {
+      has_product_offering: false,
+      product_confidence: 0,
+      detected_product_keywords: [],
+      homepage_is_blog: false,
+      layout_type: 'mixed',
+      layout_confidence: 0,
+      has_business_nav: false,
+      business_nav_percentage: 0,
+      nav_items_classified: {
+        business: [],
+        content: [],
+        other: [],
+      },
+      monetization_type: 'unknown',
+      ad_networks_detected: [],
+      affiliate_patterns_detected: [],
+      publication_score: 0,
+      module_scores: {
+        product_offering: 0,
+        layout: 0,
+        navigation: 0,
+        monetization: 0,
+      },
     };
   }
 
@@ -539,12 +890,7 @@ export class Layer2OperationalFilterService {
     return {
       passed: true,
       reasoning,
-      signals: {
-        company_pages: { has_about: false, has_team: false, has_contact: false, count: 0 },
-        blog_data: { has_blog: false, last_post_date: null, days_since_last_post: null, passes_freshness: false },
-        tech_stack: { tools_detected: [], count: 0 },
-        design_quality: { score: 0, has_modern_framework: false, is_responsive: false, has_professional_imagery: false },
-      },
+      signals: this.createEmptySignals(),
       processingTimeMs: Date.now() - startTime,
     };
   }
@@ -555,21 +901,134 @@ export class Layer2OperationalFilterService {
    *
    * @deprecated Use filterUrl() instead
    */
-  async validateOperational(url: string, content: any): Promise<any> {
-    this.logger.debug(`[DEPRECATED] validateOperational called for ${url.slice(0, 100)} - redirecting to filterUrl()`);
+  async validateOperational(url: string): Promise<any> {
+    this.logger.debug(
+      `[DEPRECATED] validateOperational called for ${url.slice(0, 100)} - redirecting to filterUrl()`,
+    );
     const result = await this.filterUrl(url);
 
     return {
       passed: result.passed,
       reasoning: result.reasoning,
       signals: {
-        companyPageFound: result.signals.company_pages.count >= 2,
-        blogFreshnessScore: result.signals.blog_data.passes_freshness ? 1 : 0,
-        techStack: result.signals.tech_stack.tools_detected,
-        lastBlogPostDate: result.signals.blog_data.last_post_date,
-        contactInfoPresent: result.signals.company_pages.has_contact,
+        companyPageFound: false,
+        blogFreshnessScore: 0,
+        techStack: [],
+        lastBlogPostDate: null,
+        contactInfoPresent: false,
       },
       processingTimeMs: result.processingTimeMs,
+    };
+  }
+
+  /**
+   * Get structured Layer 2 evaluation results for manual review
+   * Returns detailed factor breakdown for guest post indicators and content quality
+   *
+   * @param url - URL to analyze
+   * @returns Layer2Results with all red flag and content quality checks
+   */
+  async getStructuredResults(url: string): Promise<Layer2Results> {
+    try {
+      // TODO: Update this in Task 7 when refactor is complete
+      return this.getEmptyResults();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Error getting structured Layer 2 results: ${errorMessage}`);
+      return this.getEmptyResults();
+    }
+  }
+
+  /**
+   * Return empty results structure when analysis cannot be performed
+   */
+  private getEmptyResults(): Layer2Results {
+    return {
+      guest_post_red_flags: {
+        contact_page: { checked: false, detected: false },
+        author_bio: { checked: false, detected: false },
+        pricing_page: { checked: false, detected: false },
+        submit_content: { checked: false, detected: false },
+        write_for_us: { checked: false, detected: false },
+        guest_post_guidelines: { checked: false, detected: false },
+      },
+      content_quality: {
+        thin_content: { checked: false, detected: false },
+        excessive_ads: { checked: false, detected: false },
+        broken_links: { checked: false, detected: false },
+      },
+    };
+  }
+
+  /**
+   * Get complete Layer 2 factor structure for url_results table
+   * Returns JSONB-compatible object with all publication detection factors
+   *
+   * @param url - URL to analyze
+   * @returns Promise<Layer2Factors> with complete publication detection data
+   */
+  async getLayer2Factors(url: string): Promise<any> {
+    try {
+      // Run full Layer 2 analysis
+      const filterResult = await this.filterUrl(url);
+
+      if (!filterResult.signals) {
+        return this.getEmptyLayer2Factors('No signals available');
+      }
+
+      const signals = filterResult.signals;
+
+      // Map Layer2Signals to Layer2Factors structure
+      return {
+        publication_score: signals.publication_score || 0,
+        module_scores: {
+          product_offering: signals.module_scores?.product_offering || 0,
+          layout_quality: signals.module_scores?.layout || 0,
+          navigation_complexity: signals.module_scores?.navigation || 0,
+          monetization_indicators: signals.module_scores?.monetization || 0,
+        },
+        keywords_found: signals.detected_product_keywords || [],
+        ad_networks_detected: signals.ad_networks_detected || [],
+        content_signals: {
+          has_blog: signals.homepage_is_blog || false,
+          has_press_releases: false, // Not currently detected
+          has_whitepapers: false, // Not currently detected
+          has_case_studies: false, // Not currently detected
+        },
+        reasoning: filterResult.reasoning,
+        passed: filterResult.passed,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Error getting Layer 2 factors: ${errorMessage}`);
+      return this.getEmptyLayer2Factors('Analysis error');
+    }
+  }
+
+  /**
+   * Return empty Layer2Factors structure when analysis cannot be performed
+   * @private
+   */
+  private getEmptyLayer2Factors(reason: string): any {
+    this.logger.warn(`Returning empty Layer 2 factors: ${reason}`);
+    return {
+      publication_score: 0,
+      module_scores: {
+        product_offering: 0,
+        layout_quality: 0,
+        navigation_complexity: 0,
+        monetization_indicators: 0,
+      },
+      keywords_found: [],
+      ad_networks_detected: [],
+      content_signals: {
+        has_blog: false,
+        has_press_releases: false,
+        has_whitepapers: false,
+        has_case_studies: false,
+      },
+      reasoning: reason,
+      passed: false,
     };
   }
 }

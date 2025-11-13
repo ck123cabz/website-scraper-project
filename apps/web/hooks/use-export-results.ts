@@ -18,8 +18,8 @@ export function useExportResults({ jobId, jobName }: UseExportResultsOptions) {
       // Generate filename
       const timestamp = new Date().toISOString().slice(0, 10);
       const name = jobName || jobId;
-      const extension = variables.format === 'csv' ? 'csv' : 'json';
-      link.download = `${name}-results-${timestamp}.${extension}`;
+      const extension = 'csv'; // All exports are CSV
+      link.download = `${name}-results-${variables.format}-${timestamp}.${extension}`;
 
       // Trigger download
       document.body.appendChild(link);

@@ -1,0 +1,278 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - heading "Manual Review Queue" [level=1] [ref=e5]
+        - paragraph [ref=e6]: Review and approve/reject URLs requiring manual verification
+      - generic [ref=e7]:
+        - button "Refresh" [ref=e8] [cursor=pointer]:
+          - img
+          - text: Refresh
+        - link "Back to Dashboard" [ref=e9] [cursor=pointer]:
+          - /url: /dashboard
+          - button "Back to Dashboard" [ref=e10]
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - paragraph [ref=e14]: Total Items
+        - paragraph [ref=e15]: "1000"
+      - generic [ref=e16]:
+        - paragraph [ref=e17]: Current Page
+        - paragraph [ref=e18]: "1"
+      - generic [ref=e19]:
+        - paragraph [ref=e20]: Items Per Page
+        - paragraph [ref=e21]: "20"
+      - generic [ref=e22]:
+        - paragraph [ref=e23]: Filter Status
+        - paragraph [ref=e24]: No filters
+    - generic [ref=e25]:
+      - heading "Filters" [level=2] [ref=e27]:
+        - img [ref=e28]
+        - text: Filters
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - generic [ref=e32]: Stale Status
+          - combobox [ref=e33]:
+            - option "All Items" [selected]
+            - option "Active Only"
+            - option "Stale Items Only"
+        - generic [ref=e34]:
+          - generic [ref=e35]: Confidence Band
+          - combobox [ref=e36]:
+            - option "All Bands" [selected]
+            - option "High"
+            - option "Medium"
+            - option "Low"
+            - option "Auto Reject"
+    - table [ref=e39]:
+      - rowgroup [ref=e40]:
+        - row "URL Confidence Band Status Queued Action" [ref=e41]:
+          - cell "URL" [ref=e42]
+          - cell "Confidence" [ref=e43]
+          - cell "Band" [ref=e44]
+          - cell "Status" [ref=e45]
+          - cell "Queued" [ref=e46]
+          - cell "Action" [ref=e47]
+      - rowgroup [ref=e48]:
+        - row "https://example-0.com/article/0 63% low Active less than a minute ago Review" [ref=e49] [cursor=pointer]:
+          - cell "https://example-0.com/article/0" [ref=e50]
+          - cell "63%" [ref=e51]
+          - cell "low" [ref=e52]:
+            - generic [ref=e53]: low
+          - cell "Active" [ref=e54]:
+            - generic [ref=e55]: Active
+          - cell "less than a minute ago" [ref=e56]
+          - cell "Review" [ref=e57]:
+            - button "Review" [ref=e58]
+        - row "https://example-1.com/article/1 133% medium Active less than a minute ago Review" [ref=e59] [cursor=pointer]:
+          - cell "https://example-1.com/article/1" [ref=e60]
+          - cell "133%" [ref=e61]
+          - cell "medium" [ref=e62]:
+            - generic [ref=e63]: medium
+          - cell "Active" [ref=e64]:
+            - generic [ref=e65]: Active
+          - cell "less than a minute ago" [ref=e66]
+          - cell "Review" [ref=e67]:
+            - button "Review" [ref=e68]
+        - row "https://example-2.com/article/2 151% high Active less than a minute ago Review" [ref=e69] [cursor=pointer]:
+          - cell "https://example-2.com/article/2" [ref=e70]
+          - cell "151%" [ref=e71]
+          - cell "high" [ref=e72]:
+            - generic [ref=e73]: high
+          - cell "Active" [ref=e74]:
+            - generic [ref=e75]: Active
+          - cell "less than a minute ago" [ref=e76]
+          - cell "Review" [ref=e77]:
+            - button "Review" [ref=e78]
+        - row "https://example-3.com/article/3 113% low Active less than a minute ago Review" [ref=e79] [cursor=pointer]:
+          - cell "https://example-3.com/article/3" [ref=e80]
+          - cell "113%" [ref=e81]
+          - cell "low" [ref=e82]:
+            - generic [ref=e83]: low
+          - cell "Active" [ref=e84]:
+            - generic [ref=e85]: Active
+          - cell "less than a minute ago" [ref=e86]
+          - cell "Review" [ref=e87]:
+            - button "Review" [ref=e88]
+        - row "https://example-4.com/article/4 132% medium Active less than a minute ago Review" [ref=e89] [cursor=pointer]:
+          - cell "https://example-4.com/article/4" [ref=e90]
+          - cell "132%" [ref=e91]
+          - cell "medium" [ref=e92]:
+            - generic [ref=e93]: medium
+          - cell "Active" [ref=e94]:
+            - generic [ref=e95]: Active
+          - cell "less than a minute ago" [ref=e96]
+          - cell "Review" [ref=e97]:
+            - button "Review" [ref=e98]
+        - row "https://example-5.com/article/5 159% high Active less than a minute ago Review" [ref=e99] [cursor=pointer]:
+          - cell "https://example-5.com/article/5" [ref=e100]
+          - cell "159%" [ref=e101]
+          - cell "high" [ref=e102]:
+            - generic [ref=e103]: high
+          - cell "Active" [ref=e104]:
+            - generic [ref=e105]: Active
+          - cell "less than a minute ago" [ref=e106]
+          - cell "Review" [ref=e107]:
+            - button "Review" [ref=e108]
+        - row "https://example-6.com/article/6 100% low Active less than a minute ago Review" [ref=e109] [cursor=pointer]:
+          - cell "https://example-6.com/article/6" [ref=e110]
+          - cell "100%" [ref=e111]
+          - cell "low" [ref=e112]:
+            - generic [ref=e113]: low
+          - cell "Active" [ref=e114]:
+            - generic [ref=e115]: Active
+          - cell "less than a minute ago" [ref=e116]
+          - cell "Review" [ref=e117]:
+            - button "Review" [ref=e118]
+        - row "https://example-7.com/article/7 122% medium Active less than a minute ago Review" [ref=e119] [cursor=pointer]:
+          - cell "https://example-7.com/article/7" [ref=e120]
+          - cell "122%" [ref=e121]
+          - cell "medium" [ref=e122]:
+            - generic [ref=e123]: medium
+          - cell "Active" [ref=e124]:
+            - generic [ref=e125]: Active
+          - cell "less than a minute ago" [ref=e126]
+          - cell "Review" [ref=e127]:
+            - button "Review" [ref=e128]
+        - row "https://example-8.com/article/8 89% high Active less than a minute ago Review" [ref=e129] [cursor=pointer]:
+          - cell "https://example-8.com/article/8" [ref=e130]
+          - cell "89%" [ref=e131]
+          - cell "high" [ref=e132]:
+            - generic [ref=e133]: high
+          - cell "Active" [ref=e134]:
+            - generic [ref=e135]: Active
+          - cell "less than a minute ago" [ref=e136]
+          - cell "Review" [ref=e137]:
+            - button "Review" [ref=e138]
+        - row "https://example-9.com/article/9 102% low Active less than a minute ago Review" [ref=e139] [cursor=pointer]:
+          - cell "https://example-9.com/article/9" [ref=e140]
+          - cell "102%" [ref=e141]
+          - cell "low" [ref=e142]:
+            - generic [ref=e143]: low
+          - cell "Active" [ref=e144]:
+            - generic [ref=e145]: Active
+          - cell "less than a minute ago" [ref=e146]
+          - cell "Review" [ref=e147]:
+            - button "Review" [ref=e148]
+        - row "https://example-10.com/article/10 115% medium Active 1 day ago Review" [ref=e149] [cursor=pointer]:
+          - cell "https://example-10.com/article/10" [ref=e150]
+          - cell "115%" [ref=e151]
+          - cell "medium" [ref=e152]:
+            - generic [ref=e153]: medium
+          - cell "Active" [ref=e154]:
+            - generic [ref=e155]: Active
+          - cell "1 day ago" [ref=e156]
+          - cell "Review" [ref=e157]:
+            - button "Review" [ref=e158]
+        - row "https://example-11.com/article/11 148% high Active 1 day ago Review" [ref=e159] [cursor=pointer]:
+          - cell "https://example-11.com/article/11" [ref=e160]
+          - cell "148%" [ref=e161]
+          - cell "high" [ref=e162]:
+            - generic [ref=e163]: high
+          - cell "Active" [ref=e164]:
+            - generic [ref=e165]: Active
+          - cell "1 day ago" [ref=e166]
+          - cell "Review" [ref=e167]:
+            - button "Review" [ref=e168]
+        - row "https://example-12.com/article/12 108% low Active 1 day ago Review" [ref=e169] [cursor=pointer]:
+          - cell "https://example-12.com/article/12" [ref=e170]
+          - cell "108%" [ref=e171]
+          - cell "low" [ref=e172]:
+            - generic [ref=e173]: low
+          - cell "Active" [ref=e174]:
+            - generic [ref=e175]: Active
+          - cell "1 day ago" [ref=e176]
+          - cell "Review" [ref=e177]:
+            - button "Review" [ref=e178]
+        - row "https://example-13.com/article/13 109% medium Active 1 day ago Review" [ref=e179] [cursor=pointer]:
+          - cell "https://example-13.com/article/13" [ref=e180]
+          - cell "109%" [ref=e181]
+          - cell "medium" [ref=e182]:
+            - generic [ref=e183]: medium
+          - cell "Active" [ref=e184]:
+            - generic [ref=e185]: Active
+          - cell "1 day ago" [ref=e186]
+          - cell "Review" [ref=e187]:
+            - button "Review" [ref=e188]
+        - row "https://example-14.com/article/14 166% high Active 1 day ago Review" [ref=e189] [cursor=pointer]:
+          - cell "https://example-14.com/article/14" [ref=e190]
+          - cell "166%" [ref=e191]
+          - cell "high" [ref=e192]:
+            - generic [ref=e193]: high
+          - cell "Active" [ref=e194]:
+            - generic [ref=e195]: Active
+          - cell "1 day ago" [ref=e196]
+          - cell "Review" [ref=e197]:
+            - button "Review" [ref=e198]
+        - row "https://example-15.com/article/15 91% low Active 1 day ago Review" [ref=e199] [cursor=pointer]:
+          - cell "https://example-15.com/article/15" [ref=e200]
+          - cell "91%" [ref=e201]
+          - cell "low" [ref=e202]:
+            - generic [ref=e203]: low
+          - cell "Active" [ref=e204]:
+            - generic [ref=e205]: Active
+          - cell "1 day ago" [ref=e206]
+          - cell "Review" [ref=e207]:
+            - button "Review" [ref=e208]
+        - row "https://example-16.com/article/16 85% medium Active 1 day ago Review" [ref=e209] [cursor=pointer]:
+          - cell "https://example-16.com/article/16" [ref=e210]
+          - cell "85%" [ref=e211]
+          - cell "medium" [ref=e212]:
+            - generic [ref=e213]: medium
+          - cell "Active" [ref=e214]:
+            - generic [ref=e215]: Active
+          - cell "1 day ago" [ref=e216]
+          - cell "Review" [ref=e217]:
+            - button "Review" [ref=e218]
+        - row "https://example-17.com/article/17 86% high Active 1 day ago Review" [ref=e219] [cursor=pointer]:
+          - cell "https://example-17.com/article/17" [ref=e220]
+          - cell "86%" [ref=e221]
+          - cell "high" [ref=e222]:
+            - generic [ref=e223]: high
+          - cell "Active" [ref=e224]:
+            - generic [ref=e225]: Active
+          - cell "1 day ago" [ref=e226]
+          - cell "Review" [ref=e227]:
+            - button "Review" [ref=e228]
+        - row "https://example-18.com/article/18 88% low Active 1 day ago Review" [ref=e229] [cursor=pointer]:
+          - cell "https://example-18.com/article/18" [ref=e230]
+          - cell "88%" [ref=e231]
+          - cell "low" [ref=e232]:
+            - generic [ref=e233]: low
+          - cell "Active" [ref=e234]:
+            - generic [ref=e235]: Active
+          - cell "1 day ago" [ref=e236]
+          - cell "Review" [ref=e237]:
+            - button "Review" [ref=e238]
+        - row "https://example-19.com/article/19 121% medium Active 1 day ago Review" [ref=e239] [cursor=pointer]:
+          - cell "https://example-19.com/article/19" [ref=e240]
+          - cell "121%" [ref=e241]
+          - cell "medium" [ref=e242]:
+            - generic [ref=e243]: medium
+          - cell "Active" [ref=e244]:
+            - generic [ref=e245]: Active
+          - cell "1 day ago" [ref=e246]
+          - cell "Review" [ref=e247]:
+            - button "Review" [ref=e248]
+    - generic [ref=e249]:
+      - generic [ref=e250]:
+        - generic [ref=e251]: Showing 1 to 20 of 1000
+        - combobox [ref=e252]:
+          - option "10 per page"
+          - option "20 per page" [selected]
+          - option "50 per page"
+          - option "100 per page"
+      - generic [ref=e253]:
+        - button [disabled]:
+          - img
+        - generic [ref=e254]: Page 1 of 50
+        - button [ref=e255] [cursor=pointer]:
+          - img
+  - generic [ref=e256]:
+    - img [ref=e258]
+    - button "Open Tanstack query devtools" [ref=e306] [cursor=pointer]:
+      - img [ref=e307]
+  - alert [ref=e355]
+```

@@ -14,6 +14,9 @@ import {
   Req,
   Query,
   Res,
+  BadRequestException,
+  NotFoundException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
@@ -22,6 +25,7 @@ import { FileParserService } from './services/file-parser.service';
 import { UrlValidationService } from './services/url-validation.service';
 import { QueueService } from '../queue/queue.service';
 import { SupabaseService } from '../supabase/supabase.service';
+import { ExportService } from './services/export.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { extname } from 'path';
 
@@ -33,6 +37,7 @@ export class JobsController {
     private readonly urlValidationService: UrlValidationService,
     private readonly queueService: QueueService,
     private readonly supabase: SupabaseService,
+    private readonly exportService: ExportService,
   ) {}
 
   @Post('create')
@@ -101,7 +106,7 @@ export class JobsController {
       const duplicatesRemovedCount = originalCount - uniqueUrls.length;
 
       // Database insertion (Task 5)
-      const job = await this.jobsService.createJobWithUrls(jobName, uniqueUrls);
+      const { job, urlIds } = await this.jobsService.createJobWithUrls(jobName, uniqueUrls);
 
       // Queue URLs for processing (Story 3.1 fix: auto-start job)
       // Update job status to 'processing' and set started_at timestamp
@@ -110,10 +115,11 @@ export class JobsController {
         started_at: new Date().toISOString(),
       });
 
-      // Add URLs to BullMQ queue for worker processing
-      const queueJobs = uniqueUrls.map((url) => ({
+      // Add URLs to BullMQ queue for worker processing with urlId
+      const queueJobs = uniqueUrls.map((url, index) => ({
         jobId: job.id,
         url,
+        urlId: urlIds[index], // Include urlId from job_urls table
       }));
       await this.queueService.addUrlsToQueue(queueJobs);
 
@@ -228,56 +234,41 @@ export class JobsController {
   async getJobResults(
     @Param('id') jobId: string,
     @Query('page') page: string = '1',
-    @Query('limit') limit: string = '50',
-    @Query('status') status?: string,
-    @Query('classification') classification?: string,
-    @Query('search') search?: string,
+    @Query('pageSize') pageSize: string = '20',
+    @Query('filter') filter?: 'approved' | 'rejected' | 'all',
+    @Query('layer') layer?: 'layer1' | 'layer2' | 'layer3' | 'passed_all' | 'all',
+    @Query('confidence') confidence?: 'high' | 'medium' | 'low' | 'very-high' | 'very-low' | 'all',
   ) {
     try {
       const pageNum = parseInt(page, 10) || 1;
-      const limitNum = Math.min(parseInt(limit, 10) || 50, 1000); // Max 1000
-      const offset = (pageNum - 1) * limitNum;
+      const pageSizeNum = parseInt(pageSize, 10) || 20;
 
-      // Build query
-      let query = this.supabase.getClient()
-        .from('results')
-        .select('*', { count: 'exact' })
-        .eq('job_id', jobId)
-        .order('processed_at', { ascending: false });
-
-      // Apply filters
-      if (status && status !== '') {
-        query = query.eq('status', status);
-      }
-      if (classification && classification !== '') {
-        query = query.eq('classification_result', classification);
-      }
-      if (search && search !== '') {
-        query = query.ilike('url', `%${search}%`);
-      }
-
-      // Apply pagination
-      query = query.range(offset, offset + limitNum - 1);
-
-      const { data: results, error, count } = await query;
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      const totalPages = Math.ceil((count || 0) / limitNum);
+      // Call JobsService method
+      const result = await this.jobsService.getJobResults(
+        jobId,
+        pageNum,
+        pageSizeNum,
+        filter,
+        layer,
+        confidence,
+      );
 
       return {
         success: true,
-        data: results || [],
-        pagination: {
-          page: pageNum,
-          limit: limitNum,
-          total: count || 0,
-          totalPages,
-        },
+        data: result.results,
+        pagination: result.pagination,
       };
     } catch (error) {
+      if (error instanceof Error && error.message.includes('Job not found')) {
+        throw new HttpException(
+          {
+            success: false,
+            error: 'Job not found',
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
       console.error('[JobsController] Error fetching job results:', error);
       throw new HttpException(
         {
@@ -289,123 +280,156 @@ export class JobsController {
     }
   }
 
-  @Get(':id/export')
-  async exportJobResults(
-    @Param('id') jobId: string,
-    @Query('format') format: string = 'csv',
-    @Query('status') status: string = '',
-    @Query('classification') classification: string = '',
-    @Query('search') search: string = '',
-    @Res() res: Response,
-  ) {
+  @Get(':id/results/:resultId')
+  async getResultDetails(@Param('id') jobId: string, @Param('resultId') resultId: string) {
     try {
-      // Build query
-      let query = this.supabase.getClient()
-        .from('results')
-        .select('*')
-        .eq('job_id', jobId)
-        .order('processed_at', { ascending: false });
+      const result = await this.jobsService.getResultDetails(jobId, resultId);
 
-      // Apply filters
-      if (status && status !== '') {
-        query = query.eq('status', status);
-      }
-      if (classification && classification !== '') {
-        query = query.eq('classification_result', classification);
-      }
-      if (search && search !== '') {
-        query = query.ilike('url', `%${search}%`);
-      }
-
-      const { data: results, error } = await query;
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      if (!results || results.length === 0) {
+      if (!result) {
         throw new HttpException(
           {
             success: false,
-            error: 'No results found to export',
+            error: 'Result not found or does not belong to this job',
           },
           HttpStatus.NOT_FOUND,
         );
       }
 
-      // Get job name for filename
-      const { data: job } = await this.supabase.getClient()
-        .from('jobs')
-        .select('name')
-        .eq('id', jobId)
-        .single();
-
-      const jobName = job?.name || 'job';
-      const timestamp = new Date().toISOString().split('T')[0];
-      const filename = `${jobName.replace(/[^a-z0-9]/gi, '_')}_${timestamp}`;
-
-      if (format === 'json') {
-        res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Content-Disposition', `attachment; filename="${filename}.json"`);
-        res.send(JSON.stringify(results, null, 2));
-      } else {
-        // CSV format
-        const headers = [
-          'URL',
-          'Status',
-          'Classification',
-          'Score',
-          'Reasoning',
-          'LLM Provider',
-          'Cost',
-          'Processing Time (ms)',
-          'Retry Count',
-          'Error Message',
-          'Prefilter Passed',
-          'Prefilter Reasoning',
-          'Processed At',
-        ];
-
-        const csvRows = [headers.join(',')];
-
-        for (const result of results) {
-          const row = [
-            `"${(result.url || '').replace(/"/g, '""')}"`,
-            result.status || '',
-            result.classification_result || '',
-            result.classification_score || '',
-            `"${(result.classification_reasoning || '').replace(/"/g, '""')}"`,
-            result.llm_provider || '',
-            result.llm_cost || '0',
-            result.processing_time_ms || '',
-            result.retry_count || '0',
-            `"${(result.error_message || '').replace(/"/g, '""')}"`,
-            result.prefilter_passed !== null ? result.prefilter_passed : '',
-            `"${(result.prefilter_reasoning || '').replace(/"/g, '""')}"`,
-            result.processed_at || '',
-          ];
-          csvRows.push(row.join(','));
-        }
-
-        const csvContent = csvRows.join('\n');
-
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', `attachment; filename="${filename}.csv"`);
-        res.send(csvContent);
-      }
+      // Handle NULL factors gracefully for pre-migration data
+      return {
+        success: true,
+        data: {
+          ...result,
+          layer1_factors: result.layer1_factors || {
+            message: 'Factor data not available (processed before schema migration)',
+            reason: 'Layer 1 analysis not completed',
+          },
+          layer2_factors: result.layer2_factors || {
+            message: 'Factor data not available',
+            reason: 'Layer 2 analysis not completed or error occurred',
+          },
+          layer3_factors: result.layer3_factors || {
+            message: 'Factor data not available',
+            reason: 'Layer 3 analysis not completed or error occurred',
+          },
+        },
+      };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
 
-      console.error('[JobsController] Error exporting results:', error);
+      console.error('[JobsController] Error fetching result details:', error);
       throw new HttpException(
         {
           success: false,
-          error: 'Failed to export results. Please try again.',
+          error: 'Failed to retrieve result details. Please try again.',
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+
+  /**
+   * T067 [US3]: Export job results to CSV
+   * POST /jobs/:id/export
+   *
+   * Streams CSV data using ExportService with multiple format options.
+   * Supports filtering by approval status, layer, and confidence.
+   *
+   * @param jobId - Job UUID
+   * @param format - Export format: complete, summary, layer1, layer2, layer3 (default: complete)
+   * @param filter - Filter by approval status: approved, rejected, all
+   * @param layer - Filter by layer: layer1, layer2, layer3, passed_all, all
+   * @param confidence - Filter by confidence: high, medium, low, all
+   * @param res - Express Response object
+   */
+  @Post(':id/export')
+  async exportJobResults(
+    @Param('id') jobId: string,
+    @Res() res: Response,
+    @Query('format') format: string = 'complete',
+    @Query('filter') filter?: string,
+    @Query('layer') layer?: string,
+    @Query('confidence') confidence?: string,
+  ): Promise<void> {
+    // 1. Validate jobId UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(jobId)) {
+      throw new BadRequestException('Invalid job ID format. Must be a valid UUID.');
+    }
+
+    // 2. Validate format parameter
+    const validFormats = ['complete', 'summary', 'layer1', 'layer2', 'layer3'];
+    if (!validFormats.includes(format)) {
+      throw new BadRequestException(
+        `Invalid format: ${format}. Must be one of: ${validFormats.join(', ')}`,
+      );
+    }
+
+    // 3. Validate filter parameter
+    if (filter && !['approved', 'rejected', 'all'].includes(filter)) {
+      throw new BadRequestException(
+        `Invalid filter value: ${filter}. Must be one of: approved, rejected, all`,
+      );
+    }
+
+    // 4. Validate layer parameter
+    if (layer && !['layer1', 'layer2', 'layer3', 'passed_all', 'all'].includes(layer)) {
+      throw new BadRequestException(
+        `Invalid layer value: ${layer}. Must be one of: layer1, layer2, layer3, passed_all, all`,
+      );
+    }
+
+    // 5. Validate confidence parameter
+    if (confidence && !['high', 'medium', 'low', 'all'].includes(confidence)) {
+      throw new BadRequestException(
+        `Invalid confidence value: ${confidence}. Must be one of: high, medium, low, all`,
+      );
+    }
+
+    try {
+      // 6. Call ExportService to get stream
+      const stream = await this.exportService.streamCSVExport(
+        jobId,
+        format as 'complete' | 'summary' | 'layer1' | 'layer2' | 'layer3',
+        {
+          filter: filter as 'approved' | 'rejected' | 'all' | undefined,
+          layer: layer as 'layer1' | 'layer2' | 'layer3' | 'passed_all' | 'all' | undefined,
+          confidence: confidence as 'high' | 'medium' | 'low' | 'all' | undefined,
+        },
+      );
+
+      // 7. Set response headers
+      res.set({
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="job-${jobId}-${format}.csv"`,
+      });
+
+      // 8. Pipe stream to response
+      stream.pipe(res);
+
+      // Handle stream errors
+      stream.on('error', (error) => {
+        console.error('[JobsController] Export stream error:', error);
+        if (!res.headersSent) {
+          throw new InternalServerErrorException('Export stream failed');
+        }
+      });
+    } catch (error) {
+      // Handle specific error types
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      // Handle job not found errors from ExportService
+      if (error instanceof Error && error.message.includes('Job not found')) {
+        throw new NotFoundException(`Job not found: ${jobId}`);
+      }
+
+      // Log and throw generic error
+      console.error('[JobsController] Error exporting results:', error);
+      throw new InternalServerErrorException('Failed to export results. Please try again.');
     }
   }
 
@@ -481,6 +505,68 @@ export class JobsController {
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+
+  /**
+   * GET /jobs/queue/status
+   * Task T072 [Phase 6 - Dashboard]
+   *
+   * Returns real-time job progress for dashboard monitoring.
+   * Includes active jobs (processing + queued) with optional completed jobs.
+   *
+   * @param includeCompleted - Include recently completed jobs (optional)
+   * @param limit - Limit active jobs returned (default: 50, max: 100)
+   * @param offset - Pagination offset (default: 0)
+   * @returns Job queue status with progress metrics
+   */
+  @Get('queue/status')
+  async getQueueStatus(
+    @Query('includeCompleted') includeCompleted?: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    try {
+      // Parse and validate query parameters
+      const parsedLimit = limit ? parseInt(limit, 10) : 50;
+      const parsedOffset = offset ? parseInt(offset, 10) : 0;
+      const parsedIncludeCompleted = includeCompleted === 'true';
+
+      // Validate limit (1-100)
+      if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 100) {
+        throw new BadRequestException('Limit must be a number between 1 and 100');
+      }
+
+      // Validate offset (>= 0)
+      if (isNaN(parsedOffset) || parsedOffset < 0) {
+        throw new BadRequestException('Offset must be a non-negative number');
+      }
+
+      // Get active jobs (processing + queued)
+      const activeJobs = await this.jobsService.getActiveJobs(parsedLimit, parsedOffset);
+
+      // Build response data
+      const responseData: any = {
+        activeJobs,
+      };
+
+      // Include completed jobs if requested
+      if (parsedIncludeCompleted) {
+        const completedJobs = await this.jobsService.getCompletedJobs();
+        responseData.completedJobs = completedJobs;
+      }
+
+      return {
+        success: true,
+        data: responseData,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      console.error('[JobsController] Error fetching queue status:', error);
+      throw new InternalServerErrorException('Failed to retrieve queue status. Please try again.');
     }
   }
 }

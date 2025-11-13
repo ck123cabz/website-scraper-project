@@ -14,7 +14,7 @@
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { SupabaseService } from '../../../supabase/supabase.service';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Skip entire test suite if ENABLE_REALTIME_TESTS is not set
 const shouldRunTests = process.env.ENABLE_REALTIME_TESTS === 'true';

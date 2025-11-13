@@ -1,5 +1,9 @@
 import { PreFilterRule } from './prefilter';
 import { Layer2Rules } from './layer2';
+import type { ManualReviewSettings } from './manual-review';
+
+// Re-export ManualReviewSettings from manual-review for backward compatibility
+export type { ManualReviewSettings };
 
 /**
  * Pre-filter rule with enabled flag for database storage
@@ -23,6 +27,8 @@ export interface Layer1Rules {
     commercial: string[]; // [".com", ".io", ".co", ".ai"]
     non_commercial: string[]; // [".org", ".gov", ".edu"]
     personal: string[]; // [".me", ".blog", ".xyz"]
+    /** User-added custom TLDs (e.g., [".crypto", ".web3"]). Defaults to [] if not provided. */
+    custom?: string[];
   };
   /** Industry keywords for domain classification */
   industry_keywords: string[]; // ["SaaS", "consulting", "software", ...]
@@ -46,8 +52,8 @@ export interface Layer1Rules {
  * Controls LLM-based content classification
  */
 export interface Layer3Rules {
-  /** Content marketing indicators for LLM prompt */
-  content_marketing_indicators: string[]; // ["Write for us", "Guest post guidelines", ...]
+  /** Guest post red flags - signals that indicate low-quality link farms (sites WITH these should be marked NOT suitable) */
+  guest_post_red_flags: string[]; // ["Write for us", "Guest post guidelines", ...]
   /** SEO investment signals */
   seo_investment_signals: string[]; // ["schema_markup", "open_graph", "structured_data"]
   /** LLM temperature (0-1, default 0.3) */
@@ -80,25 +86,6 @@ export interface ConfidenceBands {
 }
 
 /**
- * Manual Review Queue Settings
- */
-export interface ManualReviewSettings {
-  /** Maximum queue size (null = unlimited) */
-  queue_size_limit: number | null;
-  /** Auto-review timeout in days (null = disabled) */
-  auto_review_timeout_days: number | null;
-  /** Notification preferences */
-  notifications: {
-    /** Email notification threshold (send email when queue reaches this size) */
-    email_threshold: number;
-    /** Show badge on dashboard */
-    dashboard_badge: boolean;
-    /** Slack integration enabled */
-    slack_integration: boolean;
-  };
-}
-
-/**
  * Classification Settings - 3-Tier Architecture
  * Story 3.0: Refactored for layer-specific settings management
  */
@@ -109,7 +96,7 @@ export interface ClassificationSettings {
   // V1 fields (preserved for backward compatibility during migration)
   /** @deprecated Use layer1_rules instead */
   prefilter_rules?: PreFilterRuleWithEnabled[];
-  /** @deprecated Use layer3_rules.content_marketing_indicators instead */
+  /** @deprecated Use layer3_rules.guest_post_red_flags instead */
   classification_indicators?: string[];
   /** @deprecated Use layer3_rules.llm_temperature instead */
   llm_temperature?: number;

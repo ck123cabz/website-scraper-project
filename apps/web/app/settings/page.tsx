@@ -4,15 +4,14 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Layer1DomainTab } from '@/components/settings/Layer1DomainTab';
-import { Layer2OperationalTab } from '@/components/settings/Layer2OperationalTab';
+import { Layer2PublicationTab } from '@/components/settings/Layer2PublicationTab';
 import { Layer3LlmTab } from '@/components/settings/Layer3LlmTab';
 import { ConfidenceBandsTab } from '@/components/settings/ConfidenceBandsTab';
-import { ManualReviewTab } from '@/components/settings/ManualReviewTab';
 import { useSettings, useUpdateSettings, useResetSettings } from '@/hooks/useSettings';
 import { ClassificationSettings } from '@website-scraper/shared';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, RotateCcw, AlertCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Loader2, RotateCcw, AlertCircle } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +21,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function SettingsPage() {
   const { data: settings, isLoading, error } = useSettings();
@@ -73,18 +71,13 @@ export default function SettingsPage() {
     }
 
     // Layer 2: Validate ranges
-    if (formData.layer2_rules.blog_freshness_days < 30 || formData.layer2_rules.blog_freshness_days > 180) {
-      toast.error('Layer 2: Blog freshness must be between 30-180 days');
+    if (formData.layer2_rules.publication_score_threshold < 0 || formData.layer2_rules.publication_score_threshold > 1) {
+      toast.error('Layer 2: Publication score threshold must be between 0-1');
       return false;
     }
 
-    if (formData.layer2_rules.required_pages_count < 1 || formData.layer2_rules.required_pages_count > 3) {
-      toast.error('Layer 2: Required pages must be between 1-3');
-      return false;
-    }
-
-    if (formData.layer2_rules.min_design_quality_score < 1 || formData.layer2_rules.min_design_quality_score > 10) {
-      toast.error('Layer 2: Design quality score must be between 1-10');
+    if (formData.layer2_rules.min_business_nav_percentage < 0 || formData.layer2_rules.min_business_nav_percentage > 1) {
+      toast.error('Layer 2: Min business nav percentage must be between 0-1');
       return false;
     }
 
@@ -117,7 +110,9 @@ export default function SettingsPage() {
     }
 
     for (let i = 0; i < sorted.length - 1; i++) {
-      if (sorted[i][1].max !== sorted[i + 1][1].min) {
+      const gap = Math.abs(sorted[i + 1][1].min - sorted[i][1].max);
+      // Allow small gaps (<=0.02) for floating point precision
+      if (gap > 0.02) {
         toast.error('Confidence Bands: Ranges must be continuous with no gaps or overlaps');
         return false;
       }
@@ -208,25 +203,13 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Implementation Status Warning Banner */}
-      <Alert className="mb-6 border-amber-500 bg-amber-50 dark:bg-amber-950/20">
-        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
-        <AlertTitle className="text-amber-900 dark:text-amber-100">Partial Implementation Status</AlertTitle>
-        <AlertDescription className="text-amber-800 dark:text-amber-200 text-sm">
-          Settings UI is functional and saves to database, but most controls don&apos;t affect job processing yet.
-          Only <strong>URL Pattern Exclusions</strong>, <strong>Content Indicators</strong>, <strong>Temperature</strong>, and <strong>Truncation Limit</strong> are currently implemented.
-          See tooltips (⚠️) on individual controls for details. Full implementation planned in Story 3.1.
-        </AlertDescription>
-      </Alert>
-
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="layer1">Layer 1 Domain</TabsTrigger>
-          <TabsTrigger value="layer2">Layer 2 Operational</TabsTrigger>
+          <TabsTrigger value="layer2">Layer 2: Publication Detection</TabsTrigger>
           <TabsTrigger value="layer3">Layer 3 LLM</TabsTrigger>
           <TabsTrigger value="confidence">Confidence Bands</TabsTrigger>
-          <TabsTrigger value="manual">Manual Review</TabsTrigger>
         </TabsList>
 
         {/* Layer 1 Tab */}
@@ -244,7 +227,7 @@ export default function SettingsPage() {
 
         {/* Layer 2 Tab */}
         <TabsContent value="layer2" className="space-y-4">
-          <Layer2OperationalTab
+          <Layer2PublicationTab
             rules={formData.layer2_rules}
             onChange={(rules) =>
               handleSettingsChange((prev) => ({
@@ -276,19 +259,6 @@ export default function SettingsPage() {
               handleSettingsChange((prev) => ({
                 ...prev,
                 confidence_bands: bands,
-              }))
-            }
-          />
-        </TabsContent>
-
-        {/* Manual Review Tab */}
-        <TabsContent value="manual" className="space-y-4">
-          <ManualReviewTab
-            settings={formData.manual_review_settings}
-            onChange={(settings) =>
-              handleSettingsChange((prev) => ({
-                ...prev,
-                manual_review_settings: settings,
               }))
             }
           />

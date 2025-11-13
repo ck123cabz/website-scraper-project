@@ -4,7 +4,9 @@ import { SettingsService } from '../../settings/settings.service';
 import type { ClassificationSettings } from '@website-scraper/shared';
 
 // Helper to create valid test settings with all required fields
-const createTestSettings = (overrides?: Partial<ClassificationSettings>): ClassificationSettings => ({
+const createTestSettings = (
+  overrides?: Partial<ClassificationSettings>,
+): ClassificationSettings => ({
   id: 'default',
   // V1 fields
   llm_temperature: 0.3,
@@ -23,17 +25,21 @@ const createTestSettings = (overrides?: Partial<ClassificationSettings>): Classi
     target_elimination_rate: 0.5,
   },
   layer2_rules: {
-    blog_freshness_days: 90,
-    required_pages_count: 2,
-    min_tech_stack_tools: 2,
-    tech_stack_tools: {
-      analytics: ['google-analytics'],
-      marketing: ['hubspot'],
+    publication_score_threshold: 0.65,
+    product_keywords: {
+      commercial: ['pricing'],
+      features: ['features'],
+      cta: ['sign up'],
     },
-    min_design_quality_score: 6,
+    business_nav_keywords: ['product'],
+    content_nav_keywords: ['blog'],
+    min_business_nav_percentage: 0.3,
+    ad_network_patterns: [],
+    affiliate_patterns: [],
+    payment_provider_patterns: [],
   },
   layer3_rules: {
-    content_marketing_indicators: [],
+    guest_post_red_flags: [],
     seo_investment_signals: [],
     llm_temperature: 0.3,
     content_truncation_limit: 10000,
@@ -47,7 +53,13 @@ const createTestSettings = (overrides?: Partial<ClassificationSettings>): Classi
   manual_review_settings: {
     queue_size_limit: null,
     auto_review_timeout_days: null,
-    notifications: { email_threshold: 100, dashboard_badge: true, slack_integration: false },
+    notifications: {
+      email_threshold: 100,
+      email_recipient: 'test@example.com',
+      slack_webhook_url: null,
+      slack_threshold: 100,
+      dashboard_badge: true,
+    },
   },
   updated_at: new Date().toISOString(),
   ...overrides,
@@ -171,12 +183,14 @@ describe('ConfidenceScoringService', () => {
 
     it('should load custom confidence thresholds from database settings (Task 7.3)', async () => {
       // Mock settings service to return custom thresholds
-      settingsService.getSettings.mockResolvedValue(createTestSettings({
-        id: 'test-settings-id',
-        confidence_threshold_high: 0.9, // Custom: raised from 0.8
-        confidence_threshold_medium: 0.6, // Custom: raised from 0.5
-        confidence_threshold_low: 0.4, // Custom: raised from 0.3
-      }));
+      settingsService.getSettings.mockResolvedValue(
+        createTestSettings({
+          id: 'test-settings-id',
+          confidence_threshold_high: 0.9, // Custom: raised from 0.8
+          confidence_threshold_medium: 0.6, // Custom: raised from 0.5
+          confidence_threshold_low: 0.4, // Custom: raised from 0.3
+        }),
+      );
 
       // Test with confidence 0.85 - should be "medium" with custom thresholds (< 0.9)
       const band1 = await service.calculateConfidenceBand(0.85);
@@ -212,14 +226,16 @@ describe('ConfidenceScoringService', () => {
 
     it('should handle string-encoded thresholds from Supabase (Task 7.2)', async () => {
       // Mock settings service to return string-encoded numerics (Supabase DECIMAL behavior)
-      settingsService.getSettings.mockResolvedValue(createTestSettings({
-        id: 'test-settings-id',
-        llm_temperature: '0.3' as any,
-        confidence_threshold: '0' as any,
-        confidence_threshold_high: '0.85' as any, // String-encoded
-        confidence_threshold_medium: '0.55' as any,
-        confidence_threshold_low: '0.35' as any,
-      }));
+      settingsService.getSettings.mockResolvedValue(
+        createTestSettings({
+          id: 'test-settings-id',
+          llm_temperature: '0.3' as any,
+          confidence_threshold: '0' as any,
+          confidence_threshold_high: '0.85' as any, // String-encoded
+          confidence_threshold_medium: '0.55' as any,
+          confidence_threshold_low: '0.35' as any,
+        }),
+      );
 
       // Should parse strings correctly and use as thresholds
       const band1 = await service.calculateConfidenceBand(0.86);

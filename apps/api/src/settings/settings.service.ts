@@ -110,6 +110,11 @@ export class SettingsService {
       this.validateRegexPatterns(dto.layer1_rules.url_pattern_exclusions as PreFilterRuleDto[]);
     }
 
+    // Validate confidence bands if present (check for gaps/overlaps)
+    if (dto.confidence_bands) {
+      this.validateConfidenceBands(dto.confidence_bands);
+    }
+
     try {
       // Get current settings to extract ID
       const current = await this.getSettings();
@@ -120,20 +125,24 @@ export class SettingsService {
 
       // V1 fields (if provided)
       if (dto.prefilter_rules !== undefined) updatePayload.prefilter_rules = dto.prefilter_rules;
-      if (dto.classification_indicators !== undefined) updatePayload.classification_indicators = dto.classification_indicators;
+      if (dto.classification_indicators !== undefined)
+        updatePayload.classification_indicators = dto.classification_indicators;
       if (dto.llm_temperature !== undefined) updatePayload.llm_temperature = dto.llm_temperature;
-      if (dto.confidence_threshold !== undefined) updatePayload.confidence_threshold = dto.confidence_threshold;
-      if (dto.content_truncation_limit !== undefined) updatePayload.content_truncation_limit = dto.content_truncation_limit;
+      if (dto.confidence_threshold !== undefined)
+        updatePayload.confidence_threshold = dto.confidence_threshold;
+      if (dto.content_truncation_limit !== undefined)
+        updatePayload.content_truncation_limit = dto.content_truncation_limit;
 
       // 3-Tier Architecture fields (if provided)
       if (dto.layer1_rules !== undefined) updatePayload.layer1_rules = dto.layer1_rules;
       if (dto.layer2_rules !== undefined) updatePayload.layer2_rules = dto.layer2_rules;
       if (dto.layer3_rules !== undefined) updatePayload.layer3_rules = dto.layer3_rules;
       if (dto.confidence_bands !== undefined) updatePayload.confidence_bands = dto.confidence_bands;
-      if (dto.manual_review_settings !== undefined) updatePayload.manual_review_settings = dto.manual_review_settings;
+      if (dto.manual_review_settings !== undefined)
+        updatePayload.manual_review_settings = dto.manual_review_settings;
 
       // Update settings in database
-      const { data, error} = await supabase
+      const { data, error } = await supabase
         .from('classification_settings')
         .update(updatePayload)
         .eq('id', current.id)
@@ -195,11 +204,7 @@ export class SettingsService {
       let response: { data: any; error: { message: string } | null };
 
       if (current.id === 'default') {
-        response = await supabase
-          .from('classification_settings')
-          .insert(payload)
-          .select()
-          .single();
+        response = await supabase.from('classification_settings').insert(payload).select().single();
       } else {
         response = await supabase
           .from('classification_settings')
@@ -349,6 +354,7 @@ export class SettingsService {
         commercial: ['.com', '.io', '.co', '.ai'],
         non_commercial: ['.org', '.gov', '.edu'],
         personal: ['.me', '.blog', '.xyz'],
+        custom: [],
       },
       industry_keywords: ['SaaS', 'consulting', 'software', 'platform', 'marketing', 'agency'],
       url_pattern_exclusions: v1PrefilterRules,
@@ -356,18 +362,38 @@ export class SettingsService {
     };
 
     const layer2_rules: Layer2Rules = {
-      blog_freshness_days: 90,
-      required_pages_count: 2,
-      min_tech_stack_tools: 2,
-      tech_stack_tools: {
-        analytics: ['google-analytics', 'mixpanel', 'amplitude'],
-        marketing: ['hubspot', 'marketo', 'activecampaign', 'mailchimp'],
+      publication_score_threshold: 0.65,
+      product_keywords: {
+        commercial: ['pricing', 'buy', 'demo', 'plans', 'free trial', 'get started'],
+        features: ['features', 'capabilities', 'solutions', 'product'],
+        cta: ['sign up', 'start free', 'book a call', 'request demo'],
       },
-      min_design_quality_score: 6,
+      business_nav_keywords: [
+        'product',
+        'pricing',
+        'solutions',
+        'about',
+        'careers',
+        'customers',
+        'contact',
+      ],
+      content_nav_keywords: [
+        'articles',
+        'blog',
+        'news',
+        'topics',
+        'categories',
+        'archives',
+        'authors',
+      ],
+      min_business_nav_percentage: 0.3,
+      ad_network_patterns: ['googlesyndication', 'adsense', 'doubleclick', 'media.net'],
+      affiliate_patterns: ['amazon', 'affiliate', 'aff=', 'ref=', 'amzn'],
+      payment_provider_patterns: ['stripe', 'paypal', 'braintree', 'square'],
     };
 
     const layer3_rules: Layer3Rules = {
-      content_marketing_indicators: v1ClassificationIndicators,
+      guest_post_red_flags: v1ClassificationIndicators,
       seo_investment_signals: ['schema_markup', 'open_graph', 'structured_data'],
       llm_temperature: this.DEFAULT_TEMPERATURE,
       content_truncation_limit: this.DEFAULT_CONTENT_LIMIT,
@@ -381,13 +407,10 @@ export class SettingsService {
     };
 
     const manual_review_settings: ManualReviewSettings = {
-      queue_size_limit: null,
-      auto_review_timeout_days: null,
-      notifications: {
-        email_threshold: 100,
-        dashboard_badge: true,
-        slack_integration: false,
-      },
+      enabled: true,
+      auto_review_timeout_hours: 72,
+      max_queue_size: 1000,
+      enable_slack_notifications: false,
     };
 
     return {
@@ -429,35 +452,49 @@ export class SettingsService {
         ? data.classification_indicators
         : defaults.classification_indicators,
       llm_temperature: this.toNumber(data?.llm_temperature, defaults.llm_temperature!),
-      confidence_threshold: this.toNumber(data?.confidence_threshold, defaults.confidence_threshold!),
+      confidence_threshold: this.toNumber(
+        data?.confidence_threshold,
+        defaults.confidence_threshold!,
+      ),
       content_truncation_limit: Math.round(
         this.toNumber(data?.content_truncation_limit, defaults.content_truncation_limit!),
       ),
-      confidence_threshold_high: this.toNumber(data?.confidence_threshold_high, defaults.confidence_threshold_high!),
-      confidence_threshold_medium: this.toNumber(data?.confidence_threshold_medium, defaults.confidence_threshold_medium!),
-      confidence_threshold_low: this.toNumber(data?.confidence_threshold_low, defaults.confidence_threshold_low!),
+      confidence_threshold_high: this.toNumber(
+        data?.confidence_threshold_high,
+        defaults.confidence_threshold_high!,
+      ),
+      confidence_threshold_medium: this.toNumber(
+        data?.confidence_threshold_medium,
+        defaults.confidence_threshold_medium!,
+      ),
+      confidence_threshold_low: this.toNumber(
+        data?.confidence_threshold_low,
+        defaults.confidence_threshold_low!,
+      ),
 
       // 3-Tier Architecture fields (Story 3.0)
-      layer1_rules: data?.layer1_rules && typeof data.layer1_rules === 'object'
-        ? data.layer1_rules
-        : defaults.layer1_rules,
-      layer2_rules: data?.layer2_rules && typeof data.layer2_rules === 'object'
-        ? data.layer2_rules
-        : defaults.layer2_rules,
-      layer3_rules: data?.layer3_rules && typeof data.layer3_rules === 'object'
-        ? data.layer3_rules
-        : defaults.layer3_rules,
-      confidence_bands: data?.confidence_bands && typeof data.confidence_bands === 'object'
-        ? data.confidence_bands
-        : defaults.confidence_bands,
-      manual_review_settings: data?.manual_review_settings && typeof data.manual_review_settings === 'object'
-        ? data.manual_review_settings
-        : defaults.manual_review_settings,
+      layer1_rules:
+        data?.layer1_rules && typeof data.layer1_rules === 'object'
+          ? data.layer1_rules
+          : defaults.layer1_rules,
+      layer2_rules:
+        data?.layer2_rules && typeof data.layer2_rules === 'object'
+          ? data.layer2_rules
+          : defaults.layer2_rules,
+      layer3_rules:
+        data?.layer3_rules && typeof data.layer3_rules === 'object'
+          ? data.layer3_rules
+          : defaults.layer3_rules,
+      confidence_bands:
+        data?.confidence_bands && typeof data.confidence_bands === 'object'
+          ? data.confidence_bands
+          : defaults.confidence_bands,
+      manual_review_settings:
+        data?.manual_review_settings && typeof data.manual_review_settings === 'object'
+          ? data.manual_review_settings
+          : defaults.manual_review_settings,
 
-      updated_at:
-        typeof data?.updated_at === 'string'
-          ? data.updated_at
-          : defaults.updated_at,
+      updated_at: typeof data?.updated_at === 'string' ? data.updated_at : defaults.updated_at,
     };
   }
 
@@ -481,6 +518,83 @@ export class SettingsService {
     }
 
     return fallback;
+  }
+
+  /**
+   * Validate confidence bands for gaps/overlaps
+   * Ensures bands cover 0.0 to 1.0 with no gaps or overlaps
+   * @throws BadRequestException if bands are invalid
+   */
+  private validateConfidenceBands(bands: any): void {
+    if (!bands || typeof bands !== 'object') {
+      return; // Let DTO validation handle missing/null
+    }
+
+    const bandNames = ['high', 'medium', 'low', 'auto_reject'];
+    const bandConfigs: Array<{ name: string; min: number; max: number }> = [];
+
+    // Extract all band configurations
+    for (const bandName of bandNames) {
+      const band = bands[bandName];
+      if (!band || typeof band.min !== 'number' || typeof band.max !== 'number') {
+        continue; // Let DTO validation handle incomplete bands
+      }
+      bandConfigs.push({
+        name: bandName,
+        min: band.min,
+        max: band.max,
+      });
+    }
+
+    // Only validate if all bands are present
+    if (bandConfigs.length !== bandNames.length) {
+      return; // Let DTO validation handle missing bands
+    }
+
+    // Sort by min value
+    bandConfigs.sort((a, b) => a.min - b.min);
+
+    // Check that coverage starts at 0.0
+    if (Math.abs(bandConfigs[0].min - 0) > 0.001) {
+      throw new BadRequestException(
+        'Confidence bands must start at 0.0. Current start: ' + bandConfigs[0].min,
+      );
+    }
+
+    // Check that coverage ends at 1.0
+    if (Math.abs(bandConfigs[bandConfigs.length - 1].max - 1.0) > 0.001) {
+      throw new BadRequestException(
+        'Confidence bands must end at 1.0. Current end: ' + bandConfigs[bandConfigs.length - 1].max,
+      );
+    }
+
+    // Check for gaps and overlaps
+    for (let i = 0; i < bandConfigs.length - 1; i++) {
+      const current = bandConfigs[i];
+      const next = bandConfigs[i + 1];
+
+      // Check for gap or overlap (allow small floating point differences up to 0.02)
+      if (Math.abs(current.max - next.min) > 0.02) {
+        throw new BadRequestException(
+          `Confidence bands have gap or overlap between ${current.name} (max: ${current.max}) and ${next.name} (min: ${next.min}). Ranges must be continuous.`,
+        );
+      }
+
+      // Ensure min < max for each band
+      if (current.min >= current.max) {
+        throw new BadRequestException(
+          `Confidence band ${current.name} has invalid range: min (${current.min}) must be less than max (${current.max})`,
+        );
+      }
+    }
+
+    // Ensure last band's min < max
+    const last = bandConfigs[bandConfigs.length - 1];
+    if (last.min >= last.max) {
+      throw new BadRequestException(
+        `Confidence band ${last.name} has invalid range: min (${last.min}) must be less than max (${last.max})`,
+      );
+    }
   }
 
   /**

@@ -397,10 +397,11 @@ export function ResultsTable({ jobId, jobName }: ResultsTableProps) {
                       <TableRow>
                         <TableCell colSpan={columns.length}>
                           <div
-                            className="p-4 bg-muted/50 rounded space-y-2"
+                            className="p-4 bg-muted/50 rounded space-y-4"
                             role="region"
                             aria-label="Row details"
                           >
+                            {/* URL Section */}
                             <div>
                               <strong>Full URL:</strong>{' '}
                               <a
@@ -412,24 +413,83 @@ export function ResultsTable({ jobId, jobName }: ResultsTableProps) {
                                 {row.original.url}
                               </a>
                             </div>
-                            {row.original.classification_reasoning && (
-                              <div>
-                                <strong>Classification Reasoning:</strong>
-                                <p className="mt-1 text-sm">
-                                  {row.original.classification_reasoning}
-                                </p>
-                              </div>
-                            )}
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                              <div>
-                                <strong>LLM Provider:</strong> {row.original.llm_provider || '-'}
-                              </div>
-                              <div>
-                                <strong>Retry Count:</strong> {row.original.retry_count || 0}
+
+                            {/* Filtering Journey Section */}
+                            <div className="border-t pt-3">
+                              <h4 className="font-semibold mb-2">Filtering Journey</h4>
+
+                              {/* Elimination Layer Badge */}
+                              {row.original.elimination_layer && (
+                                <div className="mb-3">
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    Eliminated at: {row.original.elimination_layer.toUpperCase()}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Layer 1: Domain Analysis */}
+                              {row.original.layer1_reasoning && (
+                                <div className="mb-3 p-3 bg-background rounded border">
+                                  <strong className="text-sm">Layer 1 - Domain Analysis:</strong>
+                                  <p className="mt-1 text-sm text-muted-foreground">
+                                    {row.original.layer1_reasoning}
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* Prefilter Information */}
+                              {row.original.prefilter_reasoning && (
+                                <div className="mb-3 p-3 bg-background rounded border">
+                                  <strong className="text-sm">
+                                    Prefilter: {row.original.prefilter_passed ? '✓ Passed' : '✗ Failed'}
+                                  </strong>
+                                  <p className="mt-1 text-sm text-muted-foreground">
+                                    {row.original.prefilter_reasoning}
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* Layer 3: LLM Classification */}
+                              {row.original.classification_reasoning && (
+                                <div className="mb-3 p-3 bg-background rounded border">
+                                  <strong className="text-sm">Layer 3 - LLM Classification:</strong>
+                                  <p className="mt-1 text-sm text-muted-foreground">
+                                    {row.original.classification_reasoning}
+                                  </p>
+                                  {row.original.confidence_band && (
+                                    <div className="mt-2">
+                                      <span className="text-xs font-medium">
+                                        Confidence Band: <span className="text-primary">{row.original.confidence_band}</span>
+                                      </span>
+                                    </div>
+                                  )}
+                                  {row.original.manual_review_required && (
+                                    <div className="mt-2">
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        ⚠ Manual Review Required
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Technical Metadata Section */}
+                            <div className="border-t pt-3">
+                              <h4 className="font-semibold mb-2 text-sm">Technical Metadata</h4>
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <strong>LLM Provider:</strong> {row.original.llm_provider || '-'}
+                                </div>
+                                <div>
+                                  <strong>Retry Count:</strong> {row.original.retry_count || 0}
+                                </div>
                               </div>
                             </div>
+
+                            {/* Error Section */}
                             {row.original.error_message && (
-                              <div>
+                              <div className="border-t pt-3">
                                 <strong className="text-destructive">Error Details:</strong>
                                 <p className="mt-1 text-sm text-destructive">
                                   {row.original.error_message}

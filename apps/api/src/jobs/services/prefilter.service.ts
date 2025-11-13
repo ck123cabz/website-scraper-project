@@ -87,7 +87,9 @@ export class PreFilterService implements OnModuleInit {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Failed to load rules from database: ${errorMessage}. Falling back to file.`);
+      this.logger.error(
+        `Failed to load rules from database: ${errorMessage}. Falling back to file.`,
+      );
       this.loadRulesFromFile();
     }
   }
@@ -144,7 +146,10 @@ export class PreFilterService implements OnModuleInit {
 
       this.logger.log(`Loaded ${this.compiledRules.length} pre-filter rules from file (fallback)`);
     } catch (error) {
-      this.logger.error('Failed to load pre-filter rules from file. Pre-filtering will be disabled.', error);
+      this.logger.error(
+        'Failed to load pre-filter rules from file. Pre-filtering will be disabled.',
+        error,
+      );
     }
   }
 

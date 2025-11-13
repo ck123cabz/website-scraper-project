@@ -30,11 +30,24 @@ export type {
   Layer2FilterResult,
   Layer2Signals,
   Layer2Rules,
-  CompanyPageSignals,
-  BlogDataSignals,
-  TechStackSignals,
-  DesignQualitySignals,
 } from './types/layer2';
+export type {
+  Layer3AnalysisResult,
+} from './types/layer3-analysis';
+
+// Batch Processing Refactor Types (Phase 1)
+export type {
+  Layer1Factors,
+  Layer2Factors,
+  Layer3Factors,
+  UrlResult,
+} from './types/url-results';
+export type {
+  Job as BatchJob,
+  JobStatus as BatchJobStatus,
+  CreateJobInput,
+  JobProgress,
+} from './types/jobs';
 
 // Schemas
 export { JobSchema, JobStatusSchema, ProcessingStageSchema } from './schemas/job';

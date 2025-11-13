@@ -3,6 +3,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 export interface UrlProcessingJob {
     jobId: string;
     url: string;
+    urlId: string;
     priority?: number;
 }
 export declare class QueueService {

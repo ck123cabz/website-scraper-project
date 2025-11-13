@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import OpenAI from 'openai';
-import type { LlmProvider, ClassificationResponse } from '@website-scraper/shared';
+import type { LlmProvider, ClassificationResponse, Layer3Results } from '@website-scraper/shared';
 import { SettingsService } from '../../settings/settings.service';
 
 /**
@@ -65,7 +65,7 @@ export class LlmService {
   /**
    * Get the enhanced classification prompt for guest post suitability analysis
    * Story 2.4-refactored AC2: Enhanced with sophistication signals
-   * Story 3.0 AC7: Loads indicators and content limit from database settings
+   * Story 3.0 AC7: Loads indicators and content limit from database settings (layer3_rules)
    * @param url - URL being analyzed
    * @param content - Website content to analyze
    * @returns Formatted prompt string
@@ -73,10 +73,23 @@ export class LlmService {
   private async getClassificationPrompt(url: string, content: string): Promise<string> {
     try {
       const settings = await this.settingsService.getSettings();
-      const contentLimit = this.asNumber(
-        settings.content_truncation_limit,
-        this.DEFAULT_CONTENT_LIMIT,
-      );
+
+      // Use layer3_rules structure, fallback to V1 fields for backward compatibility
+      const layer3Rules = settings.layer3_rules;
+      const contentLimit = layer3Rules?.content_truncation_limit
+        ? this.asNumber(layer3Rules.content_truncation_limit, this.DEFAULT_CONTENT_LIMIT)
+        : this.asNumber(settings.content_truncation_limit, this.DEFAULT_CONTENT_LIMIT);
+
+      const guestPostRedFlags =
+        layer3Rules?.guest_post_red_flags ||
+        settings.classification_indicators ||
+        this.DEFAULT_INDICATORS;
+
+      const seoInvestmentSignals = layer3Rules?.seo_investment_signals || [
+        'schema_markup',
+        'open_graph',
+        'structured_data',
+      ];
 
       const isFromDatabase = settings.id !== 'default';
       if (!isFromDatabase) {
@@ -93,35 +106,41 @@ export class LlmService {
       const truncatedContent = content.slice(0, contentLimit);
       const isTruncated = content.length > contentLimit;
 
+      // Build dynamic indicators list from settings
+      const indicatorsList = guestPostRedFlags.map((indicator) => `- ${indicator}`).join('\n');
+
+      const seoSignalsList = seoInvestmentSignals
+        .map((signal) => `- ${signal.replace(/_/g, ' ')}`)
+        .join('\n');
+
       // Enhanced prompt with sophistication signals (Story 2.4-refactored AC2)
-      return `You are an AI assistant that analyzes website content to determine if the site accepts guest post contributions. Focus on content marketing sophistication, SEO investment, and explicit guest post signals.
+      // Story 3.0: Uses dynamic indicators and signals from layer3_rules
+      return `You are an AI assistant that analyzes website content to determine if the site is suitable for high-quality guest post outreach. Focus on content marketing sophistication and SEO investment as POSITIVE indicators, while treating explicit guest post solicitation as RED FLAGS.
 
-Analyze the following website content and determine if it accepts guest posts.
+Analyze the following website content and determine suitability.
 
-**Content Marketing Sophistication Indicators:**
+**Content Marketing Sophistication Indicators (POSITIVE):**
 - Author bylines with external contributor profiles
 - Editorial quality: writing depth, professional tone, well-researched content
 - Audience engagement signals: comment sections, social shares, community interaction
 - Multiple authors or contributors (indicates editorial process)
 - Regular publishing cadence with diverse content
 
-**SEO Investment Signals:**
-- Structured data: schema markup, JSON-LD, Open Graph tags
+**SEO Investment Signals (POSITIVE):**
+${seoSignalsList}
 - Meta optimization: descriptive title tags, meta descriptions, canonical tags
 - Technical SEO: sitemap.xml, robots.txt, proper heading hierarchy
 - Internal linking strategy and content organization
 - Mobile optimization and page speed indicators
 
-**Guest Post Opportunity Signals:**
-- Explicit "Write for Us" or "Guest Post Guidelines" pages
-- Contributor sections with submission forms or guidelines
-- "Become a contributor" CTAs or author recruitment messaging
-- Clear evidence of accepting external content
-- Guest author attribution and bio sections
+**Guest Post Red Flags (NEGATIVE - Mark as NOT SUITABLE if found):**
+${indicatorsList}
+
+IMPORTANT: Sites WITH these red flag signals should be marked as NOT suitable (they are low-quality link farms or openly solicit paid guest posts). Sites WITHOUT these signals, but WITH sophistication and SEO investment, should be marked as suitable.
 
 Website URL: ${url}
 
-Website Content${isTruncated ? ' (truncated to 10,000 chars)' : ''}:
+Website Content${isTruncated ? ` (truncated to ${contentLimit.toLocaleString()} chars)` : ''}:
 ${truncatedContent}
 
 Respond ONLY with valid JSON in this exact format:
@@ -137,7 +156,6 @@ Respond ONLY with valid JSON in this exact format:
 - Medium confidence (0.5-0.79): Some signals present, but ambiguous or conflicting evidence
 - Low confidence (0.3-0.49): Weak signals, limited evidence, unclear intent
 - Auto-reject (0-0.29): No relevant signals, clear mismatch, or negative indicators`;
-
     } catch (error) {
       this.logger.warn('Failed to load settings for prompt. Using defaults.');
 
@@ -151,30 +169,32 @@ Respond ONLY with valid JSON in this exact format:
         );
       }
 
-      return `You are an AI assistant that analyzes website content to determine if the site accepts guest post contributions. Focus on content marketing sophistication, SEO investment, and explicit guest post signals.
+      const indicatorsList = this.DEFAULT_INDICATORS.map((indicator) => `- ${indicator}`).join(
+        '\n',
+      );
 
-Analyze the following website content and determine if it accepts guest posts.
+      return `You are an AI assistant that analyzes website content to determine if the site is suitable for high-quality guest post outreach. Focus on content marketing sophistication and SEO investment as POSITIVE indicators, while treating explicit guest post solicitation as RED FLAGS.
 
-**Content Marketing Sophistication Indicators:**
+Analyze the following website content and determine suitability.
+
+**Content Marketing Sophistication Indicators (POSITIVE):**
 - Author bylines with external contributor profiles
 - Editorial quality: writing depth, professional tone, well-researched content
 - Audience engagement signals: comment sections, social shares, community interaction
 - Multiple authors or contributors (indicates editorial process)
 - Regular publishing cadence with diverse content
 
-**SEO Investment Signals:**
+**SEO Investment Signals (POSITIVE):**
 - Structured data: schema markup, JSON-LD, Open Graph tags
 - Meta optimization: descriptive title tags, meta descriptions, canonical tags
 - Technical SEO: sitemap.xml, robots.txt, proper heading hierarchy
 - Internal linking strategy and content organization
 - Mobile optimization and page speed indicators
 
-**Guest Post Opportunity Signals:**
-- Explicit "Write for Us" or "Guest Post Guidelines" pages
-- Contributor sections with submission forms or guidelines
-- "Become a contributor" CTAs or author recruitment messaging
-- Clear evidence of accepting external content
-- Guest author attribution and bio sections
+**Guest Post Red Flags (NEGATIVE - Mark as NOT SUITABLE if found):**
+${indicatorsList}
+
+IMPORTANT: Sites WITH these red flag signals should be marked as NOT suitable (they are low-quality link farms or openly solicit paid guest posts). Sites WITHOUT these signals, but WITH sophistication and SEO investment, should be marked as suitable.
 
 Website URL: ${url}
 
@@ -391,7 +411,7 @@ Respond ONLY with valid JSON in this exact format:
 
   /**
    * Classify using Gemini API
-   * Story 3.0 AC7: Uses database temperature setting
+   * Story 3.0 AC7: Uses database temperature setting from layer3_rules
    * @private
    */
   private async classifyWithGemini(
@@ -409,11 +429,14 @@ Respond ONLY with valid JSON in this exact format:
 
     const prompt = await this.getClassificationPrompt(url, content);
 
-    // Get temperature from settings (Story 3.0 AC7)
+    // Get temperature from settings (Story 3.0 AC7: Use layer3_rules, fallback to V1)
     let temperature = this.DEFAULT_TEMPERATURE;
     try {
       const settings = await this.settingsService.getSettings();
-      temperature = this.asNumber(settings.llm_temperature, this.DEFAULT_TEMPERATURE);
+      temperature =
+        settings.layer3_rules?.llm_temperature !== undefined
+          ? this.asNumber(settings.layer3_rules.llm_temperature, this.DEFAULT_TEMPERATURE)
+          : this.asNumber(settings.llm_temperature, this.DEFAULT_TEMPERATURE);
     } catch (error) {
       this.logger.debug('Failed to load temperature setting. Using default.');
     }
@@ -456,7 +479,7 @@ Respond ONLY with valid JSON in this exact format:
 
   /**
    * Classify using OpenAI GPT API
-   * Story 3.0 AC7: Uses database temperature setting
+   * Story 3.0 AC7: Uses database temperature setting from layer3_rules
    * @private
    */
   private async classifyWithGPT(
@@ -474,11 +497,14 @@ Respond ONLY with valid JSON in this exact format:
 
     const prompt = await this.getClassificationPrompt(url, content);
 
-    // Get temperature from settings (Story 3.0 AC7)
+    // Get temperature from settings (Story 3.0 AC7: Use layer3_rules, fallback to V1)
     let temperature = this.DEFAULT_TEMPERATURE;
     try {
       const settings = await this.settingsService.getSettings();
-      temperature = this.asNumber(settings.llm_temperature, this.DEFAULT_TEMPERATURE);
+      temperature =
+        settings.layer3_rules?.llm_temperature !== undefined
+          ? this.asNumber(settings.layer3_rules.llm_temperature, this.DEFAULT_TEMPERATURE)
+          : this.asNumber(settings.llm_temperature, this.DEFAULT_TEMPERATURE);
       this.logger.debug(`Using temperature: ${temperature} for GPT classification`);
     } catch (error) {
       this.logger.debug('Failed to load temperature setting. Using default.');
@@ -591,9 +617,7 @@ Respond ONLY with valid JSON in this exact format:
       // This field is optional but if present must be an array
       if (parsed.sophistication_signals !== undefined) {
         if (!Array.isArray(parsed.sophistication_signals)) {
-          this.logger.warn(
-            'Invalid sophistication_signals field (not an array). Ignoring field.',
-          );
+          this.logger.warn('Invalid sophistication_signals field (not an array). Ignoring field.');
           delete parsed.sophistication_signals;
         } else if (!parsed.sophistication_signals.every((s: unknown) => typeof s === 'string')) {
           this.logger.warn(
@@ -610,5 +634,216 @@ Respond ONLY with valid JSON in this exact format:
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to parse classification response: ${errorMessage}`);
     }
+  }
+
+  /**
+   * Get structured Layer 3 evaluation results for manual review
+   * Returns detailed sophistication signal breakdown from LLM analysis
+   *
+   * @param url - URL to analyze
+   * @param content - Website content to analyze
+   * @returns Layer3Results with all sophistication signals
+   */
+  async getStructuredResults(url: string, content: string): Promise<Layer3Results> {
+    try {
+      // Run full classification to get sophistication signals
+      const result = await this.classifyUrl(url, content);
+
+      // For now, we don't have individual sophistication signal scores from LLM
+      // The LLM returns an array of detected signals, not individual scores
+      // We'll need to enhance the prompt to get individual signal scores
+      // For MVP, use overall confidence as proxy for all signals
+
+      const baseScore = result.confidence;
+      const detected = result.classification === 'suitable';
+
+      return {
+        design_quality: {
+          score: baseScore,
+          detected,
+          reasoning: 'Inferred from overall classification - detailed scoring not yet implemented',
+        },
+        content_originality: {
+          score: baseScore,
+          detected,
+          reasoning: 'Inferred from overall classification - detailed scoring not yet implemented',
+        },
+        authority_indicators: {
+          score: baseScore,
+          detected,
+          reasoning: 'Inferred from overall classification - detailed scoring not yet implemented',
+        },
+        professional_presentation: {
+          score: baseScore,
+          detected,
+          reasoning: result.reasoning.slice(0, 500), // Truncate reasoning to 500 chars
+        },
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Error getting structured Layer 3 results: ${errorMessage}`);
+      return this.getEmptyResults();
+    }
+  }
+
+  /**
+   * Return empty results structure when analysis cannot be performed
+   */
+  private getEmptyResults(): Layer3Results {
+    return {
+      design_quality: {
+        score: 0,
+        detected: false,
+        reasoning: 'Analysis not performed',
+      },
+      content_originality: {
+        score: 0,
+        detected: false,
+        reasoning: 'Analysis not performed',
+      },
+      authority_indicators: {
+        score: 0,
+        detected: false,
+        reasoning: 'Analysis not performed',
+      },
+      professional_presentation: {
+        score: 0,
+        detected: false,
+        reasoning: 'Analysis not performed',
+      },
+    };
+  }
+
+  /**
+   * Get complete Layer 3 factor structure for url_results table
+   * Returns JSONB-compatible object with all sophistication analysis factors
+   *
+   * This method returns ALL fields required by the Layer3Factors interface:
+   * - classification: 'accepted' | 'rejected' - Final LLM decision
+   * - sophistication_signals: Object with 4 dimensions (design_quality, authority_indicators,
+   *   professional_presentation, content_originality), each containing score and indicators array
+   * - llm_provider: string - Provider name ('gemini' or 'gpt')
+   * - model_version: string - Model version identifier
+   * - cost_usd: number - API call cost in USD
+   * - reasoning: string - Full LLM explanation (up to 5000 chars)
+   * - tokens_used: { input: number, output: number } - Token usage statistics
+   * - processing_time_ms: number - Total Layer 3 processing time
+   *
+   * @param url - URL to analyze
+   * @param content - Website content to analyze
+   * @returns Promise<Layer3Factors> with complete sophistication analysis data
+   */
+  async getLayer3Factors(url: string, content: string): Promise<any> {
+    try {
+      // Run full LLM classification to get all metadata
+      const classification = await this.classifyUrl(url, content);
+
+      // Get structured Layer 3 results for sophistication signals
+      const layer3Results = await this.getStructuredResults(url, content);
+
+      // Parse sophistication signals from classification response if available
+      // The LLM response may include a sophistication_signals array
+      let sophisticationSignals: any;
+      try {
+        // Try to get sophistication_signals from the raw LLM response
+        // For now, we'll construct it from the structured results
+        sophisticationSignals = {
+          design_quality: {
+            score: layer3Results.design_quality.score,
+            indicators: layer3Results.design_quality.signals || [],
+          },
+          authority_indicators: {
+            score: layer3Results.authority_indicators.score,
+            indicators: layer3Results.authority_indicators.signals || [],
+          },
+          professional_presentation: {
+            score: layer3Results.professional_presentation.score,
+            indicators: layer3Results.professional_presentation.signals || [],
+          },
+          content_originality: {
+            score: layer3Results.content_originality.score,
+            indicators: layer3Results.content_originality.signals || [],
+          },
+        };
+      } catch (error) {
+        // Fallback to basic structure if parsing fails
+        sophisticationSignals = {
+          design_quality: { score: classification.confidence, indicators: [] },
+          authority_indicators: { score: classification.confidence, indicators: [] },
+          professional_presentation: { score: classification.confidence, indicators: [] },
+          content_originality: { score: classification.confidence, indicators: [] },
+        };
+      }
+
+      // Determine model version based on provider
+      let modelVersion = 'unknown';
+      if (classification.provider === 'gemini') {
+        modelVersion = 'gemini-2.0-flash-exp';
+      } else if (classification.provider === 'gpt') {
+        modelVersion = 'gpt-4o-mini';
+      }
+
+      // Calculate token usage (estimated as fallback - real tokens tracked in classifyWithGemini/GPT)
+      // Note: Real token counts are available from LLM providers via usageMetadata/usage fields
+      // but not passed through classifyUrl() response. This is acceptable for MVP.
+      const estimatedInputTokens = Math.ceil(content.length / 4);
+      const estimatedOutputTokens = Math.ceil(classification.reasoning.length / 4);
+
+      return {
+        classification: classification.classification === 'suitable' ? 'accepted' : 'rejected',
+        sophistication_signals: sophisticationSignals,
+        llm_provider: classification.provider,
+        model_version: modelVersion,
+        cost_usd: classification.cost,
+        reasoning: classification.reasoning,
+        tokens_used: {
+          input: estimatedInputTokens,
+          output: estimatedOutputTokens,
+        },
+        processing_time_ms: classification.processingTimeMs,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Error getting Layer 3 factors: ${errorMessage}`);
+      return this.getEmptyLayer3Factors('Analysis error');
+    }
+  }
+
+  /**
+   * Return empty Layer3Factors structure when analysis cannot be performed
+   * @private
+   */
+  private getEmptyLayer3Factors(reason: string): any {
+    this.logger.warn(`Returning empty Layer 3 factors: ${reason}`);
+    return {
+      classification: 'rejected',
+      sophistication_signals: {
+        design_quality: {
+          score: 0,
+          indicators: [],
+        },
+        authority_indicators: {
+          score: 0,
+          indicators: [],
+        },
+        professional_presentation: {
+          score: 0,
+          indicators: [],
+        },
+        content_originality: {
+          score: 0,
+          indicators: [],
+        },
+      },
+      llm_provider: 'none',
+      model_version: 'unknown',
+      cost_usd: 0,
+      reasoning: reason,
+      tokens_used: {
+        input: 0,
+        output: 0,
+      },
+      processing_time_ms: 0,
+    };
   }
 }
