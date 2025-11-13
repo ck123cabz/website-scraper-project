@@ -244,6 +244,7 @@ describe('UrlWorkerProcessor - Integration Test: url_results Write Flow (T025)',
       passed: true,
       reasoning: layer1Factors.reasoning,
       processingTimeMs: 50,
+      layer: 'layer1',
     });
     mockLayer1Service.getLayer1Factors.mockReturnValue(layer1Factors);
     mockLayer1Service.getStructuredResults.mockReturnValue(layer1Factors);
@@ -251,15 +252,34 @@ describe('UrlWorkerProcessor - Integration Test: url_results Write Flow (T025)',
     // Mock scraper
     mockScraperService.fetchUrl.mockResolvedValue({
       success: true,
+      url: url,
       content: '<html><body>High quality content</body></html>',
       title: 'Enterprise Software Solution',
+      metaDescription: 'Enterprise software platform',
     });
 
     // Mock Layer 2 filter
     mockLayer2Service.filterUrl.mockResolvedValue({
       passed: true,
       reasoning: layer2Factors.reasoning,
-      signals: {},
+      signals: {
+        has_product_offering: true,
+        product_confidence: 0.8,
+        detected_product_keywords: ['software', 'platform'],
+        homepage_is_blog: false,
+        has_articles: true,
+        article_count: 50,
+        days_since_last_article: 5,
+        avg_article_word_count: 2000,
+        blog_quality_score: 0.8,
+        has_about_page: true,
+        has_team_page: true,
+        has_contact_page: true,
+        has_press_releases: true,
+        press_release_count: 10,
+        has_case_studies: true,
+        case_study_count: 5,
+      },
       processingTimeMs: 100,
     });
     mockLayer2Service.getLayer2Factors.mockResolvedValue(layer2Factors);
@@ -269,7 +289,7 @@ describe('UrlWorkerProcessor - Integration Test: url_results Write Flow (T025)',
     mockLayer3Service.classifyUrl.mockResolvedValue({
       classification: 'suitable',
       confidence: 0.88,
-      provider: 'openai',
+      provider: 'gpt',
       cost: 0.0025,
       reasoning: layer3Factors.reasoning,
       processingTimeMs: 1200,

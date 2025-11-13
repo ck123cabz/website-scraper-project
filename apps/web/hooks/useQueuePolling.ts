@@ -13,8 +13,8 @@ export interface UseQueuePollingOptions {
 }
 
 export interface UseQueuePollingReturn {
-  jobs: Job[];
-  completedJobs: Job[];
+  jobs: (Job | null)[];
+  completedJobs: (Job | null)[];
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
@@ -52,7 +52,7 @@ export function useQueuePolling(
   const jobs = useMemo(() => {
     const data = query.data || [];
     const filtered = includeCompleted
-      ? data.filter((job) => job.status !== 'completed')
+      ? data
       : data.filter((job) => job.status !== 'completed');
 
     return filtered.slice(0, limit);
@@ -67,8 +67,8 @@ export function useQueuePolling(
   }, [query.data, includeCompleted]);
 
   return {
-    jobs,
-    completedJobs,
+    jobs: jobs || [],
+    completedJobs: completedJobs || [],
     isLoading: query.isLoading,
     isError: query.isError,
     error: query.error ?? null,

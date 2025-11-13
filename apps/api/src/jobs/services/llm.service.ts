@@ -1,8 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import OpenAI from 'openai';
-import type { LlmProvider, ClassificationResponse, Layer3Results } from '@website-scraper/shared';
+import type { LlmProvider, ClassificationResponse } from '@website-scraper/shared';
 import { SettingsService } from '../../settings/settings.service';
+
+// Type stub for unused legacy method
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type Layer3Results = any;
 
 /**
  * LLM classification service with Gemini primary and GPT fallback

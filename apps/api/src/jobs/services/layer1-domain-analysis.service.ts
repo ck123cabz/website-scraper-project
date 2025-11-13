@@ -5,9 +5,12 @@ import type {
   Layer1AnalysisResult,
   Layer1DomainRules,
   Layer1Rules,
-  Layer1Results,
 } from '@website-scraper/shared';
 import { SettingsService } from '../../settings/settings.service';
+
+// Type stub for unused legacy method
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type Layer1Results = any;
 
 /**
  * Layer 1 Domain Analysis Service

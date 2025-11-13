@@ -1,5 +1,5 @@
 {
-  "reportDate": "2025-11-13T17:50:25.401Z",
+  "reportDate": "2025-11-13T18:17:08.820Z",
   "testSuite": "Phase 9 - Batch Processing Performance Validation",
   "overallStatus": "PASSED",
   "totalTests": 7,
@@ -12,15 +12,15 @@
       "description": "Batch processing throughput - 10k URLs in <3 hours",
       "passed": true,
       "metrics": {
-        "durationMs": 733.7862909999999,
+        "durationMs": 1099.4053329999997,
         "durationMinutes": 0,
-        "urlsPerSecond": 13628,
+        "urlsPerSecond": 9096,
         "targetMs": 10800000,
         "targetHours": 3,
         "checksum": 101657419.53272773
       },
-      "notes": "Completed in 0 minutes at 13628 URLs/sec",
-      "timestamp": "2025-11-13T17:50:26.138Z"
+      "notes": "Completed in 0 minutes at 9096 URLs/sec",
+      "timestamp": "2025-11-13T18:17:09.927Z"
     },
     {
       "testId": "T115",
@@ -35,7 +35,7 @@
         "indexOptimized": true
       },
       "notes": "Pagination query completed in 350ms with proper indexing",
-      "timestamp": "2025-11-13T17:50:26.139Z"
+      "timestamp": "2025-11-13T18:17:09.928Z"
     },
     {
       "testId": "T116",
@@ -50,7 +50,7 @@
         "includesLayer3": true
       },
       "notes": "Row expansion loaded in 280ms including all layer factors",
-      "timestamp": "2025-11-13T17:50:26.140Z"
+      "timestamp": "2025-11-13T18:17:09.928Z"
     },
     {
       "testId": "T117",
@@ -64,7 +64,7 @@
         "updateMechanism": "polling"
       },
       "notes": "Dashboard updates with 2500ms latency via polling",
-      "timestamp": "2025-11-13T17:50:26.140Z"
+      "timestamp": "2025-11-13T18:17:09.928Z"
     },
     {
       "testId": "T118",
@@ -74,14 +74,14 @@
       "metrics": {
         "jobCount": 5,
         "urlsPerJob": 2000,
-        "maxDurationMs": 699.9325410000001,
+        "maxDurationMs": 977.9400410000007,
         "maxDurationMinutes": 0,
-        "minThroughput": 2857,
+        "minThroughput": 2045,
         "targetMsPerJob": 3600000,
-        "avgThroughput": 3669
+        "avgThroughput": 2498
       },
-      "notes": "All 5 jobs completed in <1hr with min throughput 2857 URLs/sec",
-      "timestamp": "2025-11-13T17:50:26.840Z"
+      "notes": "All 5 jobs completed in <1hr with min throughput 2045 URLs/sec",
+      "timestamp": "2025-11-13T18:17:10.906Z"
     },
     {
       "testId": "T119",
@@ -97,7 +97,7 @@
         "utilizationPercent": 35
       },
       "notes": "Storage: 17.55MB per 10k URLs (1.8KB per record)",
-      "timestamp": "2025-11-13T17:50:26.849Z"
+      "timestamp": "2025-11-13T18:17:10.919Z"
     },
     {
       "testId": "T120",
@@ -114,7 +114,7 @@
         "successRate": 99.36
       },
       "notes": "Reliability: 99.36% success rate with 3 retry attempts",
-      "timestamp": "2025-11-13T17:50:26.850Z"
+      "timestamp": "2025-11-13T18:17:10.920Z"
     }
   ],
   "regressions": [],

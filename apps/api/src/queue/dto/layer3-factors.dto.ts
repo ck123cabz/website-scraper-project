@@ -16,11 +16,11 @@ import { Type } from 'class-transformer';
 class SophisticationSignalDetailDto {
   @IsNumber()
   @Min(0)
-  score: number;
+  score!: number;
 
   @IsArray()
   @IsString({ each: true })
-  indicators: string[];
+  indicators!: string[];
 }
 
 /**
@@ -30,19 +30,19 @@ class SophisticationSignalDetailDto {
 class SophisticationSignalsDto {
   @ValidateNested()
   @Type(() => SophisticationSignalDetailDto)
-  design_quality: SophisticationSignalDetailDto;
+  design_quality!: SophisticationSignalDetailDto;
 
   @ValidateNested()
   @Type(() => SophisticationSignalDetailDto)
-  authority_indicators: SophisticationSignalDetailDto;
+  authority_indicators!: SophisticationSignalDetailDto;
 
   @ValidateNested()
   @Type(() => SophisticationSignalDetailDto)
-  professional_presentation: SophisticationSignalDetailDto;
+  professional_presentation!: SophisticationSignalDetailDto;
 
   @ValidateNested()
   @Type(() => SophisticationSignalDetailDto)
-  content_originality: SophisticationSignalDetailDto;
+  content_originality!: SophisticationSignalDetailDto;
 }
 
 /**
@@ -52,11 +52,11 @@ class SophisticationSignalsDto {
 class TokenUsageDto {
   @IsNumber()
   @Min(0)
-  input: number;
+  input!: number;
 
   @IsNumber()
   @Min(0)
-  output: number;
+  output!: number;
 }
 
 /**
@@ -73,33 +73,33 @@ class TokenUsageDto {
 export class Layer3FactorsDto {
   @IsEnum(['accepted', 'rejected'])
   @IsNotEmpty()
-  classification: 'accepted' | 'rejected';
+  classification!: 'accepted' | 'rejected';
 
   @ValidateNested()
   @Type(() => SophisticationSignalsDto)
-  sophistication_signals: SophisticationSignalsDto;
+  sophistication_signals!: SophisticationSignalsDto;
 
   @IsString()
   @IsNotEmpty()
-  llm_provider: string;
+  llm_provider!: string;
 
   @IsString()
   @IsNotEmpty()
-  model_version: string;
+  model_version!: string;
 
   @IsNumber()
   @Min(0)
-  cost_usd: number;
+  cost_usd!: number;
 
   @IsString()
   @IsNotEmpty()
-  reasoning: string;
+  reasoning!: string;
 
   @ValidateNested()
   @Type(() => TokenUsageDto)
-  tokens_used: TokenUsageDto;
+  tokens_used!: TokenUsageDto;
 
   @IsNumber()
   @Min(0)
-  processing_time_ms: number;
+  processing_time_ms!: number;
 }

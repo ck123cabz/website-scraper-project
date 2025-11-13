@@ -6,8 +6,11 @@ import type {
   Layer2FilterResult,
   Layer2Signals,
   Layer2Rules,
-  Layer2Results,
 } from '@website-scraper/shared';
+
+// Type stub for unused legacy method
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type Layer2Results = any;
 
 /**
  * Layer 2: Operational Filtering Service

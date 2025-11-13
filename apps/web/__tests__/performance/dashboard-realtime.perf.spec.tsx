@@ -59,69 +59,38 @@ function createPerformanceQueryWrapper() {
 
 /**
  * Helper to create mock job data in snake_case format (as returned by API)
- * The useQueuePolling hook expects snake_case and will transform to camelCase
+ * The useQueuePolling hook expects snake_case and will transform to snake_case Job type
  */
 function createMockJob(overrides: Partial<Job> = {}): any {
   const now = new Date().toISOString();
 
-  // Default values in camelCase for easy override
+  // Default values matching Job interface
   const defaults = {
     id: '123e4567-e89b-12d3-a456-426614174000',
-    name: 'Test Job',
-    status: 'processing',
-    totalUrls: 100,
-    processedUrls: 50,
-    successfulUrls: 45,
-    failedUrls: 2,
-    rejectedUrls: 3,
-    currentUrl: 'https://example.com',
-    currentStage: 'layer3',
-    currentUrlStartedAt: now,
-    progressPercentage: 50,
-    processingRate: 10,
-    estimatedTimeRemaining: 300,
-    totalCost: 5.50,
-    geminiCost: 3.00,
-    gptCost: 2.50,
-    avgCostPerUrl: 0.11,
-    projectedTotalCost: 11.00,
-    startedAt: now,
-    completedAt: null,
-    createdAt: now,
-    updatedAt: now,
-    queuePosition: null,
+    job_name: 'Test Job',
+    status: 'running',
+    created_at: now,
+    started_at: now,
+    completed_at: null,
+    archived_at: null,
+    total_urls: 100,
+    processed_urls: 50,
+    accepted_count: 45,
+    rejected_count: 2,
+    error_count: 3,
+    total_cost: 5.50,
+    layer1_eliminated: 10,
+    layer2_eliminated: 20,
+    layer3_classified: 70,
+    csv_file_path: null,
+    updated_at: now,
   };
 
   // Merge overrides
   const merged = { ...defaults, ...overrides };
 
-  // Convert to snake_case format as returned by API
-  return {
-    id: merged.id,
-    name: merged.name,
-    status: merged.status,
-    total_urls: merged.totalUrls,
-    processed_urls: merged.processedUrls,
-    successful_urls: merged.successfulUrls,
-    failed_urls: merged.failedUrls,
-    rejected_urls: merged.rejectedUrls,
-    current_url: merged.currentUrl,
-    current_stage: merged.currentStage,
-    current_url_started_at: merged.currentUrlStartedAt,
-    progress_percentage: merged.progressPercentage,
-    processing_rate: merged.processingRate,
-    estimated_time_remaining: merged.estimatedTimeRemaining,
-    total_cost: merged.totalCost,
-    gemini_cost: merged.geminiCost,
-    gpt_cost: merged.gptCost,
-    avg_cost_per_url: merged.avgCostPerUrl,
-    projected_total_cost: merged.projectedTotalCost,
-    started_at: merged.startedAt,
-    completed_at: merged.completedAt,
-    created_at: merged.createdAt,
-    updated_at: merged.updatedAt,
-    queue_position: merged.queuePosition,
-  };
+  // Return in snake_case format as returned by API
+  return merged;
 }
 
 /**

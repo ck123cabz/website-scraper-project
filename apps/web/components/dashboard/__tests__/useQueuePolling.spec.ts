@@ -43,32 +43,28 @@ function createWrapper() {
     React.createElement(QueryClientProvider, { client: queryClient }, children);
 }
 
-// Helper to create mock job data
-function createMockJob(overrides: Partial<Job> = {}): Job {
+// Helper to create mock job data in snake_case format (as returned by API)
+function createMockJob(overrides: Partial<any> = {}): any {
+  const now = new Date().toISOString();
   return {
     id: '123e4567-e89b-12d3-a456-426614174000',
-    name: 'Test Job',
-    status: 'processing',
-    totalUrls: 100,
-    processedUrls: 50,
-    successfulUrls: 45,
-    failedUrls: 2,
-    rejectedUrls: 3,
-    currentUrl: 'https://example.com',
-    currentStage: 'classifying',
-    currentUrlStartedAt: new Date().toISOString(),
-    progressPercentage: 50,
-    processingRate: 10,
-    estimatedTimeRemaining: 300,
-    totalCost: 5.50,
-    geminiCost: 3.00,
-    gptCost: 2.50,
-    avgCostPerUrl: 0.11,
-    projectedTotalCost: 11.00,
-    startedAt: new Date().toISOString(),
-    completedAt: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    job_name: 'Test Job',
+    status: 'running',
+    created_at: now,
+    started_at: now,
+    completed_at: null,
+    archived_at: null,
+    total_urls: 100,
+    processed_urls: 50,
+    accepted_count: 45,
+    rejected_count: 2,
+    error_count: 3,
+    total_cost: 5.50,
+    layer1_eliminated: 10,
+    layer2_eliminated: 20,
+    layer3_classified: 70,
+    csv_file_path: null,
+    updated_at: now,
     ...overrides,
   };
 }

@@ -18,22 +18,22 @@ class ModuleScoresDto {
   @IsNumber()
   @Min(0)
   @Max(1)
-  product_offering: number;
+  product_offering!: number;
 
   @IsNumber()
   @Min(0)
   @Max(1)
-  layout_quality: number;
+  layout_quality!: number;
 
   @IsNumber()
   @Min(0)
   @Max(1)
-  navigation_complexity: number;
+  navigation_complexity!: number;
 
   @IsNumber()
   @Min(0)
   @Max(1)
-  monetization_indicators: number;
+  monetization_indicators!: number;
 }
 
 /**
@@ -42,16 +42,16 @@ class ModuleScoresDto {
  */
 class ContentSignalsDto {
   @IsBoolean()
-  has_blog: boolean;
+  has_blog!: boolean;
 
   @IsBoolean()
-  has_press_releases: boolean;
+  has_press_releases!: boolean;
 
   @IsBoolean()
-  has_whitepapers: boolean;
+  has_whitepapers!: boolean;
 
   @IsBoolean()
-  has_case_studies: boolean;
+  has_case_studies!: boolean;
 }
 
 /**
@@ -70,28 +70,28 @@ export class Layer2FactorsDto {
   @Min(0)
   @Max(1)
   @IsNotEmpty()
-  publication_score: number;
+  publication_score!: number;
 
   @ValidateNested()
   @Type(() => ModuleScoresDto)
-  module_scores: ModuleScoresDto;
+  module_scores!: ModuleScoresDto;
 
   @IsArray()
   @IsString({ each: true })
-  keywords_found: string[];
+  keywords_found!: string[];
 
   @IsArray()
   @IsString({ each: true })
-  ad_networks_detected: string[];
+  ad_networks_detected!: string[];
 
   @ValidateNested()
   @Type(() => ContentSignalsDto)
-  content_signals: ContentSignalsDto;
+  content_signals!: ContentSignalsDto;
 
   @IsString()
   @IsNotEmpty()
-  reasoning: string;
+  reasoning!: string;
 
   @IsBoolean()
-  passed: boolean;
+  passed!: boolean;
 }

@@ -6,7 +6,6 @@ import { Layer1DomainAnalysisService } from '../../jobs/services/layer1-domain-a
 import { Layer2OperationalFilterService } from '../../jobs/services/layer2-operational-filter.service';
 import { LlmService } from '../../jobs/services/llm.service';
 import { ConfidenceScoringService } from '../../jobs/services/confidence-scoring.service';
-import { ManualReviewRouterService } from '../../jobs/services/manual-review-router.service';
 import type { Job } from 'bullmq';
 
 /**
@@ -71,12 +70,6 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
           provide: ConfidenceScoringService,
           useValue: {
             calculateConfidenceBand: jest.fn().mockResolvedValue('high'),
-          },
-        },
-        {
-          provide: ManualReviewRouterService,
-          useValue: {
-            shouldRouteToManualReview: jest.fn().mockReturnValue(false),
           },
         },
       ],

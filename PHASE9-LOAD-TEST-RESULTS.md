@@ -1,6 +1,6 @@
 # Phase 9 Load Test Results
 
-**Generated:** 11/14/2025, 1:50:25 AM
+**Generated:** 11/14/2025, 2:17:08 AM
 **Test Suite:** Phase 9 - Batch Processing Performance Validation
 **Overall Status:** ✅ PASSED
 
@@ -31,21 +31,21 @@
 
 **Status:** ✅ PASSED
 **Success Criteria:** SC-001
-**Timestamp:** 11/14/2025, 1:50:26 AM
+**Timestamp:** 11/14/2025, 2:17:09 AM
 
 **Metrics:**
 ```json
 {
-  "durationMs": 733.7862909999999,
+  "durationMs": 1099.4053329999997,
   "durationMinutes": 0,
-  "urlsPerSecond": 13628,
+  "urlsPerSecond": 9096,
   "targetMs": 10800000,
   "targetHours": 3,
   "checksum": 101657419.53272773
 }
 ```
 
-**Notes:** Completed in 0 minutes at 13628 URLs/sec
+**Notes:** Completed in 0 minutes at 9096 URLs/sec
 
 ---
 
@@ -53,7 +53,7 @@
 
 **Status:** ✅ PASSED
 **Success Criteria:** SC-003
-**Timestamp:** 11/14/2025, 1:50:26 AM
+**Timestamp:** 11/14/2025, 2:17:09 AM
 
 **Metrics:**
 ```json
@@ -74,7 +74,7 @@
 
 **Status:** ✅ PASSED
 **Success Criteria:** SC-006
-**Timestamp:** 11/14/2025, 1:50:26 AM
+**Timestamp:** 11/14/2025, 2:17:09 AM
 
 **Metrics:**
 ```json
@@ -95,7 +95,7 @@
 
 **Status:** ✅ PASSED
 **Success Criteria:** SC-007
-**Timestamp:** 11/14/2025, 1:50:26 AM
+**Timestamp:** 11/14/2025, 2:17:09 AM
 
 **Metrics:**
 ```json
@@ -115,22 +115,22 @@
 
 **Status:** ✅ PASSED
 **Success Criteria:** SC-009
-**Timestamp:** 11/14/2025, 1:50:26 AM
+**Timestamp:** 11/14/2025, 2:17:10 AM
 
 **Metrics:**
 ```json
 {
   "jobCount": 5,
   "urlsPerJob": 2000,
-  "maxDurationMs": 699.9325410000001,
+  "maxDurationMs": 977.9400410000007,
   "maxDurationMinutes": 0,
-  "minThroughput": 2857,
+  "minThroughput": 2045,
   "targetMsPerJob": 3600000,
-  "avgThroughput": 3669
+  "avgThroughput": 2498
 }
 ```
 
-**Notes:** All 5 jobs completed in <1hr with min throughput 2857 URLs/sec
+**Notes:** All 5 jobs completed in <1hr with min throughput 2045 URLs/sec
 
 ---
 
@@ -138,7 +138,7 @@
 
 **Status:** ✅ PASSED
 **Success Criteria:** SC-010
-**Timestamp:** 11/14/2025, 1:50:26 AM
+**Timestamp:** 11/14/2025, 2:17:10 AM
 
 **Metrics:**
 ```json
@@ -160,7 +160,7 @@
 
 **Status:** ✅ PASSED
 **Success Criteria:** SC-011
-**Timestamp:** 11/14/2025, 1:50:26 AM
+**Timestamp:** 11/14/2025, 2:17:10 AM
 
 **Metrics:**
 ```json
@@ -183,13 +183,13 @@
 
 ### Batch Processing (T114)
 - Duration: 0 minutes
-- Throughput: 13628 URLs/second
+- Throughput: 9096 URLs/second
 - Target: <180 minutes (3 hours)
 
 ### Concurrent Jobs (T118)
 - Max Duration: 0 minutes
-- Min Throughput: 2857 URLs/second
-- Avg Throughput: 3669 URLs/second
+- Min Throughput: 2045 URLs/second
+- Avg Throughput: 2498 URLs/second
 - Target: <60 minutes per job
 
 ### Storage Efficiency (T119)

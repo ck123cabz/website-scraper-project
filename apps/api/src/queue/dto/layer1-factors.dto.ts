@@ -18,12 +18,12 @@ import { Type } from 'class-transformer';
 class TargetProfileDto {
   @IsString()
   @IsNotEmpty()
-  type: string;
+  type!: string;
 
   @IsNumber()
   @Min(0)
   @Max(1)
-  confidence: number;
+  confidence!: number;
 }
 
 /**
@@ -40,28 +40,28 @@ class TargetProfileDto {
 export class Layer1FactorsDto {
   @IsEnum(['gtld', 'cctld', 'custom'])
   @IsNotEmpty()
-  tld_type: 'gtld' | 'cctld' | 'custom';
+  tld_type!: 'gtld' | 'cctld' | 'custom';
 
   @IsString()
   @IsNotEmpty()
-  tld_value: string;
+  tld_value!: string;
 
   @IsEnum(['commercial', 'personal', 'institutional', 'spam'])
   @IsNotEmpty()
-  domain_classification: 'commercial' | 'personal' | 'institutional' | 'spam';
+  domain_classification!: 'commercial' | 'personal' | 'institutional' | 'spam';
 
   @IsArray()
   @IsString({ each: true })
-  pattern_matches: string[];
+  pattern_matches!: string[];
 
   @ValidateNested()
   @Type(() => TargetProfileDto)
-  target_profile: TargetProfileDto;
+  target_profile!: TargetProfileDto;
 
   @IsString()
   @IsNotEmpty()
-  reasoning: string;
+  reasoning!: string;
 
   @IsBoolean()
-  passed: boolean;
+  passed!: boolean;
 }
