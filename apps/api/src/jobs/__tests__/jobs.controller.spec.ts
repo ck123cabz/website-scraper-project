@@ -325,3 +325,586 @@ describe('JobsController - GET /jobs/:jobId/results/:resultId (T038)', () => {
     });
   });
 });
+
+/**
+ * Contract Tests for JobsController - POST /jobs/:jobId/export
+ * Task T056 [Phase 5 - User Story 3]
+ *
+ * Tests the POST /jobs/:jobId/export endpoint for exporting job results as CSV.
+ *
+ * Expected Request Parameters:
+ * - Path: jobId (UUID)
+ * - Query/Body: format, filter, layer, confidence
+ *
+ * Expected Response:
+ * - CSV file stream with Content-Type: text/csv; charset=utf-8
+ * - Content-Disposition header with filename
+ * - Streaming response (not buffered)
+ *
+ * Test Scenarios:
+ * 1. Export with format=complete (default) - 48 columns
+ * 2. Export with format=summary - 7 columns
+ * 3. Export with filters applied (filter, layer, confidence)
+ * 4. Export with invalid format - 400 Bad Request
+ * 5. Export for non-existent job - 404 Not Found
+ * 6. Export with invalid UUID format - 400 Bad Request
+ * 7. All format options work (complete, summary, layer1, layer2, layer3)
+ * 8. Filter combinations work correctly
+ */
+describe('JobsController - POST /jobs/:jobId/export (T056)', () => {
+  let app: INestApplication;
+  let jobsService: JobsService;
+
+  beforeAll(async () => {
+    const mockSupabaseClient = {
+      from: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn(),
+    };
+
+    const mockSupabaseService = {
+      getClient: jest.fn(() => mockSupabaseClient),
+    };
+
+    const mockFileParserService = {
+      parseFile: jest.fn(),
+    };
+
+    const mockUrlValidationService = {
+      validateAndNormalizeUrls: jest.fn(),
+      normalizeForDeduplication: jest.fn(),
+    };
+
+    const mockQueueService = {
+      addUrlsToQueue: jest.fn(),
+      addUrlToQueue: jest.fn(),
+      pauseJob: jest.fn(),
+      resumeJob: jest.fn(),
+      cancelJob: jest.fn(),
+    };
+
+    const mockJobsService = {
+      createJob: jest.fn(),
+      getJobById: jest.fn(),
+      getAllJobs: jest.fn(),
+      updateJob: jest.fn(),
+      deleteJob: jest.fn(),
+      createJobWithUrls: jest.fn(),
+      getResultDetails: jest.fn(),
+    };
+
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      controllers: [JobsController],
+      providers: [
+        {
+          provide: JobsService,
+          useValue: mockJobsService,
+        },
+        {
+          provide: SupabaseService,
+          useValue: mockSupabaseService,
+        },
+        {
+          provide: FileParserService,
+          useValue: mockFileParserService,
+        },
+        {
+          provide: UrlValidationService,
+          useValue: mockUrlValidationService,
+        },
+        {
+          provide: QueueService,
+          useValue: mockQueueService,
+        },
+      ],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+    await app.init();
+
+    jobsService = moduleFixture.get<JobsService>(JobsService);
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('POST /jobs/:jobId/export', () => {
+    const jobId = '123e4567-e89b-12d3-a456-426614174000';
+
+    describe('Scenario 1: Export with format=complete (default)', () => {
+      it('should return 200 OK with CSV content-type and 48 columns', async () => {
+        // Act - Test endpoint (should fail as not implemented yet - TDD)
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({ format: 'complete' })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 200 OK
+        // - Content-Type: text/csv; charset=utf-8
+        // - Content-Disposition: attachment; filename="job-{jobId}-complete.csv"
+        // - Body contains CSV data with header row
+        // - Header row has 48 columns (10 core + 5 L1 + 10 L2 + 15 L3 + 8 metadata)
+      });
+
+      it('should use format=complete as default when format not specified', async () => {
+        // Act - Test without format parameter
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({})
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify default format is 'complete'
+      });
+
+      it('should include proper response headers', async () => {
+        // Act
+        const response = await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({ format: 'complete' })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify headers:
+        // - Content-Type: text/csv; charset=utf-8
+        // - Content-Disposition: attachment; filename="job-{jobId}-complete.csv"
+        // - Content-Length: (actual size)
+      });
+    });
+
+    describe('Scenario 2: Export with format=summary', () => {
+      it('should return 200 OK with CSV containing 7 columns only', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({ format: 'summary' })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 200 OK
+        // - CSV has 7 columns: URL, Status, Confidence Score, Confidence Band, Eliminated At Layer, Processing Time, Total Cost
+      });
+
+      it('should include proper filename for summary format', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({ format: 'summary' })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Content-Disposition: attachment; filename="job-{jobId}-summary.csv"
+      });
+    });
+
+    describe('Scenario 3: Export with filters applied', () => {
+      it('should export with filter=approved, layer=passed_all', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({
+            format: 'complete',
+            filter: 'approved',
+            layer: 'passed_all',
+          })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 200 OK
+        // - Body contains only approved URLs that passed all layers
+        // - Number of data rows matches filter criteria
+      });
+
+      it('should export with filter=rejected, confidence=low', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({
+            format: 'complete',
+            filter: 'rejected',
+            confidence: 'low',
+          })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 200 OK
+        // - Body contains only rejected URLs with low confidence
+      });
+
+      it('should export with layer=layer1 filter only', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({
+            format: 'complete',
+            layer: 'layer1',
+          })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 200 OK
+        // - Body contains only URLs eliminated at Layer 1
+      });
+
+      it('should export with confidence=high filter only', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({
+            format: 'complete',
+            confidence: 'high',
+          })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 200 OK
+        // - Body contains only URLs with high confidence band
+      });
+
+      it('should export with all filters combined', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({
+            format: 'complete',
+            filter: 'approved',
+            layer: 'passed_all',
+            confidence: 'high',
+          })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 200 OK
+        // - Body contains only URLs matching ALL filter criteria
+      });
+    });
+
+    describe('Scenario 4: Export with invalid format', () => {
+      it('should return 400 Bad Request for invalid format', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({ format: 'invalid_format' })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 400 Bad Request
+        // - Error message: "Invalid format"
+        // - Response includes valid format options
+      });
+
+      it('should return 400 Bad Request for empty format string', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({ format: '' })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 400 Bad Request
+      });
+    });
+
+    describe('Scenario 5: Export for non-existent job', () => {
+      it('should return 404 Not Found for non-existent job ID', async () => {
+        const nonExistentJobId = '00000000-0000-0000-0000-000000000000';
+
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/' + nonExistentJobId + '/export')
+          .send({ format: 'complete' })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 404 Not Found
+        // - Error message: "Job not found"
+      });
+    });
+
+    describe('Scenario 6: Export with invalid UUID format', () => {
+      it('should return 400 Bad Request for invalid UUID format', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/invalid-uuid-format/export')
+          .send({ format: 'complete' })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 400 Bad Request
+        // - Error message: "Invalid job ID format"
+      });
+
+      it('should return 400 Bad Request for malformed UUID', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/123-456-789/export')
+          .send({ format: 'complete' })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 400 Bad Request
+      });
+    });
+
+    describe('Scenario 7: All format options work', () => {
+      const formats = [
+        { format: 'complete', expectedColumns: 48 },
+        { format: 'summary', expectedColumns: 7 },
+        { format: 'layer1', expectedColumns: 15 },
+        { format: 'layer2', expectedColumns: 20 },
+        { format: 'layer3', expectedColumns: 25 },
+      ];
+
+      formats.forEach(({ format, expectedColumns }) => {
+        it(`should export with format=${format} and return ${expectedColumns} columns`, async () => {
+          // Act
+          await request(app.getHttpServer())
+            .post('/jobs/' + jobId + '/export')
+            .send({ format })
+            .expect(HttpStatus.NOT_FOUND);
+
+          // TODO: Once endpoint is implemented, verify:
+          // - Status: 200 OK
+          // - CSV header row has exactly {expectedColumns} columns
+          // - Content-Disposition filename includes format: "job-{jobId}-{format}.csv"
+        });
+      });
+    });
+
+    describe('Scenario 8: Filter combinations work', () => {
+      it('should handle filter=all (no filtering)', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({
+            format: 'complete',
+            filter: 'all',
+          })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 200 OK
+        // - Body contains all results regardless of status
+      });
+
+      it('should handle layer=all (no layer filtering)', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({
+            format: 'complete',
+            layer: 'all',
+          })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 200 OK
+        // - Body contains results from all layers
+      });
+
+      it('should handle confidence=all (no confidence filtering)', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({
+            format: 'complete',
+            confidence: 'all',
+          })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 200 OK
+        // - Body contains results with all confidence bands
+      });
+
+      it('should handle multiple valid filters simultaneously', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({
+            format: 'summary',
+            filter: 'rejected',
+            layer: 'layer2',
+            confidence: 'medium',
+          })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 200 OK
+        // - Body contains only rows matching ALL criteria:
+        //   - status = rejected
+        //   - eliminated_at_layer = layer2
+        //   - confidence_band = medium
+      });
+
+      it('should return 400 for invalid filter value', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({
+            format: 'complete',
+            filter: 'invalid_filter',
+          })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 400 Bad Request
+        // - Error message mentions valid filter values
+      });
+
+      it('should return 400 for invalid layer value', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({
+            format: 'complete',
+            layer: 'invalid_layer',
+          })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 400 Bad Request
+        // - Error message mentions valid layer values
+      });
+
+      it('should return 400 for invalid confidence value', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({
+            format: 'complete',
+            confidence: 'invalid_confidence',
+          })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 400 Bad Request
+        // - Error message mentions valid confidence values
+      });
+    });
+
+    describe('Edge Cases and Error Handling', () => {
+      it('should handle empty result set gracefully', async () => {
+        // Act - Export job with no results
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({ format: 'complete' })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 200 OK
+        // - Body contains only CSV header row (no data rows)
+      });
+
+      it('should handle large result sets without timeout', async () => {
+        // Act - Export job with 10,000+ results
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({ format: 'complete' })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 200 OK
+        // - Completes within 5 seconds (streaming requirement)
+      });
+
+      it('should handle NULL factor values in export', async () => {
+        // Act - Export job with pre-migration data (NULL factors)
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({ format: 'complete' })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 200 OK
+        // - NULL factors are represented as empty strings in CSV
+      });
+
+      it('should validate request body schema', async () => {
+        // Act - Send request with invalid body structure
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({
+            format: 'complete',
+            unknown_field: 'should_be_rejected',
+          })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Status: 400 Bad Request (if forbidNonWhitelisted is true)
+        // - OR unknown fields are ignored (if forbidNonWhitelisted is false)
+      });
+
+      it('should handle concurrent export requests', async () => {
+        // Act - Make multiple concurrent export requests
+        const requests = [
+          request(app.getHttpServer()).post('/jobs/' + jobId + '/export').send({ format: 'complete' }),
+          request(app.getHttpServer()).post('/jobs/' + jobId + '/export').send({ format: 'summary' }),
+          request(app.getHttpServer()).post('/jobs/' + jobId + '/export').send({ format: 'layer1' }),
+        ];
+
+        await Promise.all(
+          requests.map(req => req.expect(HttpStatus.NOT_FOUND))
+        );
+
+        // TODO: Once endpoint is implemented, verify:
+        // - All requests complete successfully
+        // - No race conditions or conflicts
+      });
+    });
+
+    describe('Streaming and Performance Requirements', () => {
+      it('should use streaming response (not buffer entire file)', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({ format: 'complete' })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - Response uses streaming (check Transfer-Encoding or similar)
+        // - Memory usage remains constant during export
+      });
+
+      it('should call ExportService.streamCSVExport()', async () => {
+        // Act
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({ format: 'complete' })
+          .expect(HttpStatus.NOT_FOUND);
+
+        // TODO: Once endpoint is implemented, verify:
+        // - JobsController calls ExportService.streamCSVExport()
+        // - Correct parameters are passed: jobId, format, filters
+      });
+
+      it('should complete export of 10k rows in < 5 seconds', async () => {
+        // Act - Measure export time
+        const startTime = Date.now();
+
+        await request(app.getHttpServer())
+          .post('/jobs/' + jobId + '/export')
+          .send({ format: 'complete' })
+          .expect(HttpStatus.NOT_FOUND);
+
+        const elapsedTime = Date.now() - startTime;
+
+        // TODO: Once endpoint is implemented, verify:
+        // - elapsedTime < 5000ms for 10k row export
+        console.log(`[T056 Performance] Export elapsed time: ${elapsedTime}ms`);
+      });
+    });
+  });
+});
