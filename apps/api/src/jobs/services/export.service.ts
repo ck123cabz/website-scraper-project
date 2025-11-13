@@ -19,7 +19,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Readable } from 'stream';
 import { JobsService } from '../jobs.service';
-import { UrlResult } from '@website-scraper/shared';
+import { UrlResult, Layer3Factors } from '@website-scraper/shared';
 
 /**
  * Export options interface
@@ -272,7 +272,7 @@ export class ExportService {
 
   /**
    * Generate row values based on format and URL result
-   * This is a stub that will be implemented in T062-T064
+   * Routes to appropriate column generator based on format
    *
    * @param result - URL result record
    * @param format - Export format
@@ -282,10 +282,205 @@ export class ExportService {
     result: UrlResult,
     format: string,
   ): Array<string | null | undefined> {
-    // TODO: Implement in T062-T064
-    // For now, return placeholder values matching column count
-    const headers = this.getColumnHeaders(format);
-    return headers.map(() => '');
+    switch (format) {
+      case 'complete':
+        return this.generateCompleteColumns(result);
+      case 'summary':
+        return this.generateSummaryColumns(result);
+      case 'layer1':
+        return this.generateLayerColumns(result, 'layer1');
+      case 'layer2':
+        return this.generateLayerColumns(result, 'layer2');
+      case 'layer3':
+        return this.generateLayerColumns(result, 'layer3');
+      default:
+        throw new Error(`Invalid format: ${format}`);
+    }
+  }
+
+  /**
+   * T062: Generate complete format columns (48 columns)
+   * 10 core + 5 L1 + 10 L2 + 15 L3 + 8 metadata
+   *
+   * @param result - URL result record
+   * @returns Array of values for all 48 columns
+   */
+  private generateCompleteColumns(result: UrlResult): Array<string | null | undefined> {
+    return [
+      // Core columns (10)
+      ...this.generateCoreColumns(result),
+      // Layer 1 columns (5)
+      ...this.generateLayer1Columns(result),
+      // Layer 2 columns (10)
+      ...this.generateLayer2Columns(result),
+      // Layer 3 columns (15)
+      ...this.generateLayer3Columns(result),
+      // Metadata columns (8)
+      ...this.generateMetadataColumns(result),
+    ];
+  }
+
+  /**
+   * T063: Generate summary format columns (7 columns)
+   * Core info + summary reason
+   *
+   * @param result - URL result record
+   * @returns Array of values for 7 summary columns
+   */
+  private generateSummaryColumns(result: UrlResult): Array<string | null | undefined> {
+    // Determine which layer's reasoning to show
+    let summaryReason = '';
+    if (result.eliminated_at_layer === 'layer1' && result.layer1_factors) {
+      summaryReason = result.layer1_factors.reasoning;
+    } else if (result.eliminated_at_layer === 'layer2' && result.layer2_factors) {
+      summaryReason = result.layer2_factors.reasoning;
+    } else if (result.layer3_factors) {
+      summaryReason = result.layer3_factors.reasoning;
+    }
+
+    return [
+      result.url,
+      result.status,
+      result.confidence_score?.toString() ?? '',
+      result.eliminated_at_layer ?? '',
+      result.processing_time_ms.toString(),
+      result.total_cost.toString(),
+      summaryReason,
+    ];
+  }
+
+  /**
+   * T064: Generate layer-specific format columns
+   * layer1: 15 columns (10 core + 5 L1)
+   * layer2: 25 columns (10 core + 5 L1 + 10 L2)
+   * layer3: 40 columns (10 core + 5 L1 + 10 L2 + 15 L3)
+   *
+   * @param result - URL result record
+   * @param layer - Which layer format to generate
+   * @returns Array of values for layer-specific columns
+   */
+  private generateLayerColumns(
+    result: UrlResult,
+    layer: 'layer1' | 'layer2' | 'layer3',
+  ): Array<string | null | undefined> {
+    const columns: Array<string | null | undefined> = [
+      ...this.generateCoreColumns(result),
+      ...this.generateLayer1Columns(result),
+    ];
+
+    if (layer === 'layer2' || layer === 'layer3') {
+      columns.push(...this.generateLayer2Columns(result));
+    }
+
+    if (layer === 'layer3') {
+      columns.push(...this.generateLayer3Columns(result));
+    }
+
+    return columns;
+  }
+
+  /**
+   * Generate core columns (10 columns)
+   * Common across all formats
+   */
+  private generateCoreColumns(result: UrlResult): Array<string | null | undefined> {
+    return [
+      result.url,
+      result.status,
+      result.confidence_score?.toString() ?? '',
+      result.confidence_band ?? '',
+      result.eliminated_at_layer ?? '',
+      result.processing_time_ms.toString(),
+      result.total_cost.toString(),
+      result.layer1_factors?.passed.toString() ?? '',
+      result.layer2_factors?.passed.toString() ?? '',
+      result.layer3_factors ? (result.layer3_factors.classification === 'accepted').toString() : '',
+    ];
+  }
+
+  /**
+   * Generate Layer 1 columns (5 columns)
+   */
+  private generateLayer1Columns(result: UrlResult): Array<string | null | undefined> {
+    if (!result.layer1_factors) {
+      return ['', '', '', '', ''];
+    }
+
+    const l1 = result.layer1_factors;
+    return [
+      l1.tld_type,
+      l1.tld_value,
+      l1.domain_classification,
+      l1.pattern_matches.join('; '),
+      l1.target_profile.type,
+    ];
+  }
+
+  /**
+   * Generate Layer 2 columns (10 columns)
+   */
+  private generateLayer2Columns(result: UrlResult): Array<string | null | undefined> {
+    if (!result.layer2_factors) {
+      return ['', '', '', '', '', '', '', '', '', ''];
+    }
+
+    const l2 = result.layer2_factors;
+    return [
+      l2.publication_score.toString(),
+      l2.module_scores.product_offering.toString(),
+      l2.module_scores.layout_quality.toString(),
+      l2.module_scores.navigation_complexity.toString(),
+      l2.module_scores.monetization_indicators.toString(),
+      l2.keywords_found.join('; '),
+      l2.ad_networks_detected.join('; '),
+      l2.content_signals.has_blog.toString(),
+      l2.content_signals.has_press_releases.toString(),
+      l2.reasoning,
+    ];
+  }
+
+  /**
+   * Generate Layer 3 columns (15 columns)
+   */
+  private generateLayer3Columns(result: UrlResult): Array<string | null | undefined> {
+    if (!result.layer3_factors) {
+      return ['', '', '', '', '', '', '', '', '', '', '', '', '', '', ''];
+    }
+
+    const l3 = result.layer3_factors;
+    return [
+      l3.classification,
+      l3.sophistication_signals.design_quality.score.toString(),
+      l3.sophistication_signals.design_quality.indicators.join('; '),
+      l3.sophistication_signals.authority_indicators.score.toString(),
+      l3.sophistication_signals.authority_indicators.indicators.join('; '),
+      l3.sophistication_signals.professional_presentation.score.toString(),
+      l3.sophistication_signals.professional_presentation.indicators.join('; '),
+      l3.sophistication_signals.content_originality.score.toString(),
+      l3.sophistication_signals.content_originality.indicators.join('; '),
+      l3.llm_provider,
+      l3.model_version,
+      l3.cost_usd.toString(),
+      l3.reasoning,
+      l3.tokens_used.input.toString(),
+      l3.tokens_used.output.toString(),
+    ];
+  }
+
+  /**
+   * Generate metadata columns (8 columns)
+   */
+  private generateMetadataColumns(result: UrlResult): Array<string | null | undefined> {
+    return [
+      result.job_id,
+      result.url_id,
+      result.retry_count.toString(),
+      result.last_error ?? '',
+      result.processed_at.toISOString(),
+      result.created_at.toISOString(),
+      result.updated_at.toISOString(),
+      result.reviewer_notes ?? '',
+    ];
   }
 
   /**
