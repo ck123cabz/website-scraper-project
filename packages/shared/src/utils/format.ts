@@ -70,16 +70,53 @@ export function calculateProcessingRate(processed: number, elapsedSeconds: numbe
 }
 
 /**
- * Formats a timestamp to HH:MM:SS format for activity logs
- * @param timestamp - ISO 8601 timestamp string
+ * Formats a timestamp to a human-readable date and time format
+ * @param timestamp - ISO 8601 timestamp string or Date object
+ * @param options - Formatting options
+ * @returns Formatted string (e.g., "Nov 20, 2025, 2:30:45 PM")
+ * @example
+ * formatTimestamp("2025-10-14T16:30:45.123Z") // "Oct 14, 2025, 4:30:45 PM"
+ * formatTimestamp("2025-10-14T09:05:02.000Z") // "Oct 14, 2025, 9:05:02 AM"
+ */
+export function formatTimestamp(
+  timestamp: string | Date,
+  options?: {
+    dateStyle?: 'full' | 'long' | 'medium' | 'short';
+    timeStyle?: 'full' | 'long' | 'medium' | 'short';
+  }
+): string {
+  try {
+    const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
+
+    // Check if date is valid
+    if (!Number.isFinite(date.getTime())) {
+      return "Invalid date";
+    }
+
+    // Default to medium date and time style
+    const dateStyle = options?.dateStyle || 'medium';
+    const timeStyle = options?.timeStyle || 'medium';
+
+    return new Intl.DateTimeFormat('en-US', {
+      dateStyle,
+      timeStyle,
+    }).format(date);
+  } catch (error) {
+    return "Invalid date";
+  }
+}
+
+/**
+ * Formats a timestamp to just the time portion (HH:MM:SS format)
+ * @param timestamp - ISO 8601 timestamp string or Date object
  * @returns Formatted string in HH:MM:SS format
  * @example
- * formatTimestamp("2025-10-14T16:30:45.123Z") // "16:30:45"
- * formatTimestamp("2025-10-14T09:05:02.000Z") // "09:05:02"
+ * formatTime("2025-10-14T16:30:45.123Z") // "16:30:45"
+ * formatTime("2025-10-14T09:05:02.000Z") // "09:05:02"
  */
-export function formatTimestamp(timestamp: string): string {
+export function formatTime(timestamp: string | Date): string {
   try {
-    const date = new Date(timestamp);
+    const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
 
     // Check if date is valid
     if (!Number.isFinite(date.getTime())) {

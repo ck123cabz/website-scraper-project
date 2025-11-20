@@ -199,9 +199,6 @@ export interface UrlResult {
   /** Timestamp of last retry attempt */
   last_retry_at: Date | null;
 
-  /** When processing of all layers completed (timestamp) */
-  processed_at: Date;
-
   /** Layer 1 domain analysis factors (NULL for pre-migration data) */
   layer1_factors: Layer1Factors | null;
 

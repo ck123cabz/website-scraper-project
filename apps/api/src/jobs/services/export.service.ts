@@ -6,7 +6,7 @@
  * Uses batch processing (100 rows per batch) to minimize memory usage.
  *
  * Export Formats:
- * - complete: 48 columns (10 core + 5 L1 + 10 L2 + 15 L3 + 8 other)
+ * - complete: 47 columns (10 core + 5 L1 + 10 L2 + 15 L3 + 7 metadata)
  * - summary: 7 columns (core + summary reason)
  * - layer1: 15 columns (10 core + 5 L1)
  * - layer2: 20-25 columns (core + L1 + L2)
@@ -253,7 +253,6 @@ export class ExportService {
       'URL ID',
       'Retry Count',
       'Last Error',
-      'Processed At',
       'Created At',
       'Updated At',
       'Reviewer Notes',
@@ -261,7 +260,7 @@ export class ExportService {
 
     switch (format) {
       case 'complete':
-        // 48 columns: 10 core + 5 L1 + 10 L2 + 15 L3 + 8 metadata
+        // 47 columns: 10 core + 5 L1 + 10 L2 + 15 L3 + 7 metadata
         return [
           ...coreColumns,
           ...layer1Columns,
@@ -307,10 +306,7 @@ export class ExportService {
    * @param format - Export format
    * @returns Array of values for CSV row
    */
-  private generateRowValues(
-    result: UrlResult,
-    format: string,
-  ): Array<string | null | undefined> {
+  private generateRowValues(result: UrlResult, format: string): Array<string | null | undefined> {
     switch (format) {
       case 'complete':
         return this.generateCompleteColumns(result);
@@ -565,7 +561,7 @@ export class ExportService {
   }
 
   /**
-   * Generate metadata columns (8 columns)
+   * Generate metadata columns (7 columns)
    */
   private generateMetadataColumns(result: UrlResult): Array<string | null | undefined> {
     return [
@@ -573,9 +569,8 @@ export class ExportService {
       result.url_id,
       result.retry_count.toString(),
       result.last_error ?? '',
-      result.processed_at.toISOString(),
-      result.created_at.toISOString(),
-      result.updated_at.toISOString(),
+      result.created_at instanceof Date ? result.created_at.toISOString() : result.created_at,
+      result.updated_at instanceof Date ? result.updated_at.toISOString() : result.updated_at,
       result.reviewer_notes ?? '',
     ];
   }
@@ -660,8 +655,7 @@ export class ExportService {
    * @returns true if valid UUID format
    */
   private isValidUUID(uuid: string): boolean {
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     return uuidRegex.test(uuid);
   }
 }

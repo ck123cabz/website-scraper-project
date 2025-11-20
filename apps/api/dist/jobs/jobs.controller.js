@@ -311,6 +311,28 @@ let JobsController = class JobsController {
             }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    async deleteJob(jobId) {
+        try {
+            await this.jobsService.deleteJob(jobId);
+            return {
+                success: true,
+                message: 'Job deleted successfully',
+            };
+        }
+        catch (error) {
+            if (error instanceof Error && error.message.includes('Job not found')) {
+                throw new common_1.HttpException({
+                    success: false,
+                    error: 'Job not found',
+                }, common_1.HttpStatus.NOT_FOUND);
+            }
+            console.error('[JobsController] Error deleting job:', error);
+            throw new common_1.HttpException({
+                success: false,
+                error: 'Failed to delete job. Please try again.',
+            }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
     async cancelJob(jobId) {
         try {
             await this.queueService.cancelJob(jobId);
@@ -326,6 +348,38 @@ let JobsController = class JobsController {
             throw new common_1.HttpException({
                 success: false,
                 error: 'Failed to cancel job. Please try again.',
+            }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    async retryJob(jobId) {
+        try {
+            await this.queueService.retryJob(jobId);
+            const job = await this.jobsService.getJobById(jobId);
+            return {
+                success: true,
+                data: job,
+                message: 'Job retry initiated successfully',
+            };
+        }
+        catch (error) {
+            console.error('[JobsController] Error retrying job:', error);
+            if (error instanceof Error) {
+                if (error.message.includes('Job not found')) {
+                    throw new common_1.HttpException({
+                        success: false,
+                        error: 'Job not found',
+                    }, common_1.HttpStatus.NOT_FOUND);
+                }
+                if (error.message.includes('Can only retry failed jobs')) {
+                    throw new common_1.HttpException({
+                        success: false,
+                        error: error.message,
+                    }, common_1.HttpStatus.BAD_REQUEST);
+                }
+            }
+            throw new common_1.HttpException({
+                success: false,
+                error: 'Failed to retry job. Please try again.',
             }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -441,12 +495,26 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], JobsController.prototype, "resumeJob", null);
 __decorate([
+    (0, common_1.Delete)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], JobsController.prototype, "deleteJob", null);
+__decorate([
     (0, common_1.Delete)(':id/cancel'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], JobsController.prototype, "cancelJob", null);
+__decorate([
+    (0, common_1.Post)(':id/retry'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], JobsController.prototype, "retryJob", null);
 __decorate([
     (0, common_1.Get)('queue/status'),
     __param(0, (0, common_1.Query)('includeCompleted')),

@@ -176,7 +176,7 @@ export function ResultsTable({ jobId, jobName }: ResultsTableProps) {
         },
       },
       {
-        accessorKey: 'processed_at',
+        accessorKey: 'updated_at',
         header: 'Timestamp',
         cell: ({ getValue }) => {
           const timestamp = getValue() as string;
@@ -460,13 +460,6 @@ export function ResultsTable({ jobId, jobName }: ResultsTableProps) {
                                     <div className="mt-2">
                                       <span className="text-xs font-medium">
                                         Confidence Band: <span className="text-primary">{row.original.confidence_band}</span>
-                                      </span>
-                                    </div>
-                                  )}
-                                  {row.original.manual_review_required && (
-                                    <div className="mt-2">
-                                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                                        ⚠ Manual Review Required
                                       </span>
                                     </div>
                                   )}

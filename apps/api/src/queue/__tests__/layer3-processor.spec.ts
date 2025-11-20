@@ -31,7 +31,8 @@ describe('Layer3Processor - getLayer3Factors() Structure Tests', () => {
   let mockSettingsService: any;
 
   const TEST_URL = 'https://example.com/blog';
-  const TEST_CONTENT = 'Example website content with sufficient text for LLM analysis and token counting.';
+  const TEST_CONTENT =
+    'Example website content with sufficient text for LLM analysis and token counting.';
 
   beforeEach(async () => {
     // Set environment variables for LLM clients
@@ -111,7 +112,8 @@ describe('Layer3Processor - getLayer3Factors() Structure Tests', () => {
             JSON.stringify({
               suitable: true,
               confidence: 0.85,
-              reasoning: 'High-quality publication with professional content and strong SEO investment',
+              reasoning:
+                'High-quality publication with professional content and strong SEO investment',
               sophistication_signals: [
                 'modern layout',
                 'author bylines',
@@ -470,9 +472,7 @@ describe('Layer3Processor - getLayer3Factors() Structure Tests', () => {
         },
       });
 
-      mockOpenAIClient.chat.completions.create.mockRejectedValue(
-        new Error('OpenAI also failed'),
-      );
+      mockOpenAIClient.chat.completions.create.mockRejectedValue(new Error('OpenAI also failed'));
 
       const layer3Factors = await llmService.getLayer3Factors(TEST_URL, TEST_CONTENT);
 

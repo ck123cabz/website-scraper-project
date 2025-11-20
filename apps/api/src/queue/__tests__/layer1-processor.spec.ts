@@ -468,11 +468,7 @@ describe('Layer1DomainAnalysisService - getLayer1Factors()', () => {
 
     it('should have valid enum values for tld_type', () => {
       const validTldTypes = ['gtld', 'cctld', 'custom'];
-      const testUrls = [
-        'https://example.com',
-        'https://example.co.uk',
-        'https://example.tech',
-      ];
+      const testUrls = ['https://example.com', 'https://example.co.uk', 'https://example.tech'];
 
       testUrls.forEach((url) => {
         const factors = service.getLayer1Factors(url);

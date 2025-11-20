@@ -20,7 +20,7 @@ export function buildUpdatePayload(
     layer2_rules: settings.layer2_rules,
     layer3_rules: settings.layer3_rules,
     confidence_bands: settings.confidence_bands,
-    manual_review_settings: settings.manual_review_settings,
+    // manual_review_settings removed - deprecated in Phase 7, US5
 
     // V1 fields for backward compatibility
     prefilter_rules: settings.prefilter_rules?.map((rule) => ({

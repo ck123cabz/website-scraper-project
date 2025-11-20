@@ -7,6 +7,7 @@ import { formatCurrency } from '@website-scraper/shared';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -30,6 +31,8 @@ export interface CompletedJobsSectionProps {
   jobs: CompletedJob[];
   isLoading?: boolean;
   onDownload?: (jobId: string, format: string) => void;
+  selectedJobIds?: Set<string>;
+  onSelectChange?: (jobId: string, selected: boolean) => void;
 }
 
 // Skeleton component for loading state
@@ -121,6 +124,8 @@ const JobCardSkeleton = () => (
 export function CompletedJobsSection({
   jobs,
   isLoading = false,
+  selectedJobIds = new Set(),
+  onSelectChange,
 }: CompletedJobsSectionProps) {
   const [exportDialogState, setExportDialogState] = useState<{
     isOpen: boolean;
@@ -172,6 +177,7 @@ export function CompletedJobsSection({
             <Table>
               <TableHeader>
                 <TableRow>
+                  {onSelectChange && <TableHead className="w-12"></TableHead>}
                   <TableHead>Job Name</TableHead>
                   <TableHead>Completed</TableHead>
                   <TableHead className="text-right">URLs</TableHead>
@@ -193,6 +199,15 @@ export function CompletedJobsSection({
                       className="hover:bg-muted/50 cursor-pointer"
                       onClick={() => window.location.href = `/jobs/${job.id}`}
                     >
+                      {onSelectChange && (
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={selectedJobIds.has(job.id)}
+                            onCheckedChange={(checked) => onSelectChange(job.id, checked as boolean)}
+                            aria-label={`Select ${job.name}`}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell className="font-medium">
                         <Link
                           href={`/jobs/${job.id}`}

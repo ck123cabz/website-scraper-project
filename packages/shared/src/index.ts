@@ -14,7 +14,7 @@ export type {
   Layer3Rules,
   ConfidenceBandConfig,
   ConfidenceBands,
-  ManualReviewSettings,
+  ManualReviewSettings, // @deprecated - Kept for backward compatibility
 } from './types/settings';
 export type {
   Layer1AnalysisResult,
@@ -34,6 +34,11 @@ export type {
 export type {
   Layer3AnalysisResult,
 } from './types/layer3-analysis';
+export type {
+  UserPreferences,
+  CreatePreferencesDto,
+  UpdatePreferencesDto,
+} from './types/preferences';
 
 // Batch Processing Refactor Types (Phase 1)
 export type {
@@ -58,4 +63,4 @@ export { resultSchema, resultStatusSchema, classificationResultSchema, llmProvid
 export type { ResultSchema } from './schemas/result';
 
 // Utils
-export { formatDuration, formatNumber, calculateProcessingRate, formatTimestamp, formatCurrency } from './utils/format';
+export { formatDuration, formatNumber, calculateProcessingRate, formatTimestamp, formatTime, formatCurrency } from './utils/format';

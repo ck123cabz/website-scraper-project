@@ -7,10 +7,14 @@ import { Layer1DomainTab } from '@/components/settings/Layer1DomainTab';
 import { Layer2PublicationTab } from '@/components/settings/Layer2PublicationTab';
 import { Layer3LlmTab } from '@/components/settings/Layer3LlmTab';
 import { ConfidenceBandsTab } from '@/components/settings/ConfidenceBandsTab';
+import { GeneralSettings } from '@/components/settings/GeneralSettings';
+import { ScrapingSettings } from '@/components/settings/ScrapingSettings';
+import { AppearanceSettings } from '@/components/settings/AppearanceSettings';
 import { useSettings, useUpdateSettings, useResetSettings } from '@/hooks/useSettings';
 import { ClassificationSettings } from '@website-scraper/shared';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, RotateCcw, AlertCircle } from 'lucide-react';
 import {
   AlertDialog,
@@ -26,11 +30,22 @@ export default function SettingsPage() {
   const { data: settings, isLoading, error } = useSettings();
   const updateSettings = useUpdateSettings();
   const resetSettings = useResetSettings();
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   const [formData, setFormData] = React.useState<ClassificationSettings | null>(null);
-  const [activeTab, setActiveTab] = React.useState('layer1');
+  // Initialize activeTab from URL query parameter or default to 'general'
+  const [activeTab, setActiveTab] = React.useState(searchParams.get('tab') || 'general');
   const [showResetDialog, setShowResetDialog] = React.useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false);
+
+  // Sync activeTab with URL on mount and when URL changes
+  React.useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams, activeTab]);
 
   // Initialize form data when settings load
   React.useEffect(() => {
@@ -39,6 +54,12 @@ export default function SettingsPage() {
       setHasUnsavedChanges(false);
     }
   }, [settings]);
+
+  // Handle tab change with URL persistence
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    router.push(`/settings?tab=${tab}`, { scroll: false });
+  };
 
   // Track unsaved changes
   const handleSettingsChange = (updateFn: (prev: ClassificationSettings) => ClassificationSettings) => {
@@ -204,13 +225,31 @@ export default function SettingsPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="layer1">Layer 1 Domain</TabsTrigger>
-          <TabsTrigger value="layer2">Layer 2: Publication Detection</TabsTrigger>
-          <TabsTrigger value="layer3">Layer 3 LLM</TabsTrigger>
-          <TabsTrigger value="confidence">Confidence Bands</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-7 gap-1">
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="scraping">Scraping</TabsTrigger>
+          <TabsTrigger value="appearance">Appearance</TabsTrigger>
+          <TabsTrigger value="layer1">Layer 1</TabsTrigger>
+          <TabsTrigger value="layer2">Layer 2</TabsTrigger>
+          <TabsTrigger value="layer3">Layer 3</TabsTrigger>
+          <TabsTrigger value="confidence">Confidence</TabsTrigger>
         </TabsList>
+
+        {/* General Tab */}
+        <TabsContent value="general" className="space-y-4">
+          <GeneralSettings />
+        </TabsContent>
+
+        {/* Scraping Tab */}
+        <TabsContent value="scraping" className="space-y-4">
+          <ScrapingSettings />
+        </TabsContent>
+
+        {/* Appearance Tab */}
+        <TabsContent value="appearance" className="space-y-4">
+          <AppearanceSettings />
+        </TabsContent>
 
         {/* Layer 1 Tab */}
         <TabsContent value="layer1" className="space-y-4">

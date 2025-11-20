@@ -156,16 +156,16 @@ export function isTransientError(error: Error | string | unknown): boolean {
   }
 
   // DNS errors
-  if (
-    message.includes('enameres') ||
-    message.includes('dns') ||
-    message.includes('getaddrinfo')
-  ) {
+  if (message.includes('enameres') || message.includes('dns') || message.includes('getaddrinfo')) {
     return true;
   }
 
   // HTTP 429 Rate Limit
-  if (message.includes('429') || message.includes('rate limit') || message.includes('too many requests')) {
+  if (
+    message.includes('429') ||
+    message.includes('rate limit') ||
+    message.includes('too many requests')
+  ) {
     return true;
   }
 

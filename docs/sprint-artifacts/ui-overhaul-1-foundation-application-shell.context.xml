@@ -1,0 +1,512 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>ui-overhaul</epicId>
+    <storyId>ui-overhaul-1</storyId>
+    <title>Foundation & Application Shell</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-01-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint_artifacts/story-ui-overhaul-1.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user of the website scraper application</asA>
+    <iWant>a modern application shell with sidebar navigation and theme customization</iWant>
+    <soThat>I can easily navigate between different sections and personalize my experience</soThat>
+    <tasks>
+### Phase 1: Setup (2-3 hours)
+1. Install shadcn/ui CLI and initialize with default config
+2. Install core shadcn components (button, card, input, table, tabs, dialog, toast, progress, badge, command, dropdown-menu, separator)
+3. Install new dependencies (cmdk)
+4. Verify setup with type-check and dev server
+
+### Phase 2: Backend - Preferences API (3-4 hours)
+5. Create Supabase migration for user_preferences table
+6. Create shared types in packages/shared/src/types/preferences.ts
+7. Create NestJS Preferences module (controller, service, DTO)
+8. Register module in app.module.ts
+9. Write backend tests for PreferencesController
+10. Test API manually with curl/Postman
+
+### Phase 3: Frontend - Layout Components (6-8 hours)
+11. Create ThemeProvider with React Context
+12. Create use-theme hook
+13. Create use-user-preferences hook with React Query
+14. Create preferences API client functions
+15. Create Sidebar component with nav links and collapse/expand
+16. Create Header component with breadcrumbs and theme toggle
+17. Create MobileNav drawer component
+18. Create AppShell component composing all layout pieces
+19. Update root layout to wrap with ThemeProvider and AppShell
+
+### Phase 4: Command Palette (2-3 hours)
+20. Create CommandPalette component using shadcn Command
+21. Integrate CommandPalette into AppShell with ⌘K / Ctrl+K keyboard shortcut
+
+### Phase 5: Testing (4-6 hours)
+22. Write component unit tests (AppShell, Sidebar, Header, MobileNav, ThemeProvider, CommandPalette)
+23. Write hook tests (use-theme, use-user-preferences)
+24. Write E2E tests (layout navigation, theme switching, command palette)
+25. Run all tests and ensure they pass
+
+### Phase 6: Polish & Verification (2-3 hours)
+26. Accessibility review (keyboard navigation, screen reader, Lighthouse)
+27. Visual polish (responsive breakpoints, animations, spacing)
+28. Code review checklist (TypeScript errors, console warnings, code patterns)
+29. Performance check (page load, CLS, sidebar toggle smoothness)
+30. Final verification against all acceptance criteria
+</tasks>
+  </story>
+
+  <acceptanceCriteria>
+**Setup & Configuration:**
+- shadcn/ui CLI installed and initialized with correct configuration
+- Core shadcn components added (button, card, input, label, select, checkbox, tabs, dialog, toast, progress, badge, command, dropdown-menu, separator)
+- components.json configured correctly
+- Tailwind config updated with shadcn theme variables
+- No build errors, no TypeScript errors
+
+**Application Shell:**
+- AppShell component created and wraps all pages
+- Sidebar component created with navigation links (Home, Jobs, Analytics, Settings)
+- Sidebar collapses/expands and state persists to user preferences
+- Header component created with breadcrumbs and user actions area
+- Mobile navigation drawer works on small screens (<640px)
+- Active route highlighting works in sidebar
+- Responsive layout works on mobile, tablet, desktop
+
+**Theme System:**
+- ThemeProvider component created using React Context
+- Theme toggles between light, dark, and system preference
+- Theme choice persists to backend preferences
+- Theme applies correctly to all shadcn components
+- No flash of unstyled content (FOUC) on page load
+
+**Command Palette:**
+- Command palette opens with ⌘K (Mac) or Ctrl+K (Windows/Linux)
+- Palette shows navigation options (Go to Home, Jobs, Analytics, Settings)
+- Fuzzy search works in command palette
+- Selecting option navigates to correct page
+- Escape key closes palette
+
+**Backend Integration:**
+- Preferences module created in apps/api/src/preferences/
+- PreferencesController with GET and PATCH endpoints
+- PreferencesService with business logic
+- UpdatePreferencesDto with validation
+- Preferences types in packages/shared/src/types/preferences.ts
+- Zod schemas in packages/shared/src/schemas/preferences.ts
+- Database migration created and applied
+- user_preferences table exists in Supabase
+- GET /preferences returns user preferences
+- PATCH /preferences updates preferences and returns updated data
+
+**Testing:**
+- Unit tests for AppShell, Sidebar, Header, MobileNav, ThemeProvider, CommandPalette
+- Unit tests for use-theme and use-user-preferences hooks
+- Unit tests for PreferencesController (GET, PATCH)
+- E2E tests for navigation, sidebar toggle, theme switching, command palette
+- All tests pass (npm test, npm run test:e2e)
+- Coverage meets requirements (80% for hooks)
+
+**Accessibility:**
+- Keyboard navigation works (Tab, Enter, Escape, Arrow keys)
+- Sidebar has proper ARIA labels
+- Theme toggle has accessible label
+- Command palette keyboard accessible
+- Focus indicators visible
+- Screen reader announces navigation changes
+</acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <!-- Technical Specification -->
+      <doc>
+        <path>docs/tech-spec.md</path>
+        <title>Technical Specification - UI/UX Modernization</title>
+        <section>Complete Implementation Guide</section>
+        <snippet>Comprehensive technical spec covering shadcn/ui setup, component library integration, theme system, user preferences backend persistence, and complete file tree of changes for the UI overhaul.</snippet>
+      </doc>
+
+      <!-- Epic Overview -->
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic: UI/UX Modernization Overhaul</title>
+        <section>Epic Overview & Story Breakdown</section>
+        <snippet>Business value, technical approach, scope boundaries, and breakdown of 4 user stories for modernizing the UI with shadcn/ui, sidebar navigation, and theme customization.</snippet>
+      </doc>
+
+      <!-- Web Architecture -->
+      <doc>
+        <path>docs/architecture-web.md</path>
+        <title>Architecture Documentation - Web Frontend</title>
+        <section>Next.js 14 App Router Architecture</section>
+        <snippet>Current frontend architecture using Next.js 14 App Router, React Query for state management, Radix UI components with Tailwind CSS, component hierarchy, and routing structure.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <!-- Existing Frontend Files to Reference -->
+      <artifact>
+        <path>apps/web/app/layout.tsx</path>
+        <kind>layout</kind>
+        <symbol>RootLayout</symbol>
+        <lines>1-50</lines>
+        <reason>Current root layout structure - will be enhanced with AppShell and ThemeProvider</reason>
+      </artifact>
+
+      <artifact>
+        <path>apps/web/components/providers/query-provider.tsx</path>
+        <kind>provider</kind>
+        <symbol>QueryProvider</symbol>
+        <lines>all</lines>
+        <reason>Pattern for creating React context providers - reference for ThemeProvider implementation</reason>
+      </artifact>
+
+      <artifact>
+        <path>apps/web/tailwind.config.ts</path>
+        <kind>config</kind>
+        <symbol>tailwindConfig</symbol>
+        <lines>all</lines>
+        <reason>Existing Tailwind configuration - will be extended with shadcn theme variables</reason>
+      </artifact>
+
+      <artifact>
+        <path>apps/web/package.json</path>
+        <kind>config</kind>
+        <symbol>dependencies</symbol>
+        <lines>all</lines>
+        <reason>Current dependencies - will add recharts and cmdk for this story</reason>
+      </artifact>
+
+      <!-- Existing Backend Patterns to Follow -->
+      <artifact>
+        <path>apps/api/src/settings/settings.controller.ts</path>
+        <kind>controller</kind>
+        <symbol>SettingsController</symbol>
+        <lines>1-100</lines>
+        <reason>NestJS controller pattern for GET/PATCH endpoints - template for PreferencesController</reason>
+      </artifact>
+
+      <artifact>
+        <path>apps/api/src/settings/settings.service.ts</path>
+        <kind>service</kind>
+        <symbol>SettingsService</symbol>
+        <lines>1-150</lines>
+        <reason>Service layer pattern with Supabase integration - template for PreferencesService</reason>
+      </artifact>
+
+      <artifact>
+        <path>apps/api/src/jobs/jobs.controller.ts</path>
+        <kind>controller</kind>
+        <symbol>JobsController</symbol>
+        <lines>1-50</lines>
+        <reason>NestJS controller decorators and patterns (@Get, @Patch, validation)</reason>
+      </artifact>
+
+      <!-- Shared Types Pattern -->
+      <artifact>
+        <path>packages/shared/src/types/settings.ts</path>
+        <kind>types</kind>
+        <symbol>Settings</symbol>
+        <lines>all</lines>
+        <reason>Pattern for shared type definitions - template for preferences.ts</reason>
+      </artifact>
+
+      <artifact>
+        <path>packages/shared/src/types/jobs.ts</path>
+        <kind>types</kind>
+        <symbol>Job</symbol>
+        <lines>all</lines>
+        <reason>TypeScript interface patterns - reference for UserPreferences interface</reason>
+      </artifact>
+
+      <!-- Migration Pattern -->
+      <artifact>
+        <path>supabase/migrations/20251016050000_refactor_settings_for_3tier.sql</path>
+        <kind>migration</kind>
+        <symbol>settings_table</symbol>
+        <lines>all</lines>
+        <reason>SQL migration pattern for creating tables - template for user_preferences migration</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <frontend>
+        <!-- Existing Dependencies (Already Installed) -->
+        <package name="next" version="14.2.15">React framework with App Router</package>
+        <package name="react" version="18.x">UI library</package>
+        <package name="typescript" version="5.x">Type safety</package>
+        <package name="tailwindcss" version="3.4.1">Utility-first CSS</package>
+        <package name="@radix-ui/*" version="various">Accessible component primitives (10+ packages)</package>
+        <package name="zustand" version="4.5.7">Client state management</package>
+        <package name="@tanstack/react-query" version="5.90.2">Server state management</package>
+        <package name="@tanstack/react-table" version="8.21.3">Headless table library</package>
+        <package name="class-variance-authority" version="0.7.1">Component variants</package>
+        <package name="clsx" version="2.1.1">Conditional className</package>
+        <package name="tailwind-merge" version="3.3.1">Merge Tailwind classes</package>
+        <package name="tailwindcss-animate" version="1.0.7">Animation utilities</package>
+        <package name="lucide-react" version="0.545.0">Icon library</package>
+        <package name="sonner" version="2.0.7">Toast notifications</package>
+        <package name="date-fns" version="3.6.0">Date utilities</package>
+
+        <!-- New Dependencies to Install -->
+        <package name="cmdk" version="^1.0.0">Command palette (⌘K) - NEW</package>
+        <package name="recharts" version="^2.12.0">Charts for analytics (future stories) - NEW</package>
+      </frontend>
+
+      <backend>
+        <!-- Existing Dependencies -->
+        <package name="@nestjs/core" version="10.3.0">NestJS framework</package>
+        <package name="@nestjs/common" version="10.3.0">NestJS common utilities</package>
+        <package name="@supabase/supabase-js" version="2.39.0">Supabase client</package>
+        <package name="class-validator" version="0.14.2">DTO validation</package>
+        <package name="zod" version="3.25.76">Schema validation</package>
+      </backend>
+
+      <shared>
+        <!-- Shared Types Package -->
+        <package name="@website-scraper/shared" version="workspace:*">Shared types and schemas</package>
+      </shared>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <!-- Development Patterns & Standards -->
+    <constraint>Use TypeScript strict mode - all function parameters and returns must have explicit types</constraint>
+    <constraint>Follow Next.js 14 App Router conventions - Server Components by default, 'use client' only when needed</constraint>
+    <constraint>Use functional components only (no class components) with named exports</constraint>
+    <constraint>Import order: external packages → internal modules (@/) → relative imports → type imports</constraint>
+    <constraint>File naming: PascalCase for components (JobCard.tsx), camelCase for hooks (useTheme.ts), camelCase for utils</constraint>
+
+    <!-- Styling & UI Standards -->
+    <constraint>Use Tailwind utility classes exclusively - no inline styles, no CSS modules</constraint>
+    <constraint>Use cn() utility from lib/utils.ts for conditional className composition</constraint>
+    <constraint>Component variants must use class-variance-authority (CVA) pattern</constraint>
+    <constraint>Responsive design with Tailwind breakpoints: sm:640px, md:768px, lg:1024px, xl:1280px</constraint>
+    <constraint>Follow shadcn/ui conventions for component structure and variants</constraint>
+
+    <!-- State Management -->
+    <constraint>Use React Query for all server state (jobs, results, settings, preferences)</constraint>
+    <constraint>Use Zustand for client-side UI state (future - not heavily used yet)</constraint>
+    <constraint>React Context for theme and global UI state (ThemeProvider pattern)</constraint>
+    <constraint>Query keys must follow convention: ['resource'], ['resource', id], ['resource', id, 'nested', filters]</constraint>
+
+    <!-- API Integration -->
+    <constraint>All API calls go through lib/api-client.ts - use Axios instance with base URL config</constraint>
+    <constraint>Transform backend responses (snake_case → camelCase) in API client layer</constraint>
+    <constraint>Use React Query mutations for POST/PATCH/DELETE with cache invalidation</constraint>
+
+    <!-- Backend Patterns (NestJS) -->
+    <constraint>Follow NestJS module structure: controller → service → repository pattern</constraint>
+    <constraint>Use DTOs with class-validator decorators for request validation</constraint>
+    <constraint>Service layer handles business logic, controllers handle HTTP concerns only</constraint>
+    <constraint>Use Supabase client via SupabaseService for database operations</constraint>
+
+    <!-- Testing Requirements -->
+    <constraint>Test file naming: ComponentName.test.tsx or ComponentName.spec.tsx</constraint>
+    <constraint>E2E tests location: apps/web/tests/e2e/*.spec.ts using Playwright</constraint>
+    <constraint>Coverage requirements: hooks 80%+, components aim for 80% but not enforced</constraint>
+    <constraint>Test user behavior not implementation details - use screen.getByRole(), semantic queries</constraint>
+
+    <!-- Accessibility Standards -->
+    <constraint>WCAG 2.1 AA compliance required - Lighthouse accessibility score >90</constraint>
+    <constraint>All interactive elements must be keyboard accessible (Tab, Enter, Escape, Arrow keys)</constraint>
+    <constraint>Use semantic HTML (button, a, nav, main, table) - no div buttons</constraint>
+    <constraint>Provide ARIA labels for icon-only buttons and interactive elements</constraint>
+
+    <!-- Code Quality -->
+    <constraint>No TypeScript errors - npm run type-check must pass</constraint>
+    <constraint>No console.log in production code (remove after debugging)</constraint>
+    <constraint>Single quotes for strings, semicolons required, 2-space indentation</constraint>
+    <constraint>Prettier formatting via Tailwind plugin</constraint>
+  </constraints>
+
+  <interfaces>
+    <!-- API Endpoints to Create -->
+    <interface>
+      <name>GET /preferences</name>
+      <kind>REST endpoint</kind>
+      <signature>
+GET /preferences
+Response 200: {
+  "data": {
+    "id": "uuid",
+    "user_id": "uuid",
+    "theme": "light" | "dark" | "system",
+    "sidebar_collapsed": boolean,
+    "default_view": "cards" | "table",
+    "created_at": "ISO8601",
+    "updated_at": "ISO8601"
+  }
+}
+      </signature>
+      <path>apps/api/src/preferences/preferences.controller.ts</path>
+    </interface>
+
+    <interface>
+      <name>PATCH /preferences</name>
+      <kind>REST endpoint</kind>
+      <signature>
+PATCH /preferences
+Request Body: {
+  "theme"?: "light" | "dark" | "system",
+  "sidebar_collapsed"?: boolean,
+  "default_view"?: "cards" | "table"
+}
+Response 200: {
+  "data": {
+    "id": "uuid",
+    "user_id": "uuid",
+    "theme": "light" | "dark" | "system",
+    "sidebar_collapsed": boolean,
+    "default_view": "cards" | "table",
+    "updated_at": "ISO8601"
+  }
+}
+      </signature>
+      <path>apps/api/src/preferences/preferences.controller.ts</path>
+    </interface>
+
+    <!-- Type Interfaces -->
+    <interface>
+      <name>UserPreferences</name>
+      <kind>TypeScript interface</kind>
+      <signature>
+export interface UserPreferences {
+  id: string;
+  userId: string;
+  theme: 'light' | 'dark' | 'system';
+  sidebarCollapsed: boolean;
+  defaultView: 'cards' | 'table';
+  createdAt: Date;
+  updatedAt: Date;
+}
+      </signature>
+      <path>packages/shared/src/types/preferences.ts</path>
+    </interface>
+
+    <interface>
+      <name>UpdatePreferencesDto</name>
+      <kind>NestJS DTO</kind>
+      <signature>
+export class UpdatePreferencesDto {
+  @IsOptional()
+  @IsIn(['light', 'dark', 'system'])
+  theme?: 'light' | 'dark' | 'system';
+
+  @IsOptional()
+  @IsBoolean()
+  sidebarCollapsed?: boolean;
+
+  @IsOptional()
+  @IsIn(['cards', 'table'])
+  defaultView?: 'cards' | 'table';
+}
+      </signature>
+      <path>apps/api/src/preferences/dto/update-preferences.dto.ts</path>
+    </interface>
+
+    <!-- React Hooks -->
+    <interface>
+      <name>useTheme</name>
+      <kind>React hook</kind>
+      <signature>
+export function useTheme() {
+  const context = useContext(ThemeProviderContext);
+  if (!context) throw new Error('useTheme must be used within ThemeProvider');
+  return {
+    theme: context.theme,
+    setTheme: (theme: 'light' | 'dark' | 'system') => void,
+    resolvedTheme: 'light' | 'dark' // Computed from system preference
+  };
+}
+      </signature>
+      <path>apps/web/hooks/use-theme.ts</path>
+    </interface>
+
+    <interface>
+      <name>useUserPreferences</name>
+      <kind>React hook</kind>
+      <signature>
+export function useUserPreferences() {
+  const query = useQuery({
+    queryKey: ['preferences'],
+    queryFn: () => preferencesApi.get()
+  });
+  const mutation = useMutation({
+    mutationFn: (prefs: Partial<UserPreferences>) => preferencesApi.update(prefs),
+    onSuccess: () => queryClient.invalidateQueries(['preferences'])
+  });
+  return {
+    preferences: query.data,
+    isLoading: query.isLoading,
+    error: query.error,
+    updatePreferences: mutation.mutate
+  };
+}
+      </signature>
+      <path>apps/web/hooks/use-user-preferences.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+Testing framework: Jest 30.2 + React Testing Library 16.3 for unit tests, Playwright 1.56 for E2E.
+Unit tests co-located in __tests__/ directories or .test.tsx/.spec.tsx files next to components.
+E2E tests in apps/web/tests/e2e/ directory.
+Coverage requirements: 80% for hooks (enforced), aim for 80% on components.
+Testing philosophy: Test user behavior not implementation details - use semantic queries (getByRole, getByLabel).
+Mock API calls with jest.mock() or MSW (Mock Service Worker).
+All tests must pass before merging (npm test && npm run test:e2e).
+</standards>
+
+    <locations>
+      <location>apps/web/__tests__/**/*.test.tsx - Unit tests for components</location>
+      <location>apps/web/hooks/__tests__/*.test.ts - Unit tests for custom hooks</location>
+      <location>apps/web/tests/e2e/*.spec.ts - Playwright E2E tests</location>
+      <location>apps/api/src/preferences/__tests__/*.spec.ts - Backend controller tests</location>
+    </locations>
+
+    <ideas>
+      <!-- Frontend Component Tests -->
+      <idea for="AC: AppShell component created">
+Test AppShell renders with sidebar and header, verify responsive layout on different screen sizes
+      </idea>
+
+      <idea for="AC: Sidebar component created">
+Test sidebar navigation links, collapse/expand functionality, active route highlighting, mobile drawer
+      </idea>
+
+      <idea for="AC: Theme toggles between light, dark, system">
+Test ThemeProvider initialization, theme switching, persistence to backend via mutation
+      </idea>
+
+      <idea for="AC: Command palette opens with ⌘K">
+Test CommandPalette keyboard shortcut (⌘K/Ctrl+K), search functionality, navigation on selection
+      </idea>
+
+      <!-- Backend API Tests -->
+      <idea for="AC: GET /preferences returns user preferences">
+Test PreferencesController GET endpoint returns 200 with correct preference structure
+      </idea>
+
+      <idea for="AC: PATCH /preferences updates preferences">
+Test PreferencesController PATCH endpoint validates input, updates database, returns updated data
+      </idea>
+
+      <!-- E2E Tests -->
+      <idea for="AC: Sidebar collapses/expands and state persists">
+E2E test: Click sidebar toggle, verify collapsed state, reload page, verify state persisted
+      </idea>
+
+      <idea for="AC: Theme choice persists to backend">
+E2E test: Change theme, reload page, verify theme persisted and API called
+      </idea>
+
+      <idea for="AC: Command palette fuzzy search works">
+E2E test: Open palette (⌘K), type search query, verify filtered results, select option, verify navigation
+      </idea>
+    </ideas>
+  </tests>
+</story-context>

@@ -1,9 +1,17 @@
 import { PreFilterRule } from './prefilter';
 import { Layer2Rules } from './layer2';
-import type { ManualReviewSettings } from './manual-review';
 
-// Re-export ManualReviewSettings from manual-review for backward compatibility
-export type { ManualReviewSettings };
+/**
+ * @deprecated Manual review system has been removed (Phase 7, US5)
+ * This type is kept temporarily for backward compatibility during migration
+ */
+export interface ManualReviewSettings {
+  enabled: boolean;
+  auto_review_timeout_hours: number;
+  max_queue_size: number;
+  slack_webhook_url?: string;
+  enable_slack_notifications: boolean;
+}
 
 /**
  * Pre-filter rule with enabled flag for database storage

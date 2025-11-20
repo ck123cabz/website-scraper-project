@@ -7,47 +7,50 @@ config_source: "{project-root}/bmad/bmm/config.yaml"
 output_folder: "{config_source}:output_folder"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
+user_skill_level: "{config_source}:user_skill_level"
+document_output_language: "{config_source}:document_output_language"
+story_dir: "{config_source}:sprint_artifacts"
 date: system-generated
 
+story_file: "" # Explicit story path; auto-discovered if empty
+# Context file uses same story_key as story file (e.g., "1-2-user-authentication.context.xml")
+context_file: "{story_dir}/{{story_key}}.context.xml"
+sprint_artifacts: "{config_source}:sprint_artifacts"
+sprint_status: "{sprint_artifacts}/sprint-status.yaml || {output_folder}/sprint-status.yaml"
+
+# Smart input file references - handles both whole docs and sharded docs
+# Priority: Whole document first, then sharded version
+# Strategy: Load necessary context for story implementation
+input_file_patterns:
+  architecture:
+    description: "System architecture and decisions"
+    whole: "{output_folder}/*architecture*.md"
+    sharded: "{output_folder}/*architecture*/*.md"
+    load_strategy: "FULL_LOAD"
+  tech_spec:
+    description: "Technical specification for this epic"
+    whole: "{output_folder}/tech-spec*.md"
+    sharded: "{sprint_artifacts}/tech-spec-epic-*.md"
+    load_strategy: "SELECTIVE_LOAD"
+  ux_design:
+    description: "UX design specification (if UI)"
+    whole: "{output_folder}/*ux*.md"
+    sharded: "{output_folder}/*ux*/*.md"
+    load_strategy: "FULL_LOAD"
+  epics:
+    description: "Epic containing this story"
+    whole: "{output_folder}/*epic*.md"
+    sharded_index: "{output_folder}/*epic*/index.md"
+    sharded_single: "{output_folder}/*epic*/epic-{{epic_num}}.md"
+    load_strategy: "SELECTIVE_LOAD"
+  document_project:
+    description: "Brownfield project documentation (optional)"
+    sharded: "{output_folder}/index.md"
+    load_strategy: "INDEX_GUIDED"
+
 # Workflow components
-installed_path: "{project-root}/bmad/bmm/workflows/dev-story"
+installed_path: "{project-root}/bmad/bmm/workflows/4-implementation/dev-story"
 instructions: "{installed_path}/instructions.md"
 validation: "{installed_path}/checklist.md"
 
-# This is an action workflow (no output template document)
-template: false
-
-# Variables (can be provided by caller)
-variables:
-  story_path: ""
-  run_tests_command: "auto" # 'auto' = infer from repo, or override with explicit command
-  strict: true # if true, halt on validation failures
-  story_dir: "{config_source}:dev_story_location" # Directory containing story markdown files
-  story_selection_limit: 10
-  run_until_complete: true # Continue through all tasks without pausing except on HALT conditions
-  force_yolo: true # Hint executor to activate #yolo: skip optional prompts and elicitation
-
-# Recommended inputs
-recommended_inputs:
-  - story_markdown: "Path to the story markdown file (Tasks/Subtasks, Acceptance Criteria present)"
-
-# Required tools (conceptual; executor should provide equivalents)
-required_tools:
-  - read_file
-  - write_file
-  - search_repo
-  - run_tests
-  - list_files
-  - file_info
-
-tags:
-  - development
-  - story-execution
-  - tests
-  - validation
-  - bmad-v6
-
-execution_hints:
-  interactive: false # Minimize prompts; intended to run to completion
-  autonomous: true # Proceed without user input unless blocked
-  iterative: true
+standalone: true

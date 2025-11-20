@@ -265,9 +265,7 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
       (jobsService.getActiveJobs as jest.Mock).mockResolvedValue(mockActiveJobs);
 
       // Act - TDD: Expect 404 until endpoint is implemented
-      await request(app.getHttpServer())
-        .get('/jobs/queue/status')
-        .expect(HttpStatus.NOT_FOUND);
+      await request(app.getHttpServer()).get('/jobs/queue/status').expect(HttpStatus.NOT_FOUND);
 
       // TODO: Once endpoint is implemented, verify:
       // - Status: 200 OK
@@ -280,9 +278,7 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
       (jobsService.getActiveJobs as jest.Mock).mockResolvedValue(mockActiveJobs);
 
       // Act - TDD: Expect 404 until endpoint is implemented
-      await request(app.getHttpServer())
-        .get('/jobs/queue/status')
-        .expect(HttpStatus.NOT_FOUND);
+      await request(app.getHttpServer()).get('/jobs/queue/status').expect(HttpStatus.NOT_FOUND);
 
       // TODO: Once endpoint is implemented, verify each field type:
       // - id: string (UUID format)
@@ -299,13 +295,11 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
 
     it('should return processing jobs with queuePosition and estimatedWaitTime as null', async () => {
       // Arrange
-      const processingJobs = mockActiveJobs.filter(job => job.status === 'processing');
+      const processingJobs = mockActiveJobs.filter((job) => job.status === 'processing');
       (jobsService.getActiveJobs as jest.Mock).mockResolvedValue(processingJobs);
 
       // Act - TDD
-      await request(app.getHttpServer())
-        .get('/jobs/queue/status')
-        .expect(HttpStatus.NOT_FOUND);
+      await request(app.getHttpServer()).get('/jobs/queue/status').expect(HttpStatus.NOT_FOUND);
 
       // TODO: Verify processing jobs have:
       // - queuePosition: null
@@ -314,13 +308,11 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
 
     it('should return queued jobs with valid queuePosition and estimatedWaitTime', async () => {
       // Arrange
-      const queuedJobs = mockActiveJobs.filter(job => job.status === 'queued');
+      const queuedJobs = mockActiveJobs.filter((job) => job.status === 'queued');
       (jobsService.getActiveJobs as jest.Mock).mockResolvedValue(queuedJobs);
 
       // Act - TDD
-      await request(app.getHttpServer())
-        .get('/jobs/queue/status')
-        .expect(HttpStatus.NOT_FOUND);
+      await request(app.getHttpServer()).get('/jobs/queue/status').expect(HttpStatus.NOT_FOUND);
 
       // TODO: Verify queued jobs have:
       // - queuePosition: number (1, 2, 3...)
@@ -332,9 +324,7 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
       (jobsService.getActiveJobs as jest.Mock).mockResolvedValue(mockActiveJobs);
 
       // Act - TDD
-      await request(app.getHttpServer())
-        .get('/jobs/queue/status')
-        .expect(HttpStatus.NOT_FOUND);
+      await request(app.getHttpServer()).get('/jobs/queue/status').expect(HttpStatus.NOT_FOUND);
 
       // TODO: Verify all job IDs match UUID regex:
       // /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -367,9 +357,7 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
       (jobsService.getActiveJobs as jest.Mock).mockResolvedValue(mockActiveJobs);
 
       // Act - TDD (without includeCompleted)
-      await request(app.getHttpServer())
-        .get('/jobs/queue/status')
-        .expect(HttpStatus.NOT_FOUND);
+      await request(app.getHttpServer()).get('/jobs/queue/status').expect(HttpStatus.NOT_FOUND);
 
       // TODO: Verify:
       // - jobsService.getCompletedJobs() was NOT called
@@ -421,11 +409,13 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
 
     it('should skip jobs based on offset parameter', async () => {
       // Arrange
-      (jobsService.getActiveJobs as jest.Mock).mockImplementation((limit?: number, offset?: number) => {
-        const start = offset || 0;
-        const end = limit ? start + limit : undefined;
-        return Promise.resolve(mockActiveJobs.slice(start, end));
-      });
+      (jobsService.getActiveJobs as jest.Mock).mockImplementation(
+        (limit?: number, offset?: number) => {
+          const start = offset || 0;
+          const end = limit ? start + limit : undefined;
+          return Promise.resolve(mockActiveJobs.slice(start, end));
+        },
+      );
 
       // Act - TDD
       await request(app.getHttpServer())
@@ -449,9 +439,7 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
       (jobsService.getActiveJobs as jest.Mock).mockResolvedValue(orderedJobs);
 
       // Act - TDD
-      await request(app.getHttpServer())
-        .get('/jobs/queue/status')
-        .expect(HttpStatus.NOT_FOUND);
+      await request(app.getHttpServer()).get('/jobs/queue/status').expect(HttpStatus.NOT_FOUND);
 
       // TODO: Verify job order in response matches expected order
     });
@@ -503,9 +491,7 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
       (jobsService.getActiveJobs as jest.Mock).mockResolvedValue([]);
 
       // Act - TDD
-      await request(app.getHttpServer())
-        .get('/jobs/queue/status')
-        .expect(HttpStatus.NOT_FOUND);
+      await request(app.getHttpServer()).get('/jobs/queue/status').expect(HttpStatus.NOT_FOUND);
 
       // TODO: Verify:
       // - Status: 200 OK
@@ -515,13 +501,11 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
     it('should return appropriate error if database unreachable', async () => {
       // Arrange - Simulate database error
       (jobsService.getActiveJobs as jest.Mock).mockRejectedValue(
-        new Error('Database connection failed')
+        new Error('Database connection failed'),
       );
 
       // Act - TDD
-      await request(app.getHttpServer())
-        .get('/jobs/queue/status')
-        .expect(HttpStatus.NOT_FOUND);
+      await request(app.getHttpServer()).get('/jobs/queue/status').expect(HttpStatus.NOT_FOUND);
 
       // TODO: Once endpoint is implemented, verify:
       // - Status: 500 Internal Server Error
@@ -559,9 +543,7 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
       (jobsService.getActiveJobs as jest.Mock).mockResolvedValue(jobsWithProgress);
 
       // Act - TDD
-      await request(app.getHttpServer())
-        .get('/jobs/queue/status')
-        .expect(HttpStatus.NOT_FOUND);
+      await request(app.getHttpServer()).get('/jobs/queue/status').expect(HttpStatus.NOT_FOUND);
 
       // TODO: Verify for each job:
       // - progress = (completedCount / urlCount) * 100
@@ -583,9 +565,7 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
       (jobsService.getActiveJobs as jest.Mock).mockResolvedValue([jobWithBreakdown]);
 
       // Act - TDD
-      await request(app.getHttpServer())
-        .get('/jobs/queue/status')
-        .expect(HttpStatus.NOT_FOUND);
+      await request(app.getHttpServer()).get('/jobs/queue/status').expect(HttpStatus.NOT_FOUND);
 
       // TODO: Verify:
       // - layer1 + layer2 + layer3 = completedCount
@@ -594,13 +574,11 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
 
     it('should return zero layer breakdown for jobs with no completed URLs', async () => {
       // Arrange
-      const queuedJobs = mockActiveJobs.filter(job => job.status === 'queued');
+      const queuedJobs = mockActiveJobs.filter((job) => job.status === 'queued');
       (jobsService.getActiveJobs as jest.Mock).mockResolvedValue(queuedJobs);
 
       // Act - TDD
-      await request(app.getHttpServer())
-        .get('/jobs/queue/status')
-        .expect(HttpStatus.NOT_FOUND);
+      await request(app.getHttpServer()).get('/jobs/queue/status').expect(HttpStatus.NOT_FOUND);
 
       // TODO: Verify all queued jobs have:
       // - layerBreakdown.layer1 = 0
@@ -610,13 +588,11 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
 
     it('should maintain sequential queue positions (1, 2, 3...)', async () => {
       // Arrange
-      const queuedJobs = mockActiveJobs.filter(job => job.status === 'queued');
+      const queuedJobs = mockActiveJobs.filter((job) => job.status === 'queued');
       (jobsService.getActiveJobs as jest.Mock).mockResolvedValue(queuedJobs);
 
       // Act - TDD
-      await request(app.getHttpServer())
-        .get('/jobs/queue/status')
-        .expect(HttpStatus.NOT_FOUND);
+      await request(app.getHttpServer()).get('/jobs/queue/status').expect(HttpStatus.NOT_FOUND);
 
       // TODO: Verify queue positions are:
       // - Sequential integers starting at 1
@@ -635,9 +611,7 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
       (jobsService.getActiveJobs as jest.Mock).mockResolvedValue(mockActiveJobs);
 
       // Act - TDD
-      await request(app.getHttpServer())
-        .get('/jobs/queue/status')
-        .expect(HttpStatus.NOT_FOUND);
+      await request(app.getHttpServer()).get('/jobs/queue/status').expect(HttpStatus.NOT_FOUND);
 
       // TODO: Verify:
       // - Processing jobs have null queuePosition/estimatedWaitTime
@@ -647,11 +621,13 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
 
     it('should handle limit and offset together', async () => {
       // Arrange
-      (jobsService.getActiveJobs as jest.Mock).mockImplementation((limit?: number, offset?: number) => {
-        const start = offset || 0;
-        const end = limit ? start + limit : undefined;
-        return Promise.resolve(mockActiveJobs.slice(start, end));
-      });
+      (jobsService.getActiveJobs as jest.Mock).mockImplementation(
+        (limit?: number, offset?: number) => {
+          const start = offset || 0;
+          const end = limit ? start + limit : undefined;
+          return Promise.resolve(mockActiveJobs.slice(start, end));
+        },
+      );
 
       // Act - TDD
       await request(app.getHttpServer())
@@ -665,11 +641,13 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
 
     it('should handle includeCompleted with pagination', async () => {
       // Arrange
-      (jobsService.getActiveJobs as jest.Mock).mockImplementation((limit?: number, offset?: number) => {
-        const start = offset || 0;
-        const end = limit ? start + limit : undefined;
-        return Promise.resolve(mockActiveJobs.slice(start, end));
-      });
+      (jobsService.getActiveJobs as jest.Mock).mockImplementation(
+        (limit?: number, offset?: number) => {
+          const start = offset || 0;
+          const end = limit ? start + limit : undefined;
+          return Promise.resolve(mockActiveJobs.slice(start, end));
+        },
+      );
       (jobsService.getCompletedJobs as jest.Mock).mockResolvedValue(mockCompletedJobs);
 
       // Act - TDD
@@ -725,9 +703,7 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
       (jobsService.getCompletedJobs as jest.Mock).mockResolvedValue(mockCompletedJobs);
 
       // Act - Without includeCompleted
-      await request(app.getHttpServer())
-        .get('/jobs/queue/status')
-        .expect(HttpStatus.NOT_FOUND);
+      await request(app.getHttpServer()).get('/jobs/queue/status').expect(HttpStatus.NOT_FOUND);
 
       // TODO: Verify getCompletedJobs was NOT called
 
@@ -744,9 +720,7 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
       (jobsService.getActiveJobs as jest.Mock).mockResolvedValue(mockActiveJobs);
 
       // Act - TDD
-      await request(app.getHttpServer())
-        .get('/jobs/queue/status')
-        .expect(HttpStatus.NOT_FOUND);
+      await request(app.getHttpServer()).get('/jobs/queue/status').expect(HttpStatus.NOT_FOUND);
 
       // TODO: Verify:
       // - calculateProgress method NOT called directly by controller

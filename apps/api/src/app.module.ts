@@ -8,6 +8,7 @@ import { JobsModule } from './jobs/jobs.module';
 import { ScraperModule } from './scraper/scraper.module';
 import { WorkersModule } from './workers/workers.module';
 import { SettingsModule } from './settings/settings.module';
+import { PreferencesModule } from './preferences/preferences.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { SettingsModule } from './settings/settings.module';
     SupabaseModule,
     QueueModule,
     SettingsModule,
+    PreferencesModule,
     JobsModule,
     ScraperModule,
     WorkersModule,

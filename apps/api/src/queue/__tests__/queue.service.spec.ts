@@ -354,8 +354,7 @@ describe('QueueService', () => {
       const serviceMethods = Object.getOwnPropertyNames(Object.getPrototypeOf(service));
       const manualReviewMethods = serviceMethods.filter(
         (method) =>
-          method.toLowerCase().includes('manualreview') ||
-          method.toLowerCase().includes('review'),
+          method.toLowerCase().includes('manualreview') || method.toLowerCase().includes('review'),
       );
 
       // Only resumeJob might have 'review' in the name, but it's unrelated
@@ -403,9 +402,7 @@ describe('QueueService', () => {
       // Check that service doesn't have manual review router injected
       const serviceKeys = Object.keys(service);
       const manualReviewKeys = serviceKeys.filter(
-        (key) =>
-          key.toLowerCase().includes('manualreview') ||
-          key.toLowerCase().includes('router'),
+        (key) => key.toLowerCase().includes('manualreview') || key.toLowerCase().includes('router'),
       );
 
       expect(manualReviewKeys.length).toBe(0);
@@ -446,9 +443,7 @@ describe('QueueService', () => {
       ];
 
       // Filter out allowed methods
-      const unexpectedMethods = serviceMethods.filter(
-        (method) => !allowedMethods.includes(method),
-      );
+      const unexpectedMethods = serviceMethods.filter((method) => !allowedMethods.includes(method));
 
       // Should have no unexpected methods (especially no routing/review methods)
       expect(unexpectedMethods.length).toBe(0);
@@ -489,8 +484,7 @@ describe('QueueService', () => {
       // Verify service has no error handling that routes to manual review
       const serviceMethods = Object.getOwnPropertyNames(Object.getPrototypeOf(service));
       const errorHandlers = serviceMethods.filter(
-        (method) =>
-          method.toLowerCase().includes('error') || method.toLowerCase().includes('fail'),
+        (method) => method.toLowerCase().includes('error') || method.toLowerCase().includes('fail'),
       );
 
       // No error handlers should exist on QueueService (error handling is in worker)

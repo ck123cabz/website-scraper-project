@@ -295,16 +295,19 @@ describe('Layer Factors Structure Tests', () => {
       expect(signals).toHaveProperty('content_originality');
 
       // Verify each dimension has score and indicators
-      ['design_quality', 'authority_indicators', 'professional_presentation', 'content_originality'].forEach(
-        (dimension) => {
-          expect(signals[dimension]).toHaveProperty('score');
-          expect(signals[dimension]).toHaveProperty('indicators');
-          expect(typeof signals[dimension].score).toBe('number');
-          expect(signals[dimension].score).toBeGreaterThanOrEqual(0);
-          expect(signals[dimension].score).toBeLessThanOrEqual(1);
-          expect(Array.isArray(signals[dimension].indicators)).toBe(true);
-        },
-      );
+      [
+        'design_quality',
+        'authority_indicators',
+        'professional_presentation',
+        'content_originality',
+      ].forEach((dimension) => {
+        expect(signals[dimension]).toHaveProperty('score');
+        expect(signals[dimension]).toHaveProperty('indicators');
+        expect(typeof signals[dimension].score).toBe('number');
+        expect(signals[dimension].score).toBeGreaterThanOrEqual(0);
+        expect(signals[dimension].score).toBeLessThanOrEqual(1);
+        expect(Array.isArray(signals[dimension].indicators)).toBe(true);
+      });
     });
 
     it('should handle LLM classification errors gracefully', async () => {

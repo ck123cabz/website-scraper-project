@@ -17,7 +17,6 @@ export const resultSchema = z.object({
   processing_time_ms: z.number().int().min(0).nullable(),
   retry_count: z.number().int().min(0).nullable(),
   error_message: z.string().nullable(),
-  processed_at: z.string().datetime(),
   created_at: z.string().datetime(),
 });
 

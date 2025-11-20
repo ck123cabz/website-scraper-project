@@ -1,6 +1,11 @@
 import { writeFileSync } from 'fs';
 import { join } from 'path';
-import { runBatchSimulation, simulateConcurrentJobs, estimateStorageUsage, simulateRetryReliability } from '../performance-utils';
+import {
+  runBatchSimulation,
+  simulateConcurrentJobs,
+  estimateStorageUsage,
+  simulateRetryReliability,
+} from '../performance-utils';
 
 /**
  * T121 (Phase 9) - Final Validation Aggregation Test
@@ -62,8 +67,8 @@ describe('Phase 9 Final Validation - Aggregated Performance Tests (T121)', () =>
   afterAll(() => {
     // Finalize report
     report.results = results;
-    report.passedTests = results.filter(r => r.passed).length;
-    report.failedTests = results.filter(r => !r.passed).length;
+    report.passedTests = results.filter((r) => r.passed).length;
+    report.failedTests = results.filter((r) => !r.passed).length;
     report.overallStatus = report.failedTests === 0 ? 'PASSED' : 'FAILED';
 
     // Add recommendations
@@ -71,10 +76,10 @@ describe('Phase 9 Final Validation - Aggregated Performance Tests (T121)', () =>
       report.recommendations.push('Review failed test metrics and investigate root causes');
       report.recommendations.push('Check system resources and database performance');
     }
-    if (results.some(r => r.testId === 'T114' && r.metrics.durationMs > 2 * 60 * 60 * 1000)) {
+    if (results.some((r) => r.testId === 'T114' && r.metrics.durationMs > 2 * 60 * 60 * 1000)) {
       report.recommendations.push('Batch processing approaching threshold - consider optimization');
     }
-    if (results.some(r => r.testId === 'T119' && r.metrics.megabytesPer10k > 40)) {
+    if (results.some((r) => r.testId === 'T119' && r.metrics.megabytesPer10k > 40)) {
       report.recommendations.push('Storage footprint above 80% threshold - monitor growth');
     }
 
@@ -235,13 +240,16 @@ describe('Phase 9 Final Validation - Aggregated Performance Tests (T121)', () =>
       const targetMsPerJob = 60 * 60 * 1000; // 1 hour per job
       const minThroughput = 450; // URLs per second minimum
 
-      const { results: jobResults, maxDurationMs, minThroughput: actualMinThroughput } =
-        await simulateConcurrentJobs({
-          jobCount: 5,
-          urlsPerJob: 2_000,
-          workerCount: 5,
-          workIterations: 360,
-        });
+      const {
+        results: jobResults,
+        maxDurationMs,
+        minThroughput: actualMinThroughput,
+      } = await simulateConcurrentJobs({
+        jobCount: 5,
+        urlsPerJob: 2_000,
+        workerCount: 5,
+        workIterations: 360,
+      });
 
       const passed = maxDurationMs < targetMsPerJob && actualMinThroughput >= minThroughput;
 
@@ -258,7 +266,7 @@ describe('Phase 9 Final Validation - Aggregated Performance Tests (T121)', () =>
           minThroughput: Math.round(actualMinThroughput),
           targetMsPerJob,
           avgThroughput: Math.round(
-            jobResults.reduce((sum, r) => sum + r.urlsPerSecond, 0) / jobResults.length
+            jobResults.reduce((sum, r) => sum + r.urlsPerSecond, 0) / jobResults.length,
           ),
         },
         notes: passed
@@ -289,14 +297,14 @@ describe('Phase 9 Final Validation - Aggregated Performance Tests (T121)', () =>
         passed,
         metrics: {
           perRecordBytes,
-          perRecordKB: Math.round(perRecordBytes / 1024 * 10) / 10,
+          perRecordKB: Math.round((perRecordBytes / 1024) * 10) / 10,
           bytesPer10k,
           megabytesPer10k: Math.round(megabytesPer10k * 100) / 100,
           targetMB,
           utilizationPercent: Math.round((megabytesPer10k / targetMB) * 100),
         },
         notes: passed
-          ? `Storage: ${Math.round(megabytesPer10k * 100) / 100}MB per 10k URLs (${Math.round(perRecordBytes / 1024 * 10) / 10}KB per record)`
+          ? `Storage: ${Math.round(megabytesPer10k * 100) / 100}MB per 10k URLs (${Math.round((perRecordBytes / 1024) * 10) / 10}KB per record)`
           : `Failed: Storage exceeds ${targetMB}MB threshold`,
         timestamp: new Date().toISOString(),
       });
@@ -316,8 +324,9 @@ describe('Phase 9 Final Validation - Aggregated Performance Tests (T121)', () =>
 
       const targetFailureRate = 0.01; // 1%
       const targetMaxFailures = 100;
-      const passed = result.permanentFailureRate < targetFailureRate &&
-                     result.permanentFailures < targetMaxFailures;
+      const passed =
+        result.permanentFailureRate < targetFailureRate &&
+        result.permanentFailures < targetMaxFailures;
 
       results.push({
         testId: 'T120',
@@ -345,13 +354,13 @@ describe('Phase 9 Final Validation - Aggregated Performance Tests (T121)', () =>
   });
 
   it('should validate all success criteria pass', () => {
-    const sc001 = results.find(r => r.testId === 'T114')?.passed ?? false;
-    const sc003 = results.find(r => r.testId === 'T115')?.passed ?? false;
-    const sc006 = results.find(r => r.testId === 'T116')?.passed ?? false;
-    const sc007 = results.find(r => r.testId === 'T117')?.passed ?? false;
-    const sc009 = results.find(r => r.testId === 'T118')?.passed ?? false;
-    const sc010 = results.find(r => r.testId === 'T119')?.passed ?? false;
-    const sc011 = results.find(r => r.testId === 'T120')?.passed ?? false;
+    const sc001 = results.find((r) => r.testId === 'T114')?.passed ?? false;
+    const sc003 = results.find((r) => r.testId === 'T115')?.passed ?? false;
+    const sc006 = results.find((r) => r.testId === 'T116')?.passed ?? false;
+    const sc007 = results.find((r) => r.testId === 'T117')?.passed ?? false;
+    const sc009 = results.find((r) => r.testId === 'T118')?.passed ?? false;
+    const sc010 = results.find((r) => r.testId === 'T119')?.passed ?? false;
+    const sc011 = results.find((r) => r.testId === 'T120')?.passed ?? false;
 
     const allPassed = sc001 && sc003 && sc006 && sc007 && sc009 && sc010 && sc011;
 
@@ -381,7 +390,9 @@ function generateMarkdownReport(report: PerformanceReport): void {
   lines.push('');
   lines.push(`**Generated:** ${new Date(report.reportDate).toLocaleString()}`);
   lines.push(`**Test Suite:** ${report.testSuite}`);
-  lines.push(`**Overall Status:** ${report.overallStatus === 'PASSED' ? '✅ PASSED' : '❌ FAILED'}`);
+  lines.push(
+    `**Overall Status:** ${report.overallStatus === 'PASSED' ? '✅ PASSED' : '❌ FAILED'}`,
+  );
   lines.push('');
 
   // Summary
@@ -401,9 +412,11 @@ function generateMarkdownReport(report: PerformanceReport): void {
   lines.push('| Test ID | Success Criteria | Description | Status |');
   lines.push('|---------|------------------|-------------|--------|');
 
-  report.results.forEach(result => {
+  report.results.forEach((result) => {
     const status = result.passed ? '✅ PASS' : '❌ FAIL';
-    lines.push(`| ${result.testId} | ${result.successCriteria} | ${result.description} | ${status} |`);
+    lines.push(
+      `| ${result.testId} | ${result.successCriteria} | ${result.description} | ${status} |`,
+    );
   });
   lines.push('');
 
@@ -411,7 +424,7 @@ function generateMarkdownReport(report: PerformanceReport): void {
   lines.push('## Detailed Test Results');
   lines.push('');
 
-  report.results.forEach(result => {
+  report.results.forEach((result) => {
     lines.push(`### ${result.testId}: ${result.description}`);
     lines.push('');
     lines.push(`**Status:** ${result.passed ? '✅ PASSED' : '❌ FAILED'}`);
@@ -433,7 +446,7 @@ function generateMarkdownReport(report: PerformanceReport): void {
   lines.push('## Performance Baselines');
   lines.push('');
   lines.push('### Batch Processing (T114)');
-  const t114 = report.results.find(r => r.testId === 'T114');
+  const t114 = report.results.find((r) => r.testId === 'T114');
   if (t114) {
     lines.push(`- Duration: ${t114.metrics.durationMinutes} minutes`);
     lines.push(`- Throughput: ${t114.metrics.urlsPerSecond} URLs/second`);
@@ -442,7 +455,7 @@ function generateMarkdownReport(report: PerformanceReport): void {
   lines.push('');
 
   lines.push('### Concurrent Jobs (T118)');
-  const t118 = report.results.find(r => r.testId === 'T118');
+  const t118 = report.results.find((r) => r.testId === 'T118');
   if (t118) {
     lines.push(`- Max Duration: ${t118.metrics.maxDurationMinutes} minutes`);
     lines.push(`- Min Throughput: ${t118.metrics.minThroughput} URLs/second`);
@@ -452,7 +465,7 @@ function generateMarkdownReport(report: PerformanceReport): void {
   lines.push('');
 
   lines.push('### Storage Efficiency (T119)');
-  const t119 = report.results.find(r => r.testId === 'T119');
+  const t119 = report.results.find((r) => r.testId === 'T119');
   if (t119) {
     lines.push(`- Per Record: ${t119.metrics.perRecordKB} KB`);
     lines.push(`- Per 10k URLs: ${t119.metrics.megabytesPer10k} MB`);
@@ -462,10 +475,12 @@ function generateMarkdownReport(report: PerformanceReport): void {
   lines.push('');
 
   lines.push('### Retry Reliability (T120)');
-  const t120 = report.results.find(r => r.testId === 'T120');
+  const t120 = report.results.find((r) => r.testId === 'T120');
   if (t120) {
     lines.push(`- Success Rate: ${t120.metrics.successRate}%`);
-    lines.push(`- Permanent Failures: ${t120.metrics.permanentFailures} / ${t120.metrics.totalJobs}`);
+    lines.push(
+      `- Permanent Failures: ${t120.metrics.permanentFailures} / ${t120.metrics.totalJobs}`,
+    );
     lines.push(`- Failure Rate: ${t120.metrics.permanentFailureRate}%`);
     lines.push(`- Target: <1% failure rate`);
   }
@@ -475,7 +490,7 @@ function generateMarkdownReport(report: PerformanceReport): void {
   if (report.regressions.length > 0) {
     lines.push('## Performance Regressions');
     lines.push('');
-    report.regressions.forEach(regression => {
+    report.regressions.forEach((regression) => {
       lines.push(`- ⚠️ ${regression}`);
     });
     lines.push('');
@@ -490,7 +505,7 @@ function generateMarkdownReport(report: PerformanceReport): void {
   if (report.recommendations.length > 0) {
     lines.push('## Recommendations');
     lines.push('');
-    report.recommendations.forEach(rec => {
+    report.recommendations.forEach((rec) => {
       lines.push(`- ${rec}`);
     });
     lines.push('');

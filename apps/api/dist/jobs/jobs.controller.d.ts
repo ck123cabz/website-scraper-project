@@ -190,7 +190,41 @@ export declare class JobsController {
         } | null;
         message: string;
     }>;
+    deleteJob(jobId: string): Promise<{
+        success: boolean;
+        message: string;
+    }>;
     cancelJob(jobId: string): Promise<{
+        success: boolean;
+        data: {
+            completed_at: string | null;
+            created_at: string;
+            current_stage: import("@website-scraper/shared").Database["public"]["Enums"]["processing_stage"] | null;
+            current_url: string | null;
+            current_url_started_at: string | null;
+            estimated_time_remaining: number | null;
+            failed_urls: number;
+            gemini_cost: number;
+            gpt_cost: number;
+            id: string;
+            layer1_eliminated_count: number | null;
+            name: string | null;
+            prefilter_passed_count: number | null;
+            prefilter_rejected_count: number | null;
+            processed_urls: number;
+            processing_rate: number | null;
+            progress_percentage: number;
+            rejected_urls: number;
+            started_at: string | null;
+            status: import("@website-scraper/shared").Database["public"]["Enums"]["job_status"];
+            successful_urls: number;
+            total_cost: number;
+            total_urls: number;
+            updated_at: string;
+        } | null;
+        message: string;
+    }>;
+    retryJob(jobId: string): Promise<{
         success: boolean;
         data: {
             completed_at: string | null;

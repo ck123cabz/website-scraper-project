@@ -37,10 +37,7 @@ export class ArchivalService {
         .is('archived_at', null); // Only archive if not already archived
 
       if (queryError) {
-        this.logger.error(
-          `Archival query failed: ${queryError.message}`,
-          queryError.stack
-        );
+        this.logger.error(`Archival query failed: ${queryError.message}`, queryError.stack);
         throw queryError;
       }
 
@@ -48,13 +45,13 @@ export class ArchivalService {
 
       if (jobIds.length === 0) {
         this.logger.debug(
-          'No jobs eligible for archival (completed > 90 days ago, not already archived)'
+          'No jobs eligible for archival (completed > 90 days ago, not already archived)',
         );
         return;
       }
 
       this.logger.log(
-        `Found ${jobIds.length} jobs eligible for archival (completed > 90 days ago)`
+        `Found ${jobIds.length} jobs eligible for archival (completed > 90 days ago)`,
       );
 
       // Archive jobs in batches to avoid locking entire table
@@ -67,7 +64,7 @@ export class ArchivalService {
         const batchEnd = Math.min(i + batchSize, jobIds.length);
 
         this.logger.debug(
-          `Archiving batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(jobIds.length / batchSize)} (${batchStart}-${batchEnd})`
+          `Archiving batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(jobIds.length / batchSize)} (${batchStart}-${batchEnd})`,
         );
 
         const { error: updateError } = await this.supabase
@@ -81,29 +78,21 @@ export class ArchivalService {
           .in('id', batch);
 
         if (updateError) {
-          this.logger.error(
-            `Batch archival failed: ${updateError.message}`,
-            updateError.stack
-          );
+          this.logger.error(`Batch archival failed: ${updateError.message}`, updateError.stack);
           throw updateError;
         }
 
         archivedCount += batch.length;
       }
 
+      this.logger.log(`Successfully archived ${archivedCount} completed jobs (90+ days old)`);
       this.logger.log(
-        `Successfully archived ${archivedCount} completed jobs (90+ days old)`
-      );
-      this.logger.log(
-        `These jobs will be hard-deleted after an additional 90 days by CleanupService`
+        `These jobs will be hard-deleted after an additional 90 days by CleanupService`,
       );
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       const errorStack = error instanceof Error ? error.stack : undefined;
-      this.logger.error(
-        `Archival cron job failed: ${errorMessage}`,
-        errorStack
-      );
+      this.logger.error(`Archival cron job failed: ${errorMessage}`, errorStack);
       // Don't re-throw - cron should continue running
     }
   }

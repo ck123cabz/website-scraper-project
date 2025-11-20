@@ -1,11 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import type {
-  Layer1AnalysisResult,
-  Layer1DomainRules,
-  Layer1Rules,
-} from '@website-scraper/shared';
+import type { Layer1AnalysisResult, Layer1DomainRules, Layer1Rules } from '@website-scraper/shared';
 import { SettingsService } from '../../settings/settings.service';
 
 // Type stub for unused legacy method

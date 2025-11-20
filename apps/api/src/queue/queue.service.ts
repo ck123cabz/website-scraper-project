@@ -208,4 +208,95 @@ export class QueueService {
 
     this.logger.log(`Job ${jobId} cancelled - worker will stop processing, results preserved`);
   }
+
+  /**
+   * Retry a failed job by re-queueing all URLs and resetting job status
+   * AC33: Retry action for failed jobs
+   */
+  async retryJob(jobId: string): Promise<void> {
+    // 1. Verify job exists and is in failed status
+    const { data: job, error: jobError } = await this.supabase
+      .getClient()
+      .from('jobs')
+      .select('id, status, total_urls')
+      .eq('id', jobId)
+      .single();
+
+    if (jobError || !job) {
+      this.logger.error(`Failed to find job ${jobId}: ${jobError?.message}`);
+      throw new Error(`Job not found: ${jobId}`);
+    }
+
+    if (job.status !== 'failed') {
+      this.logger.error(`Cannot retry job ${jobId}: status is ${job.status}, expected 'failed'`);
+      throw new Error(`Can only retry failed jobs. Current status: ${job.status}`);
+    }
+
+    // 2. Get all URLs from job_urls table for this job
+    const { data: jobUrls, error: urlsError } = await this.supabase
+      .getClient()
+      .from('job_urls')
+      .select('id, url')
+      .eq('job_id', jobId);
+
+    if (urlsError) {
+      this.logger.error(`Failed to query URLs for job ${jobId}: ${urlsError.message}`);
+      throw new Error(`Failed to retrieve job URLs: ${urlsError.message}`);
+    }
+
+    if (!jobUrls || jobUrls.length === 0) {
+      this.logger.error(`No URLs found for job ${jobId}`);
+      throw new Error(`No URLs found for job ${jobId}`);
+    }
+
+    // 3. Reset all job_urls status to 'queued'
+    const { error: resetError } = await this.supabase
+      .getClient()
+      .from('job_urls')
+      .update({ status: 'queued' })
+      .eq('job_id', jobId);
+
+    if (resetError) {
+      this.logger.error(`Failed to reset URL statuses for job ${jobId}: ${resetError.message}`);
+      throw new Error(`Failed to reset URL statuses: ${resetError.message}`);
+    }
+
+    // 4. Re-queue all URLs for processing
+    this.logger.log(`Job ${jobId} retry: Re-queueing ${jobUrls.length} URLs`);
+
+    const jobs = jobUrls.map((row) => ({
+      jobId,
+      url: row.url,
+      urlId: row.id,
+    }));
+
+    await this.addUrlsToQueue(jobs);
+
+    // 5. Reset job metrics and update status to 'processing'
+    const { error: updateError } = await this.supabase
+      .getClient()
+      .from('jobs')
+      .update({
+        status: 'processing',
+        started_at: new Date().toISOString(),
+        completed_at: null,
+        processed_urls: 0,
+        successful_urls: 0,
+        failed_urls: 0,
+        rejected_urls: 0,
+        total_cost: 0,
+        gemini_cost: 0,
+        gpt_cost: 0,
+      })
+      .eq('id', jobId);
+
+    if (updateError) {
+      this.logger.error(`Failed to update job status for ${jobId}: ${updateError.message}`);
+      throw new Error(`Failed to update job status: ${updateError.message}`);
+    }
+
+    this.logger.log(
+      `Job ${jobId} retried successfully - ${jobUrls.length} URLs re-queued, metrics reset`,
+    );
+  }
 }

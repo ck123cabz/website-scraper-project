@@ -2,11 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as cheerio from 'cheerio';
 import { SettingsService } from '../../settings/settings.service';
 import { ScraperService } from '../../scraper/scraper.service';
-import type {
-  Layer2FilterResult,
-  Layer2Signals,
-  Layer2Rules,
-} from '@website-scraper/shared';
+import type { Layer2FilterResult, Layer2Signals, Layer2Rules } from '@website-scraper/shared';
 
 // Type stub for unused legacy method
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

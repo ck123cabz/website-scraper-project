@@ -330,6 +330,7 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
 
   /**
    * Store result for Layer 1 domain analysis rejection (no scraping, no LLM)
+   * Writes to url_results table with complete layer1_factors JSONB (T018-T019)
    * @private
    */
   private async storeLayer1Rejection(
@@ -342,26 +343,42 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
   ): Promise<void> {
     const processingTimeMs = Date.now() - startTime;
 
-    // UPSERT result (update if exists, insert if not) - prevents duplicates on resume
-    await this.supabase.getClient().from('results').upsert(
+    // Get Layer 1 factors for JSONB storage
+    let layer1Factors: any = null;
+    try {
+      layer1Factors = this.layer1Analysis.getLayer1Factors(url);
+      if (!layer1Factors) {
+        this.logger.warn(`Layer 1 factors returned null for ${url}, using empty structure`);
+        layer1Factors = this.getEmptyLayer1Factors();
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error getting Layer 1 factors: ${error instanceof Error ? error.message : 'Unknown'}`,
+      );
+      layer1Factors = this.getEmptyLayer1Factors();
+    }
+
+    // Write to url_results table (new schema with JSONB factors)
+    await this.supabase.getClient().from('url_results').upsert(
       {
         job_id: jobId,
+        url_id: urlId,
         url: url,
         status: 'rejected',
-        classification_result: 'rejected_prefilter', // Legacy field
-        classification_score: null,
-        classification_reasoning: layer1Result.reasoning,
-        llm_provider: 'none',
-        llm_cost: 0,
+        confidence_score: null, // No LLM classification yet
+        confidence_band: null,
+        eliminated_at_layer: 'layer1',
         processing_time_ms: processingTimeMs,
-        elimination_layer: 'layer1',
-        layer1_reasoning: layer1Result.reasoning,
-        layer1_processing_time_ms: layer1Time,
-        prefilter_passed: false,
-        prefilter_reasoning: null,
+        total_cost: 0, // Layer 1 has no costs (rule-based, no HTTP)
+        retry_count: 0,
+        last_error: null,
+        layer1_factors: layer1Factors,
+        layer2_factors: null, // Layer 2 not reached
+        layer3_factors: null, // Layer 3 not reached
+        reviewer_notes: `Layer 1 rejection: ${layer1Result.reasoning}`,
       },
       {
-        onConflict: 'job_id,url', // Update existing row with same job_id + url
+        onConflict: 'url_id', // Update if exists based on url_id uniqueness
       },
     );
 
@@ -417,6 +434,7 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
 
   /**
    * Store result for Layer 2 operational filter rejection (no LLM call)
+   * Writes to url_results table with layer1_factors and layer2_factors JSONB (T018-T019)
    * @private
    */
   private async storeLayer2Rejection(
@@ -431,31 +449,60 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
   ): Promise<void> {
     const processingTimeMs = Date.now() - startTime;
 
-    // UPSERT result
+    // Get Layer 1 factors (Layer 1 passed to reach Layer 2)
+    let layer1Factors: any = null;
+    try {
+      layer1Factors = this.layer1Analysis.getLayer1Factors(url);
+      if (!layer1Factors) {
+        this.logger.warn(`Layer 1 factors returned null for ${url}, using empty structure`);
+        layer1Factors = this.getEmptyLayer1Factors();
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error getting Layer 1 factors: ${error instanceof Error ? error.message : 'Unknown'}`,
+      );
+      layer1Factors = this.getEmptyLayer1Factors();
+    }
+
+    // Get Layer 2 factors
+    let layer2Factors: any = null;
+    try {
+      layer2Factors = await this.layer2Filter.getLayer2Factors(url);
+      if (!layer2Factors) {
+        this.logger.warn(`Layer 2 factors returned null for ${url}, using empty structure`);
+        layer2Factors = this.getEmptyLayer2Factors();
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error getting Layer 2 factors: ${error instanceof Error ? error.message : 'Unknown'}`,
+      );
+      layer2Factors = this.getEmptyLayer2Factors();
+    }
+
+    // Write to url_results table (new schema with JSONB factors)
     await this.supabase
       .getClient()
-      .from('results')
+      .from('url_results')
       .upsert(
         {
           job_id: jobId,
+          url_id: urlId,
           url: url,
           status: 'rejected',
-          classification_result: 'rejected_prefilter', // Legacy field
-          classification_score: null,
-          classification_reasoning: layer2Result.reasoning,
-          llm_provider: 'none',
-          llm_cost: 0,
+          confidence_score: null, // No LLM classification yet
+          confidence_band: null,
+          eliminated_at_layer: 'layer2',
           processing_time_ms: processingTimeMs,
-          elimination_layer: 'layer2',
-          layer1_reasoning: null, // Layer 1 passed
-          layer1_processing_time_ms: layer1Time,
-          layer2_processing_time_ms: layer2Time,
-          layer2_signals: layer2Result.signals || null,
-          prefilter_passed: false,
-          prefilter_reasoning: null,
+          total_cost: this.SCRAPING_COST_PER_URL, // Layer 2 incurs scraping cost
+          retry_count: 0,
+          last_error: null,
+          layer1_factors: layer1Factors,
+          layer2_factors: layer2Factors,
+          layer3_factors: null, // Layer 3 not reached
+          reviewer_notes: `Layer 2 rejection: ${layer2Result.reasoning}`,
         },
         {
-          onConflict: 'job_id,url',
+          onConflict: 'url_id',
         },
       );
 
@@ -585,89 +632,73 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     }
 
     // Determine final status based on classification
-    const finalStatus = layer3Result.classification.classification === 'suitable'
-      ? 'approved'
-      : 'rejected';
+    const finalStatus =
+      layer3Result.classification.classification === 'suitable' ? 'approved' : 'rejected';
 
     // Store complete result in url_results table with all factor data (T018-T019, T033)
     // Includes backwards compatibility: null factors are allowed for pre-migration data
     // Note: Using updated_at for timestamp tracking (auto-updated by trigger)
     try {
-      await this.supabase.getClient().from('url_results').upsert(
-        {
-          job_id: jobId,
-          url_id: urlId,
-          url: url,
-          status: finalStatus,
-          confidence_score: layer3Result.classification.confidence,
-          confidence_band: layer3Result.confidenceBand,
-          eliminated_at_layer: eliminatedAtLayer,
-          processing_time_ms: processingTimeMs,
-          total_cost: totalCost,
-          retry_count: layer3Result.classification.retryCount || 0,
-          last_error: null, // No error since we reached Layer 3 successfully
-          layer1_factors: layer1Factors,
-          layer2_factors: layer2Factors,
-          layer3_factors: layer3Factors,
-          reviewer_notes: `Auto-${finalStatus}: ${layer3Result.classification.reasoning}`,
-        },
-        {
-          onConflict: 'url_id', // Update if exists based on url_id uniqueness
-        },
-      );
+      await this.supabase
+        .getClient()
+        .from('url_results')
+        .upsert(
+          {
+            job_id: jobId,
+            url_id: urlId,
+            url: url,
+            status: finalStatus,
+            confidence_score: layer3Result.classification.confidence,
+            confidence_band: layer3Result.confidenceBand,
+            eliminated_at_layer: eliminatedAtLayer,
+            processing_time_ms: processingTimeMs,
+            total_cost: totalCost,
+            retry_count: layer3Result.classification.retryCount || 0,
+            last_error: null, // No error since we reached Layer 3 successfully
+            layer1_factors: layer1Factors,
+            layer2_factors: layer2Factors,
+            layer3_factors: layer3Factors,
+            reviewer_notes: `Auto-${finalStatus}: ${layer3Result.classification.reasoning}`,
+          },
+          {
+            onConflict: 'url_id', // Update if exists based on url_id uniqueness
+          },
+        );
     } catch (error) {
       this.logger.error(
         `Failed to write url_results with factors: ${error instanceof Error ? error.message : 'Unknown'}. Attempting fallback write with null factors.`,
       );
 
       // Fallback: Write without factors if there's an issue
-      await this.supabase.getClient().from('url_results').upsert(
-        {
-          job_id: jobId,
-          url_id: urlId,
-          url: url,
-          status: finalStatus,
-          confidence_score: layer3Result.classification.confidence,
-          confidence_band: layer3Result.confidenceBand,
-          eliminated_at_layer: eliminatedAtLayer,
-          processing_time_ms: processingTimeMs,
-          total_cost: totalCost,
-          retry_count: layer3Result.classification.retryCount || 0,
-          last_error: `Factor write failed: ${error instanceof Error ? error.message : 'Unknown'}`,
-          layer1_factors: null,
-          layer2_factors: null,
-          layer3_factors: null,
-          reviewer_notes: `Auto-${finalStatus} (factors failed): ${layer3Result.classification.reasoning}`,
-        },
-        {
-          onConflict: 'url_id',
-        },
-      );
+      await this.supabase
+        .getClient()
+        .from('url_results')
+        .upsert(
+          {
+            job_id: jobId,
+            url_id: urlId,
+            url: url,
+            status: finalStatus,
+            confidence_score: layer3Result.classification.confidence,
+            confidence_band: layer3Result.confidenceBand,
+            eliminated_at_layer: eliminatedAtLayer,
+            processing_time_ms: processingTimeMs,
+            total_cost: totalCost,
+            retry_count: layer3Result.classification.retryCount || 0,
+            last_error: `Factor write failed: ${error instanceof Error ? error.message : 'Unknown'}`,
+            layer1_factors: null,
+            layer2_factors: null,
+            layer3_factors: null,
+            reviewer_notes: `Auto-${finalStatus} (factors failed): ${layer3Result.classification.reasoning}`,
+          },
+          {
+            onConflict: 'url_id',
+          },
+        );
     }
 
-    // Store Layer 3 processing metadata in legacy results table for backward compatibility
-    await this.supabase.getClient().from('results').upsert(
-      {
-        job_id: jobId,
-        url: url,
-        status: finalStatus,
-        classification_result: layer3Result.classification.classification,
-        classification_score: layer3Result.classification.confidence,
-        classification_reasoning: layer3Result.classification.reasoning,
-        llm_provider: layer3Result.classification.provider,
-        llm_cost: layer3Result.classification.cost,
-        processing_time_ms: processingTimeMs,
-        layer1_processing_time_ms: layer1Time,
-        layer2_processing_time_ms: layer2Time,
-        layer3_processing_time_ms: layer3Time,
-        confidence_band: layer3Result.confidenceBand,
-        prefilter_passed: true, // Legacy field
-        prefilter_reasoning: null,
-      },
-      {
-        onConflict: 'job_id,url',
-      },
-    );
+    // Legacy results table write removed (T018-T019)
+    // All data now stored exclusively in url_results with JSONB factor columns
 
     // Update job counters
     const { data: jobMeta } = await this.supabase
@@ -787,6 +818,7 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
 
   /**
    * Handle failed URL processing
+   * Writes to url_results table (T018-T019)
    * @private
    */
   private async handleFailedUrl(
@@ -802,27 +834,30 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     const sanitizedError =
       errorMessage.length > 200 ? errorMessage.slice(0, 200) + '...' : errorMessage;
 
-    // UPSERT failed result
+    // Write failed result to url_results table
     await this.supabase
       .getClient()
-      .from('results')
+      .from('url_results')
       .upsert(
         {
           job_id: jobId,
+          url_id: urlId,
           url: url,
           status: 'failed',
-          classification_result: null,
-          classification_score: null,
-          classification_reasoning: null,
-          llm_provider: 'none',
-          llm_cost: 0,
+          confidence_score: null,
+          confidence_band: null,
+          eliminated_at_layer: null, // Failed before reaching elimination
           processing_time_ms: processingTimeMs,
-          prefilter_passed: false,
-          prefilter_reasoning: `Failed: ${sanitizedError}`,
-          error_message: sanitizedError,
+          total_cost: 0, // No cost for failed processing
+          retry_count: 0,
+          last_error: sanitizedError,
+          layer1_factors: null,
+          layer2_factors: null,
+          layer3_factors: null,
+          reviewer_notes: `Processing failed: ${sanitizedError}`,
         },
         {
-          onConflict: 'job_id,url',
+          onConflict: 'url_id',
         },
       );
 
@@ -983,14 +1018,7 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
         if (!isTransient || isLastAttempt) {
           // T034: Track final failure state in url_results
           if (jobId && urlId && isTransient) {
-            await this.trackRetryState(
-              jobId,
-              urlId,
-              url,
-              attempt + 1,
-              errorMessage,
-              'failed',
-            );
+            await this.trackRetryState(jobId, urlId, url, attempt + 1, errorMessage, 'failed');
           }
           // Permanent error or last attempt - throw
           throw error;
@@ -998,14 +1026,7 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
 
         // T034: Track retry attempt in url_results (transient error, will retry)
         if (jobId && urlId) {
-          await this.trackRetryState(
-            jobId,
-            urlId,
-            url,
-            attempt + 1,
-            errorMessage,
-            'processing',
-          );
+          await this.trackRetryState(jobId, urlId, url, attempt + 1, errorMessage, 'processing');
         }
 
         // Special handling for ScrapingBee 429 rate limit

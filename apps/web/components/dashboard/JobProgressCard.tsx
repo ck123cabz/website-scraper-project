@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +29,8 @@ interface JobProgressCardProps {
   isLoading?: boolean;
   error?: string;
   cost?: number;
+  isSelected?: boolean;
+  onSelectChange?: (selected: boolean) => void;
 }
 
 // Skeleton component for loading state
@@ -52,6 +55,8 @@ export function JobProgressCard({
   isLoading = false,
   error,
   cost,
+  isSelected = false,
+  onSelectChange,
 }: JobProgressCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -138,10 +143,19 @@ export function JobProgressCard({
   return (
     <Card className="p-4">
       <CardContent className="p-0 space-y-4">
-        {/* Header with name and progress */}
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-lg">{name}</h3>
-          <span className="text-sm font-medium">{progress}%</span>
+        {/* Header with checkbox, name and progress */}
+        <div className="flex items-center gap-3">
+          {onSelectChange && (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={onSelectChange}
+              aria-label={`Select ${name}`}
+            />
+          )}
+          <div className="flex items-center justify-between flex-1">
+            <h3 className="font-semibold text-lg">{name}</h3>
+            <span className="text-sm font-medium">{progress}%</span>
+          </div>
         </div>
 
         {/* Progress bar */}

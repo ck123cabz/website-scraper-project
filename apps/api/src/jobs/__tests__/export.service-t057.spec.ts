@@ -67,7 +67,7 @@ class ExportService {
   async streamCSVExport(
     jobId: string,
     format: 'complete' | 'summary' | 'layer1' | 'layer2' | 'layer3',
-    filters?: { status?: string; confidence?: string; layer?: string }
+    filters?: { status?: string; confidence?: string; layer?: string },
   ): Promise<Readable> {
     throw new Error('Not implemented yet - TDD approach');
   }
@@ -117,7 +117,6 @@ describe('ExportService - T057: 48-Column Complete CSV Format', () => {
       retry_count: 0,
       last_error: null,
       last_retry_at: null,
-      processed_at: new Date('2025-01-13T12:00:00Z'),
       reviewer_notes: null,
       created_at: new Date('2025-01-13T11:00:00Z'),
       updated_at: new Date('2025-01-13T12:00:00Z'),
@@ -186,8 +185,8 @@ describe('ExportService - T057: 48-Column Complete CSV Format', () => {
    * Helper: Parse CSV content into rows and columns
    */
   function parseCSV(csvContent: string): string[][] {
-    const lines = csvContent.split('\n').filter(line => line.trim().length > 0);
-    return lines.map(line => {
+    const lines = csvContent.split('\n').filter((line) => line.trim().length > 0);
+    return lines.map((line) => {
       const columns: string[] = [];
       let currentColumn = '';
       let inQuotes = false;
@@ -237,7 +236,6 @@ describe('ExportService - T057: 48-Column Complete CSV Format', () => {
         // Assert
         expect(columnCount).toBe(48);
         console.log(`[T057] Column count test: Found ${columnCount} columns (Expected: 48)`);
-
       } catch (error) {
         expect((error as Error).message).toBe('Not implemented yet - TDD approach');
       }
@@ -265,7 +263,6 @@ describe('ExportService - T057: 48-Column Complete CSV Format', () => {
 
         // Assert
         expect(commaCount).toBe(47);
-
       } catch (error) {
         expect((error as Error).message).toBe('Not implemented yet - TDD approach');
       }
@@ -279,27 +276,62 @@ describe('ExportService - T057: 48-Column Complete CSV Format', () => {
   describe('2. Column Names and Order', () => {
     const EXPECTED_COLUMNS = [
       // Core Columns (10)
-      'url', 'status', 'confidence_score', 'confidence_band', 'eliminated_at_layer',
-      'processing_time_ms', 'total_cost', 'layer1_passed', 'layer2_passed', 'layer3_passed',
+      'url',
+      'status',
+      'confidence_score',
+      'confidence_band',
+      'eliminated_at_layer',
+      'processing_time_ms',
+      'total_cost',
+      'layer1_passed',
+      'layer2_passed',
+      'layer3_passed',
 
       // Layer 1 Columns (5)
-      'l1_tld_type', 'l1_tld_value', 'l1_domain_classification', 'l1_pattern_matches', 'l1_target_profile',
+      'l1_tld_type',
+      'l1_tld_value',
+      'l1_domain_classification',
+      'l1_pattern_matches',
+      'l1_target_profile',
 
       // Layer 2 Columns (10)
-      'l2_publication_score', 'l2_product_offering_score', 'l2_layout_score', 'l2_navigation_score',
-      'l2_monetization_score', 'l2_keywords_found', 'l2_ad_networks', 'l2_content_signals',
-      'l2_reasoning', 'l2_passed',
+      'l2_publication_score',
+      'l2_product_offering_score',
+      'l2_layout_score',
+      'l2_navigation_score',
+      'l2_monetization_score',
+      'l2_keywords_found',
+      'l2_ad_networks',
+      'l2_content_signals',
+      'l2_reasoning',
+      'l2_passed',
 
       // Layer 3 Columns (15)
-      'l3_classification', 'l3_design_quality_score', 'l3_design_quality_indicators',
-      'l3_authority_score', 'l3_authority_indicators', 'l3_presentation_score',
-      'l3_presentation_indicators', 'l3_originality_score', 'l3_originality_indicators',
-      'l3_llm_provider', 'l3_llm_model', 'l3_llm_cost', 'l3_reasoning',
-      'l3_tokens_input', 'l3_tokens_output',
+      'l3_classification',
+      'l3_design_quality_score',
+      'l3_design_quality_indicators',
+      'l3_authority_score',
+      'l3_authority_indicators',
+      'l3_presentation_score',
+      'l3_presentation_indicators',
+      'l3_originality_score',
+      'l3_originality_indicators',
+      'l3_llm_provider',
+      'l3_llm_model',
+      'l3_llm_cost',
+      'l3_reasoning',
+      'l3_tokens_input',
+      'l3_tokens_output',
 
       // Metadata Columns (8)
-      'job_id', 'url_id', 'retry_count', 'last_error', 'processed_at',
-      'created_at', 'updated_at', 'reviewer_notes',
+      'job_id',
+      'url_id',
+      'retry_count',
+      'last_error',
+      'processed_at',
+      'created_at',
+      'updated_at',
+      'reviewer_notes',
     ];
 
     it('should verify expected column array has exactly 48 elements', () => {
@@ -324,13 +356,12 @@ describe('ExportService - T057: 48-Column Complete CSV Format', () => {
         }
 
         const headerLine = csvContent.split('\n')[0];
-        const actualColumns = headerLine.split(',').map(col => col.trim().replace(/^"|"$/g, ''));
+        const actualColumns = headerLine.split(',').map((col) => col.trim().replace(/^"|"$/g, ''));
 
         // Assert - Check each expected column at correct position
         EXPECTED_COLUMNS.forEach((expectedCol, index) => {
           expect(actualColumns[index]).toBe(expectedCol);
         });
-
       } catch (error) {
         expect((error as Error).message).toBe('Not implemented yet - TDD approach');
       }
@@ -354,15 +385,14 @@ describe('ExportService - T057: 48-Column Complete CSV Format', () => {
         }
 
         const headerLine = csvContent.split('\n')[0];
-        const columns = headerLine.split(',').map(col => col.trim().replace(/^"|"$/g, ''));
+        const columns = headerLine.split(',').map((col) => col.trim().replace(/^"|"$/g, ''));
 
         // Assert - All column names should be lowercase with underscores
-        columns.forEach(col => {
+        columns.forEach((col) => {
           expect(col).toMatch(/^[a-z0-9_]+$/);
           expect(col).not.toMatch(/[A-Z]/); // No uppercase
           expect(col).not.toMatch(/[\s-]/); // No spaces or hyphens
         });
-
       } catch (error) {
         expect((error as Error).message).toBe('Not implemented yet - TDD approach');
       }
@@ -391,7 +421,6 @@ describe('ExportService - T057: 48-Column Complete CSV Format', () => {
         // Assert
         const uniqueColumns = new Set(columns);
         expect(uniqueColumns.size).toBe(columns.length);
-
       } catch (error) {
         expect((error as Error).message).toBe('Not implemented yet - TDD approach');
       }
@@ -435,7 +464,6 @@ describe('ExportService - T057: 48-Column Complete CSV Format', () => {
         expect(dataRow[5]).toMatch(/^\d+$/); // processing_time_ms
         expect(dataRow[6]).toMatch(/^0\.\d+$/); // total_cost
         expect(dataRow[40]).toMatch(/^\d+$/); // retry_count
-
       } catch (error) {
         expect((error as Error).message).toBe('Not implemented yet - TDD approach');
       }
@@ -465,7 +493,6 @@ describe('ExportService - T057: 48-Column Complete CSV Format', () => {
         expect(['true', 'false']).toContain(dataRow[7]); // layer1_passed
         expect(['true', 'false']).toContain(dataRow[8]); // layer2_passed
         expect(['true', 'false']).toContain(dataRow[9]); // layer3_passed
-
       } catch (error) {
         expect((error as Error).message).toBe('Not implemented yet - TDD approach');
       }
@@ -496,7 +523,6 @@ describe('ExportService - T057: 48-Column Complete CSV Format', () => {
         expect(dataRow[42]).toMatch(isoRegex); // processed_at
         expect(dataRow[43]).toMatch(isoRegex); // created_at
         expect(dataRow[44]).toMatch(isoRegex); // updated_at
-
       } catch (error) {
         expect((error as Error).message).toBe('Not implemented yet - TDD approach');
       }
@@ -532,7 +558,6 @@ describe('ExportService - T057: 48-Column Complete CSV Format', () => {
         expect(dataRow[13]).toContain('affiliate-link'); // l1_pattern_matches
         expect(dataRow[19]).toContain('enterprise'); // l2_keywords_found
         expect(dataRow[20]).toContain('Google Ads'); // l2_ad_networks
-
       } catch (error) {
         expect((error as Error).message).toBe('Not implemented yet - TDD approach');
       }
@@ -561,7 +586,6 @@ describe('ExportService - T057: 48-Column Complete CSV Format', () => {
 
         // Assert - Fields with commas should be quoted
         expect(csvContent).toContain('"https://example.com/path?param=value,with,commas"');
-
       } catch (error) {
         expect((error as Error).message).toBe('Not implemented yet - TDD approach');
       }
@@ -594,7 +618,6 @@ describe('ExportService - T057: 48-Column Complete CSV Format', () => {
         // Assert - Quotes should be doubled and field wrapped in quotes
         expect(csvContent).toContain('""affiliate links""');
         expect(csvContent).toContain('""sponsored content""');
-
       } catch (error) {
         expect((error as Error).message).toBe('Not implemented yet - TDD approach');
       }
@@ -643,7 +666,6 @@ describe('ExportService - T057: 48-Column Complete CSV Format', () => {
         expect(dataRow[10]).toBeFalsy(); // l1_tld_type
         expect(dataRow[15]).toBeFalsy(); // l2_publication_score
         expect(dataRow[25]).toBeFalsy(); // l3_classification
-
       } catch (error) {
         expect((error as Error).message).toBe('Not implemented yet - TDD approach');
       }
@@ -696,7 +718,6 @@ describe('ExportService - T057: 48-Column Complete CSV Format', () => {
         // Layer 2/3 empty
         expect(dataRow[15]).toBeFalsy(); // l2_publication_score
         expect(dataRow[25]).toBeFalsy(); // l3_classification
-
       } catch (error) {
         expect((error as Error).message).toBe('Not implemented yet - TDD approach');
       }
@@ -758,7 +779,6 @@ describe('ExportService - T057: 48-Column Complete CSV Format', () => {
 
         // Layer 3 empty
         expect(dataRow[25]).toBeFalsy(); // l3_classification
-
       } catch (error) {
         expect((error as Error).message).toBe('Not implemented yet - TDD approach');
       }
@@ -799,7 +819,6 @@ describe('ExportService - T057: 48-Column Complete CSV Format', () => {
         expect(dataRow[8]).toBe('true'); // layer2_passed
         expect(dataRow[9]).toBe('true'); // layer3_passed
         expect(dataRow[25]).toBe('accepted'); // l3_classification
-
       } catch (error) {
         expect((error as Error).message).toBe('Not implemented yet - TDD approach');
       }
@@ -852,7 +871,6 @@ describe('ExportService - T057: 48-Column Complete CSV Format', () => {
         expect(dataRow[4]).toBe('layer3'); // eliminated_at_layer
         expect(dataRow[25]).toBe('rejected'); // l3_classification
         expect(dataRow[36]).toContain('affiliate'); // l3_reasoning
-
       } catch (error) {
         expect((error as Error).message).toBe('Not implemented yet - TDD approach');
       }

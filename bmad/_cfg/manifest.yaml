@@ -1,7 +1,7 @@
 installation:
-  version: 6.0.0-alpha.0
-  installDate: '2025-10-12T05:39:54.781Z'
-  lastUpdated: '2025-10-12T05:39:54.781Z'
+  version: 6.0.0-alpha.10
+  installDate: '2025-11-16T21:07:08.866Z'
+  lastUpdated: '2025-11-16T21:07:08.866Z'
 modules:
   - core
   - bmb
@@ -9,3 +9,5 @@ modules:
   - cis
 ides:
   - claude-code
+  - codex
+  - cursor

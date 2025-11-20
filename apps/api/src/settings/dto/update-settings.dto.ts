@@ -16,6 +16,7 @@ import { Layer1RulesDto } from './layer1-rules.dto';
 import { Layer2RulesDto } from './layer2-rules.dto';
 import { Layer3RulesDto } from './layer3-rules.dto';
 import { ConfidenceBandsDto } from './confidence-bands.dto';
+/** @deprecated Manual review system removed in Phase 7, US5 - kept for backward compatibility */
 import { ManualReviewSettingsDto } from './manual-review-settings.dto';
 
 /**
@@ -96,6 +97,10 @@ export class UpdateSettingsDto {
   @Type(() => ConfidenceBandsDto)
   confidence_bands?: ConfidenceBandsDto;
 
+  /**
+   * @deprecated Manual review system removed in Phase 7, US5
+   * Kept for backward compatibility with existing settings records
+   */
   @IsOptional()
   @ValidateNested()
   @Type(() => ManualReviewSettingsDto)

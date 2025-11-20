@@ -188,7 +188,7 @@ let JobsService = JobsService_1 = class JobsService {
         if (confidence && confidence !== 'all') {
             query = query.eq('confidence_band', confidence);
         }
-        query = query.order('processed_at', { ascending: false });
+        query = query.order('updated_at', { ascending: false });
         query = query.range(offset, offset + normalizedPageSize - 1);
         const queryStart = performance.now();
         const { data: results, error, count } = await query;
@@ -403,6 +403,7 @@ let JobsService = JobsService_1 = class JobsService {
         return jobs.map((job) => ({
             id: job.id,
             name: job.name || 'Untitled Job',
+            status: 'completed',
             completedAt: job.completed_at,
             urlCount: job.total_urls || 0,
             totalCost: job.total_cost || 0,

@@ -1,0 +1,205 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>ui-overhaul</epicId>
+    <storyId>ui-overhaul-2</storyId>
+    <title>Home/Dashboard Overhaul</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint_artifacts/story-ui-overhaul-2.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user of the website scraper application</asA>
+    <iWant>a modern dashboard with multiple view modes and quick stats</iWant>
+    <soThat>I can quickly understand system status and access my jobs in the format I prefer</soThat>
+    <tasks>
+1. Update Home page route (2h) - Modify app/page.tsx, add redirect from /dashboard to /, set up page structure
+2. Create QuickStats component (2-3h) - components/home/QuickStats.tsx with data fetch, cards for Active Jobs/Success Rate/Recent Activity, loading skeletons, shadcn Card styling
+3. Create ViewToggle component (1-2h) - components/home/ViewToggle.tsx to toggle between cards/table, save preference with use-user-preferences hook, use shadcn Tabs or ToggleGroup
+4. Create JobsCardsView (3-4h) - components/home/JobsCardsView.tsx to fetch recent jobs, map to JobCard components, responsive grid layout
+5. Create JobCard component (2h) - components/jobs/JobCard.tsx (reusable for Story 3), display job name/status badge/created date/progress, click navigation, shadcn Card styling
+6. Create JobsTableView (3-4h) - components/home/JobsTableView.tsx using shadcn Table, integrate TanStack Table for sorting, show same data as cards view, click row navigation
+7. Create RecentActivity component (2h) - components/home/RecentActivity.tsx to fetch recent completions, display with relative timestamps, link to job details
+8. Create QuickActions component (1-2h) - components/home/QuickActions.tsx with "New Job" and "Export Recent" buttons using shadcn button component
+9. Integrate all components (2h) - Compose in app/page.tsx, handle data loading states, test all interactions
+10. Write tests (4-6h) - Unit tests for all components, E2E tests for user flows, test view persistence
+11. Polish and verify (2h) - Responsive testing, accessibility check, performance optimization, visual polish
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+**Page Structure:**
+- Home page accessible at / route
+- Old /dashboard redirects to /
+- Page loads with QuickStats at top
+- View toggle visible and functional
+- Default view respects user preference
+- Page responsive on all screen sizes
+
+**QuickStats Component:**
+- Shows "Active Jobs" count
+- Shows "Success Rate" percentage
+- Shows "Recent Activity" summary (jobs completed today/this week)
+- Cards have modern shadcn styling
+- Data loads from existing API endpoints
+- Loading skeleton shows while data fetches
+- Error state handled gracefully
+
+**View Toggle:**
+- Toggle button shows Cards/Table options
+- Clicking switches view
+- Selection persists to user preferences
+- Visual indication of active view
+- Smooth transition between views
+
+**Cards View:**
+- Displays recent jobs as cards (10-20 jobs)
+- Each card shows: job name, status, created date, progress (if active)
+- Status badge with color coding (success=green, failed=red, active=blue)
+- Click card navigates to job detail
+- Cards arranged in responsive grid (1 col mobile, 2-3 cols desktop)
+- Empty state if no jobs
+
+**Table View:**
+- Uses shadcn Table component styling
+- Shows same jobs as cards view
+- Columns: Name, Status, Created, Progress/Results
+- Sortable by all columns
+- Click row navigates to job detail
+- Responsive (scrollable on mobile)
+
+**Recent Activity:**
+- Shows 5-10 most recent job completions
+- Displays job name, status, completion time
+- Relative time display ("2 hours ago")
+- Links to job detail pages
+
+**Quick Actions:**
+- "New Job" button prominent
+- "Export Recent" button (exports last 10 jobs as CSV)
+- Buttons use shadcn button component
+- Actions functional and link to existing features
+
+**Testing:**
+- Unit tests for all components
+- E2E test: Navigate to home, view loads
+- E2E test: Switch between cards and table view
+- E2E test: Click card/row, navigate to detail
+- E2E test: Click quick action buttons
+- All tests pass
+
+**Performance:**
+- Page loads in <2 seconds
+- No layout shift during load
+- View switching instant (<100ms)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/tech-spec.md" title="Technical Specification" section="Story 2: Home/Dashboard Overhaul">
+        Story 2 implementation details: Create QuickStats component (2-3h), ViewToggle (1-2h), JobsCardsView (3-4h), JobCard component (2h), JobsTableView (3-4h), RecentActivity (2h), QuickActions (1-2h). All components use shadcn/ui with Tailwind styling. Total effort: ~1 week.
+      </doc>
+      <doc path="docs/epics.md" title="Epic: UI/UX Modernization Overhaul" section="Story 2: Home/Dashboard Overhaul">
+        Redesign main dashboard with modern data visualization and multiple view modes. Deliverables include Home page at / with quick stats cards, view toggle (cards/table), JobsCardsView/TableView components, recent activity feed, and quick actions toolbar. Value: Users immediately see modern interface.
+      </doc>
+      <doc path="docs/architecture-web.md" title="Web Frontend Architecture" section="Component Architecture">
+        Next.js 14 App Router with Server/Client Component split. React Query for server state (jobs, results), Zustand for client state. Radix UI components styled with Tailwind CSS. Real-time updates via polling (10-second intervals).
+      </doc>
+      <doc path="docs/component-inventory-web.md" title="Component Inventory" section="Existing Components">
+        61 React components: 18 Radix UI wrappers in components/ui/, 7 dashboard components, 8 results components. Patterns established: card components, progress indicators, data tables with TanStack Table.
+      </doc>
+      <doc path="docs/sprint_artifacts/tech-spec-epic-ui-overhaul.md" title="Epic Tech Spec" section="Foundation">
+        Story 1 established: AppShell, Sidebar, Header layout components, theme provider, command palette, user preferences API endpoint. Foundation in place for Story 2 implementation.
+      </doc>
+    </docs>
+    <code>
+      <artifact path="apps/web/app/layout.tsx" kind="layout" symbol="RootLayout" reason="Root layout with AppShell from Story 1 - provides sidebar and header structure for home page" />
+      <artifact path="apps/web/app/page.tsx" kind="page" symbol="HomePage" reason="Current landing page - will be transformed to new dashboard with QuickStats, view toggle, and job views" />
+      <artifact path="apps/web/components/ui/card.tsx" kind="component" symbol="Card" reason="shadcn Card component for QuickStats cards - already available from Story 1" />
+      <artifact path="apps/web/components/ui/tabs.tsx" kind="component" symbol="Tabs" reason="shadcn Tabs component - can be used for ViewToggle between cards/table" />
+      <artifact path="apps/web/components/ui/table.tsx" kind="component" symbol="Table" reason="shadcn Table component for JobsTableView - styling foundation" />
+      <artifact path="apps/web/components/ui/button.tsx" kind="component" symbol="Button" reason="shadcn Button for QuickActions toolbar buttons" />
+      <artifact path="apps/web/components/ui/badge.tsx" kind="component" symbol="Badge" reason="For status badges in job cards (success=green, failed=red, active=blue)" />
+      <artifact path="apps/web/components/dashboard/JobProgressCard.tsx" kind="component" symbol="JobProgressCard" reason="Existing job card pattern - reference for new JobCard component design" />
+      <artifact path="apps/web/hooks/use-user-preferences.ts" kind="hook" symbol="useUserPreferences" reason="User preferences hook from Story 1 - use to persist default view mode (cards/table)" />
+      <artifact path="apps/web/lib/api-client.ts" kind="utility" symbol="api" reason="API client for fetching jobs data - use for QuickStats and job views" />
+      <artifact path="apps/web/components/layout/AppShell.tsx" kind="component" symbol="AppShell" reason="Application shell from Story 1 - wraps all pages including new home page" />
+    </code>
+    <dependencies>
+      <node>
+        <package>next@14.2.15</package>
+        <package>react@^18</package>
+        <package>typescript@^5</package>
+        <package>@tanstack/react-query@^5.90.2</package>
+        <package>@tanstack/react-table@^8.21.3</package>
+        <package>zustand@^4.5.7</package>
+        <package>@radix-ui/react-tabs@^1.1.13</package>
+        <package>@radix-ui/react-progress@^1.1.8</package>
+        <package>tailwindcss@^3.4.1</package>
+        <package>class-variance-authority@^0.7.1</package>
+        <package>clsx@^2.1.1</package>
+        <package>tailwind-merge@^3.3.1</package>
+        <package>lucide-react@^0.545.0</package>
+        <package>date-fns@^3.6.0</package>
+        <package>axios@^1.12.2</package>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Use shadcn/ui components from components/ui/ directory - already installed in Story 1</constraint>
+    <constraint>Follow Next.js 14 App Router conventions - pages in app/ directory, use Server Components by default, Client Components only when needed</constraint>
+    <constraint>State management: React Query for server state (jobs data), Zustand for client state (view mode), useUserPreferences hook for persisted settings</constraint>
+    <constraint>Styling: Tailwind utility classes only, use cn() utility from lib/utils.ts for conditional classes, component variants with CVA</constraint>
+    <constraint>TypeScript strict mode - explicit types for all props and function returns, no 'any' types</constraint>
+    <constraint>Responsive design: mobile-first approach, use Tailwind breakpoints (sm:, md:, lg:, xl:), 1 column mobile, 2-3 columns desktop</constraint>
+    <constraint>Accessibility: WCAG 2.1 AA compliance, semantic HTML, ARIA labels for icon buttons, keyboard navigation support</constraint>
+    <constraint>Performance: Server Components where possible, lazy load heavy components, code splitting, page loads in &lt;2 seconds</constraint>
+    <constraint>File naming: PascalCase for components (JobCard.tsx), camelCase for hooks (use-theme.ts), co-locate tests in __tests__/ directories</constraint>
+    <constraint>Component organization: Feature-based (components/home/), shared UI in components/ui/, one component per file</constraint>
+    <constraint>Home page must be at / route (not /dashboard) - redirect old /dashboard to / for backward compatibility</constraint>
+    <constraint>Default view preference (cards/table) must persist via useUserPreferences hook to backend preferences API</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="GET /jobs" kind="REST endpoint" signature="GET /jobs?status=active&amp;limit=20" path="apps/api/src/jobs/jobs.controller.ts">
+      Returns list of jobs with status, created_at, progress. Use for QuickStats active jobs count and job lists in cards/table views.
+    </interface>
+    <interface name="useUserPreferences" kind="React hook" signature="useUserPreferences() => { preferences, updatePreferences, isLoading }" path="apps/web/hooks/use-user-preferences.ts">
+      Hook from Story 1 for reading/writing user preferences. Use to persist default view mode (cards/table) and load on page mount.
+    </interface>
+    <interface name="Card component" kind="UI component" signature="&lt;Card&gt;&lt;CardHeader&gt;&lt;CardTitle/&gt;&lt;/CardHeader&gt;&lt;CardContent/&gt;&lt;/Card&gt;" path="apps/web/components/ui/card.tsx">
+      shadcn Card component with header, content, footer sections. Use for QuickStats cards and job cards.
+    </interface>
+    <interface name="Table component" kind="UI component" signature="&lt;Table&gt;&lt;TableHeader/&gt;&lt;TableBody&gt;&lt;TableRow&gt;&lt;TableCell/&gt;&lt;/TableRow&gt;&lt;/TableBody&gt;&lt;/Table&gt;" path="apps/web/components/ui/table.tsx">
+      shadcn Table component for data tables. Integrate with TanStack Table for sorting.
+    </interface>
+    <interface name="Job type" kind="TypeScript interface" signature="interface Job { id: string; name: string; status: JobStatus; created_at: string; progress?: number; }" path="packages/shared/src/types">
+      Shared Job type from packages/shared. Use for type safety in all job-related components.
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Jest 30.2.0 + React Testing Library 16.3.0 for unit/component tests. Playwright 1.56.0 for E2E tests. Test files: ComponentName.test.tsx or ComponentName.spec.ts. Co-locate tests in __tests__/ directories. 80% coverage target for hooks, aim for 80% on components. Test user behavior (not implementation details), use screen.getByRole() and semantic queries, mock API calls with jest.mock() or MSW, test accessibility (ARIA labels, keyboard navigation).
+    </standards>
+    <locations>
+      <location>apps/web/__tests__/</location>
+      <location>apps/web/components/**/__tests__/</location>
+      <location>apps/web/tests/e2e/*.spec.ts</location>
+    </locations>
+    <ideas>
+      <test ac="Home page accessible at / route">E2E: Navigate to /, verify URL is /, check QuickStats visible</test>
+      <test ac="Old /dashboard redirects to /">E2E: Navigate to /dashboard, expect redirect to /, verify content loads</test>
+      <test ac="View toggle visible and functional">Unit: Render ViewToggle, click table button, verify onViewChange called with 'table'</test>
+      <test ac="Default view respects user preference">Unit: Mock useUserPreferences to return defaultView='table', render page, verify TableView shown not CardsView</test>
+      <test ac="QuickStats shows Active Jobs count">Unit: Mock jobs API to return 5 active jobs, render QuickStats, expect "5" to be displayed</test>
+      <test ac="Cards View displays recent jobs as cards">Unit: Mock 10 jobs, render JobsCardsView, expect 10 JobCard components rendered</test>
+      <test ac="Table View sortable by all columns">E2E: Load home, switch to table view, click "Created" column header, verify sort order changes</test>
+      <test ac="Click card navigates to job detail">E2E: Click first job card, expect navigation to /jobs/[id]</test>
+      <test ac="Selection persists to user preferences">E2E: Switch to table view, reload page, verify table view still active (preference loaded)</test>
+      <test ac="Page responsive on all screen sizes">E2E: Test on viewports: 375px (mobile), 768px (tablet), 1280px (desktop), verify layout adapts</test>
+    </ideas>
+  </tests>
+</story-context>

@@ -26,9 +26,7 @@ export class CleanupService {
   async hardDeleteOldArchives(): Promise<void> {
     this.logger.log('Starting cleanup of archived jobs...');
 
-    const oneEightyDaysAgo = new Date(
-      Date.now() - 180 * 24 * 60 * 60 * 1000
-    );
+    const oneEightyDaysAgo = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000);
 
     try {
       // First, query jobs eligible for deletion
@@ -40,10 +38,7 @@ export class CleanupService {
         .lt('archived_at', oneEightyDaysAgo.toISOString());
 
       if (queryError) {
-        this.logger.error(
-          `Cleanup query failed: ${queryError.message}`,
-          queryError.stack
-        );
+        this.logger.error(`Cleanup query failed: ${queryError.message}`, queryError.stack);
         throw queryError;
       }
 
@@ -54,9 +49,7 @@ export class CleanupService {
         return;
       }
 
-      this.logger.log(
-        `Found ${jobIds.length} jobs eligible for cleanup (archived > 180 days)`
-      );
+      this.logger.log(`Found ${jobIds.length} jobs eligible for cleanup (archived > 180 days)`);
 
       // Hard delete jobs in batches to avoid locking entire table
       const batchSize = 100;
@@ -68,7 +61,7 @@ export class CleanupService {
         const batchEnd = Math.min(i + batchSize, jobIds.length);
 
         this.logger.debug(
-          `Deleting batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(jobIds.length / batchSize)} (${batchStart}-${batchEnd})`
+          `Deleting batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(jobIds.length / batchSize)} (${batchStart}-${batchEnd})`,
         );
 
         const { error: deleteError } = await this.supabase
@@ -78,29 +71,19 @@ export class CleanupService {
           .in('id', batch);
 
         if (deleteError) {
-          this.logger.error(
-            `Batch delete failed: ${deleteError.message}`,
-            deleteError.stack
-          );
+          this.logger.error(`Batch delete failed: ${deleteError.message}`, deleteError.stack);
           throw deleteError;
         }
 
         deletedCount += batch.length;
       }
 
-      this.logger.log(
-        `Successfully hard-deleted ${deletedCount} archived jobs (180+ days old)`
-      );
-      this.logger.log(
-        `Associated url_results and related data deleted via CASCADE`
-      );
+      this.logger.log(`Successfully hard-deleted ${deletedCount} archived jobs (180+ days old)`);
+      this.logger.log(`Associated url_results and related data deleted via CASCADE`);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       const errorStack = error instanceof Error ? error.stack : undefined;
-      this.logger.error(
-        `Cleanup cron job failed: ${errorMessage}`,
-        errorStack
-      );
+      this.logger.error(`Cleanup cron job failed: ${errorMessage}`, errorStack);
       // Don't re-throw - cron should continue running
     }
   }
@@ -110,9 +93,7 @@ export class CleanupService {
    * @returns Number of archived jobs 180+ days old
    */
   async getCleanupEligibleCount(): Promise<number> {
-    const oneEightyDaysAgo = new Date(
-      Date.now() - 180 * 24 * 60 * 60 * 1000
-    );
+    const oneEightyDaysAgo = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000);
 
     const { count, error } = await this.supabase
       .getClient()
@@ -136,11 +117,7 @@ export class CleanupService {
   async manualDelete(jobId: string): Promise<void> {
     this.logger.warn(`Manually deleting job: ${jobId}`);
 
-    const { error } = await this.supabase
-      .getClient()
-      .from('jobs')
-      .delete()
-      .eq('id', jobId);
+    const { error } = await this.supabase.getClient().from('jobs').delete().eq('id', jobId);
 
     if (error) {
       this.logger.error(`Manual delete failed: ${error.message}`);

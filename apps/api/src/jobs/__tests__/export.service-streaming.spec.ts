@@ -31,7 +31,6 @@ function generateMockUrlResult(index: number): UrlResult {
     retry_count: 0,
     last_error: null,
     last_retry_at: null,
-    processed_at: new Date(),
     layer1_factors: {
       tld_type: 'gtld',
       tld_value: '.com',
@@ -66,7 +65,10 @@ class MockJobsService {
   }
 
   async getJobById(id: string) {
-    if (id === '550e8400-e29b-41d4-a716-446655440000' || id === '550e8400-e29b-41d4-a716-446655440000') {
+    if (
+      id === '550e8400-e29b-41d4-a716-446655440000' ||
+      id === '550e8400-e29b-41d4-a716-446655440000'
+    ) {
       return { id, name: 'Test Job', status: 'completed' };
     }
     return null;
@@ -132,7 +134,10 @@ describe('ExportService - Streaming Tests (T061)', () => {
     it('should process results in batches of 100', async () => {
       mockJobsService.resetCallLog();
 
-      const stream = await exportService.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'summary');
+      const stream = await exportService.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'summary',
+      );
 
       // Consume stream
       let lineCount = 0;
@@ -173,7 +178,10 @@ describe('ExportService - Streaming Tests (T061)', () => {
       }).compile();
 
       const service = moduleFixture.get<ExportService>(ExportService);
-      const stream = await service.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'summary');
+      const stream = await service.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'summary',
+      );
 
       let lineCount = 0;
       for await (const chunk of stream) {
@@ -202,7 +210,10 @@ describe('ExportService - Streaming Tests (T061)', () => {
       }).compile();
 
       const service = moduleFixture.get<ExportService>(ExportService);
-      const stream = await service.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'summary');
+      const stream = await service.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'summary',
+      );
 
       let lineCount = 0;
       for await (const chunk of stream) {
@@ -223,7 +234,10 @@ describe('ExportService - Streaming Tests (T061)', () => {
 
   describe('2. Streaming Behavior', () => {
     it('should return a Node.js ReadableStream', async () => {
-      const stream = await exportService.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'summary');
+      const stream = await exportService.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'summary',
+      );
 
       expect(stream).toBeDefined();
       expect(typeof stream.read).toBe('function');
@@ -232,7 +246,10 @@ describe('ExportService - Streaming Tests (T061)', () => {
     });
 
     it('should emit data in chunks', async () => {
-      const stream = await exportService.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'summary');
+      const stream = await exportService.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'summary',
+      );
 
       let chunkCount = 0;
       for await (const chunk of stream) {
@@ -246,7 +263,10 @@ describe('ExportService - Streaming Tests (T061)', () => {
     });
 
     it('should emit complete CSV structure', async () => {
-      const stream = await exportService.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'summary');
+      const stream = await exportService.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'summary',
+      );
 
       let csvContent = '';
       for await (const chunk of stream) {
@@ -286,7 +306,10 @@ describe('ExportService - Streaming Tests (T061)', () => {
       }).compile();
 
       const service = moduleFixture.get<ExportService>(ExportService);
-      const stream = await service.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'summary');
+      const stream = await service.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'summary',
+      );
 
       let csvContent = '';
       for await (const chunk of stream) {
@@ -308,7 +331,10 @@ describe('ExportService - Streaming Tests (T061)', () => {
       // by checking that batch calls are made sequentially, not all at once
 
       mockJobsService.resetCallLog();
-      const stream = await exportService.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'summary');
+      const stream = await exportService.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'summary',
+      );
 
       // Start consuming stream
       let processedChunks = 0;

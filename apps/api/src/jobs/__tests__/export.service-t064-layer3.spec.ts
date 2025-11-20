@@ -113,10 +113,9 @@ describe('ExportService - T064: Layer 3 Column Generator', () => {
       retry_count: 0,
       last_error: null,
       last_retry_at: null,
-      processed_at: new Date('2025-01-13T12:00:00Z'),
+      updated_at: new Date('2025-01-13T12:00:00Z'),
       reviewer_notes: null,
       created_at: new Date('2025-01-13T11:00:00Z'),
-      updated_at: new Date('2025-01-13T12:00:00Z'),
       layer1_factors: null,
       layer2_factors: null,
       layer3_factors: layer3Factors,
@@ -172,7 +171,10 @@ describe('ExportService - T064: Layer 3 Column Generator', () => {
       });
 
       // Act
-      const stream = await exportService.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'complete');
+      const stream = await exportService.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'complete',
+      );
       let csvContent = '';
       for await (const chunk of stream) {
         csvContent += chunk.toString();
@@ -211,7 +213,10 @@ describe('ExportService - T064: Layer 3 Column Generator', () => {
       });
 
       // Act
-      const stream = await exportService.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'layer3');
+      const stream = await exportService.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'layer3',
+      );
       let csvContent = '';
       for await (const chunk of stream) {
         csvContent += chunk.toString();
@@ -245,7 +250,10 @@ describe('ExportService - T064: Layer 3 Column Generator', () => {
       });
 
       // Act
-      const stream = await exportService.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'complete');
+      const stream = await exportService.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'complete',
+      );
       let csvContent = '';
       for await (const chunk of stream) {
         csvContent += chunk.toString();
@@ -274,7 +282,10 @@ describe('ExportService - T064: Layer 3 Column Generator', () => {
       });
 
       // Act
-      const stream = await exportService.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'complete');
+      const stream = await exportService.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'complete',
+      );
       let csvContent = '';
       for await (const chunk of stream) {
         csvContent += chunk.toString();
@@ -319,7 +330,10 @@ describe('ExportService - T064: Layer 3 Column Generator', () => {
       });
 
       // Act
-      const stream = await exportService.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'layer3');
+      const stream = await exportService.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'layer3',
+      );
       let csvContent = '';
       for await (const chunk of stream) {
         csvContent += chunk.toString();
@@ -357,7 +371,10 @@ describe('ExportService - T064: Layer 3 Column Generator', () => {
       });
 
       // Act
-      const stream = await exportService.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'layer3');
+      const stream = await exportService.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'layer3',
+      );
       let csvContent = '';
       for await (const chunk of stream) {
         csvContent += chunk.toString();
@@ -386,7 +403,10 @@ describe('ExportService - T064: Layer 3 Column Generator', () => {
       });
 
       // Act
-      const stream = await exportService.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'layer3');
+      const stream = await exportService.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'layer3',
+      );
       let csvContent = '';
       for await (const chunk of stream) {
         csvContent += chunk.toString();
@@ -421,7 +441,10 @@ describe('ExportService - T064: Layer 3 Column Generator', () => {
       });
 
       // Act
-      const stream = await exportService.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'layer3');
+      const stream = await exportService.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'layer3',
+      );
       let csvContent = '';
       for await (const chunk of stream) {
         csvContent += chunk.toString();
@@ -450,7 +473,10 @@ describe('ExportService - T064: Layer 3 Column Generator', () => {
       });
 
       // Act
-      const stream = await exportService.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'layer3');
+      const stream = await exportService.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'layer3',
+      );
       let csvContent = '';
       for await (const chunk of stream) {
         csvContent += chunk.toString();
@@ -485,7 +511,10 @@ describe('ExportService - T064: Layer 3 Column Generator', () => {
       });
 
       // Act
-      const stream = await exportService.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'layer3');
+      const stream = await exportService.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'layer3',
+      );
       let csvContent = '';
       for await (const chunk of stream) {
         csvContent += chunk.toString();
@@ -517,7 +546,10 @@ describe('ExportService - T064: Layer 3 Column Generator', () => {
       });
 
       // Act
-      const stream = await exportService.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'layer3');
+      const stream = await exportService.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'layer3',
+      );
       let csvContent = '';
       for await (const chunk of stream) {
         csvContent += chunk.toString();
@@ -546,7 +578,10 @@ describe('ExportService - T064: Layer 3 Column Generator', () => {
       });
 
       // Act
-      const stream = await exportService.streamCSVExport('550e8400-e29b-41d4-a716-446655440000', 'layer3');
+      const stream = await exportService.streamCSVExport(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'layer3',
+      );
       let csvContent = '';
       for await (const chunk of stream) {
         csvContent += chunk.toString();

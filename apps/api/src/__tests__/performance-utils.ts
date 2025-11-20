@@ -34,14 +34,11 @@ export async function runBatchSimulation({
       if (index >= totalUrls) break;
 
       const varianceMultiplier = 1 + ((index % 10) - 5) * 0.02 * variability;
-      const iterations = Math.max(
-        100,
-        Math.floor(workIterations * varianceMultiplier),
-      );
+      const iterations = Math.max(100, Math.floor(workIterations * varianceMultiplier));
 
       let local = index % 97;
       for (let i = 0; i < iterations; i++) {
-        local = (local * 1.0003 + Math.sqrt((i + 1) * (index % 5 + 1))) % 100_000;
+        local = (local * 1.0003 + Math.sqrt((i + 1) * ((index % 5) + 1))) % 100_000;
       }
       checksum += local;
 
@@ -152,13 +149,12 @@ export function buildMockUrlResult(index: number): UrlResult {
     url_id: `url-${index}`,
     confidence_score: (index % 100) / 100,
     confidence_band: (index % 2 === 0 ? 'high' : 'medium') as UrlResult['confidence_band'],
-    eliminated_at_layer: (index % 3 === 0 ? 'layer1' : index % 3 === 1 ? 'layer2' : 'passed_all'),
+    eliminated_at_layer: index % 3 === 0 ? 'layer1' : index % 3 === 1 ? 'layer2' : 'passed_all',
     processing_time_ms: 1200 + (index % 120),
     total_cost: 0.03 + (index % 5) * 0.002,
     retry_count: index % 3,
     last_error: index % 7 === 0 ? 'Transient timeout' : null,
     last_retry_at: index % 7 === 0 ? baseDate : null,
-    processed_at: baseDate,
     layer1_factors: {
       tld_type: 'gtld',
       tld_value: '.com',

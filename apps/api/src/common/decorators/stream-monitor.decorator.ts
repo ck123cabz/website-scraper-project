@@ -44,9 +44,7 @@ export class StreamMonitor extends Transform {
       const elapsed = now - this.startTime;
       const throughput = ((this.rowCount / elapsed) * 1000).toFixed(0);
 
-      this.logger.debug(
-        `${this.operationName}: ${this.rowCount} rows, ${throughput} rows/sec`,
-      );
+      this.logger.debug(`${this.operationName}: ${this.rowCount} rows, ${throughput} rows/sec`);
 
       this.lastLogTime = now;
     }

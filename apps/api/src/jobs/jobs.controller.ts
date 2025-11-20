@@ -483,6 +483,37 @@ export class JobsController {
     }
   }
 
+  @Delete(':id')
+  async deleteJob(@Param('id') jobId: string) {
+    try {
+      await this.jobsService.deleteJob(jobId);
+
+      return {
+        success: true,
+        message: 'Job deleted successfully',
+      };
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Job not found')) {
+        throw new HttpException(
+          {
+            success: false,
+            error: 'Job not found',
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      console.error('[JobsController] Error deleting job:', error);
+      throw new HttpException(
+        {
+          success: false,
+          error: 'Failed to delete job. Please try again.',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   @Delete(':id/cancel')
   async cancelJob(@Param('id') jobId: string) {
     try {
@@ -502,6 +533,54 @@ export class JobsController {
         {
           success: false,
           error: 'Failed to cancel job. Please try again.',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post(':id/retry')
+  async retryJob(@Param('id') jobId: string) {
+    try {
+      await this.queueService.retryJob(jobId);
+
+      // Fetch updated job to return
+      const job = await this.jobsService.getJobById(jobId);
+
+      return {
+        success: true,
+        data: job,
+        message: 'Job retry initiated successfully',
+      };
+    } catch (error) {
+      console.error('[JobsController] Error retrying job:', error);
+
+      // Handle specific error cases
+      if (error instanceof Error) {
+        if (error.message.includes('Job not found')) {
+          throw new HttpException(
+            {
+              success: false,
+              error: 'Job not found',
+            },
+            HttpStatus.NOT_FOUND,
+          );
+        }
+        if (error.message.includes('Can only retry failed jobs')) {
+          throw new HttpException(
+            {
+              success: false,
+              error: error.message,
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      }
+
+      throw new HttpException(
+        {
+          success: false,
+          error: 'Failed to retry job. Please try again.',
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );

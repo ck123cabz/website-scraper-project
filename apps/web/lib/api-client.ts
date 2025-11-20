@@ -22,10 +22,45 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor for error handling
+// Helper function to convert snake_case to camelCase
+function toCamelCase(str: string): string {
+  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+// Helper function to recursively transform object keys from snake_case to camelCase
+function transformKeysToCamelCase(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(transformKeysToCamelCase);
+  }
+
+  if (typeof obj === 'object' && obj.constructor === Object) {
+    const transformed: any = {};
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        const camelKey = toCamelCase(key);
+        transformed[camelKey] = transformKeysToCamelCase(obj[key]);
+      }
+    }
+    return transformed;
+  }
+
+  return obj;
+}
+
+// Response interceptor for error handling and snake_case to camelCase transformation
 apiClient.interceptors.response.use(
   (response) => {
     console.log(`[API Response] ${response.status} ${response.config.url}`);
+
+    // Transform response data keys from snake_case to camelCase
+    if (response.data) {
+      response.data = transformKeysToCamelCase(response.data);
+    }
+
     return response;
   },
   (error) => {
@@ -75,6 +110,18 @@ export const jobsApi = {
     return response.data;
   },
 
+  // Retry job
+  retry: async (id: string) => {
+    const response = await apiClient.post(`/jobs/${id}/retry`);
+    return response.data;
+  },
+
+  // Delete job
+  deleteJob: async (id: string) => {
+    const response = await apiClient.delete(`/jobs/${id}`);
+    return response.data;
+  },
+
   // Queue status for dashboard polling
   getQueueStatus: async (params?: { includeCompleted?: boolean; limit?: number; offset?: number }) => {
     const queryParams: Record<string, string | number | boolean> = {};
@@ -105,7 +152,7 @@ export const jobsApi = {
 // Results API
 export interface GetResultsParams {
   page?: number;
-  limit?: number;
+  pageSize?: number; // API expects 'pageSize', not 'limit'
   status?: 'success' | 'rejected' | 'failed';
   classification?: 'suitable' | 'not_suitable' | 'rejected_prefilter';
   search?: string;
@@ -131,7 +178,7 @@ export const resultsApi = {
 
   // Export job results
   exportJobResults: async (jobId: string, params: ExportResultsParams) => {
-    const response = await apiClient.get(`/jobs/${jobId}/export`, {
+    const response = await apiClient.post(`/jobs/${jobId}/export`, {}, {
       params,
       responseType: 'blob',
     });

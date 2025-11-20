@@ -182,7 +182,7 @@ describe('JobsController - GET /jobs/:jobId/results/:resultId (T038)', () => {
               product_offering: 0.85,
               layout_quality: 0.75,
               navigation_complexity: 0.72,
-              monetization_indicators: 0.80,
+              monetization_indicators: 0.8,
             },
             keywords_found: ['enterprise', 'solution', 'platform', 'API'],
             ad_networks_detected: [],
@@ -201,7 +201,7 @@ describe('JobsController - GET /jobs/:jobId/results/:resultId (T038)', () => {
             classification: 'accepted',
             sophistication_signals: {
               design_quality: {
-                score: 0.90,
+                score: 0.9,
                 indicators: ['Modern interface', 'Consistent branding'],
               },
               authority_indicators: {
@@ -867,14 +867,18 @@ describe('JobsController - POST /jobs/:jobId/export (T056)', () => {
       it('should handle concurrent export requests', async () => {
         // Act - Make multiple concurrent export requests
         const requests = [
-          request(app.getHttpServer()).post('/jobs/' + jobId + '/export').send({ format: 'complete' }),
-          request(app.getHttpServer()).post('/jobs/' + jobId + '/export').send({ format: 'summary' }),
-          request(app.getHttpServer()).post('/jobs/' + jobId + '/export').send({ format: 'layer1' }),
+          request(app.getHttpServer())
+            .post('/jobs/' + jobId + '/export')
+            .send({ format: 'complete' }),
+          request(app.getHttpServer())
+            .post('/jobs/' + jobId + '/export')
+            .send({ format: 'summary' }),
+          request(app.getHttpServer())
+            .post('/jobs/' + jobId + '/export')
+            .send({ format: 'layer1' }),
         ];
 
-        await Promise.all(
-          requests.map(req => req.expect(HttpStatus.NOT_FOUND))
-        );
+        await Promise.all(requests.map((req) => req.expect(HttpStatus.NOT_FOUND)));
 
         // TODO: Once endpoint is implemented, verify:
         // - All requests complete successfully

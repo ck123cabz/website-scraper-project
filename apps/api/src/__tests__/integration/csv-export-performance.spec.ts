@@ -71,23 +71,23 @@ describe('SC-002 CSV Export Performance Validation (T122)', () => {
     // Mock paginated results
     mockJobsService.getJobResults.mockImplementation(
       async (jobId: string, page: number, pageSize: number) => {
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = Math.min(startIndex + pageSize, totalRows);
-      const results: UrlResult[] = [];
+        const startIndex = (page - 1) * pageSize;
+        const endIndex = Math.min(startIndex + pageSize, totalRows);
+        const results: UrlResult[] = [];
 
-      for (let i = startIndex; i < endIndex; i++) {
-        results.push(buildMockUrlResult(i));
-      }
+        for (let i = startIndex; i < endIndex; i++) {
+          results.push(buildMockUrlResult(i));
+        }
 
-      return {
-        results,
-        pagination: {
-          page,
-          pageSize,
-          total: totalRows,
-          pages: Math.ceil(totalRows / pageSize),
-        },
-      };
+        return {
+          results,
+          pagination: {
+            page,
+            pageSize,
+            total: totalRows,
+            pages: Math.ceil(totalRows / pageSize),
+          },
+        };
       },
     );
 
@@ -169,23 +169,23 @@ describe('SC-002 CSV Export Performance Validation (T122)', () => {
     // Mock paginated results
     mockJobsService.getJobResults.mockImplementation(
       async (jobId: string, page: number, pageSize: number) => {
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = Math.min(startIndex + pageSize, totalRows);
-      const results: UrlResult[] = [];
+        const startIndex = (page - 1) * pageSize;
+        const endIndex = Math.min(startIndex + pageSize, totalRows);
+        const results: UrlResult[] = [];
 
-      for (let i = startIndex; i < endIndex; i++) {
-        results.push(buildMockUrlResult(i));
-      }
+        for (let i = startIndex; i < endIndex; i++) {
+          results.push(buildMockUrlResult(i));
+        }
 
-      return {
-        results,
-        pagination: {
-          page,
-          pageSize,
-          total: totalRows,
-          pages: Math.ceil(totalRows / pageSize),
-        },
-      };
+        return {
+          results,
+          pagination: {
+            page,
+            pageSize,
+            total: totalRows,
+            pages: Math.ceil(totalRows / pageSize),
+          },
+        };
       },
     );
 
@@ -263,28 +263,28 @@ describe('SC-002 CSV Export Performance Validation (T122)', () => {
     // Mock paginated results with large text
     mockJobsService.getJobResults.mockImplementation(
       async (jobId: string, page: number, pageSize: number) => {
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = Math.min(startIndex + pageSize, totalRows);
-      const results: UrlResult[] = [];
+        const startIndex = (page - 1) * pageSize;
+        const endIndex = Math.min(startIndex + pageSize, totalRows);
+        const results: UrlResult[] = [];
 
-      for (let i = startIndex; i < endIndex; i++) {
-        const result = buildMockUrlResult(i);
-        // Replace Layer3 reasoning with large text
-        if (result.layer3_factors) {
-          result.layer3_factors.reasoning = largeReasoning;
+        for (let i = startIndex; i < endIndex; i++) {
+          const result = buildMockUrlResult(i);
+          // Replace Layer3 reasoning with large text
+          if (result.layer3_factors) {
+            result.layer3_factors.reasoning = largeReasoning;
+          }
+          results.push(result);
         }
-        results.push(result);
-      }
 
-      return {
-        results,
-        pagination: {
-          page,
-          pageSize,
-          total: totalRows,
-          pages: Math.ceil(totalRows / pageSize),
-        },
-      };
+        return {
+          results,
+          pagination: {
+            page,
+            pageSize,
+            total: totalRows,
+            pages: Math.ceil(totalRows / pageSize),
+          },
+        };
       },
     );
 
@@ -375,23 +375,23 @@ describe('SC-002 CSV Export Performance Validation (T122)', () => {
     // Mock paginated results
     mockJobsService.getJobResults.mockImplementation(
       async (jobId: string, page: number, pageSize: number) => {
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = Math.min(startIndex + pageSize, totalRows);
-      const results: UrlResult[] = [];
+        const startIndex = (page - 1) * pageSize;
+        const endIndex = Math.min(startIndex + pageSize, totalRows);
+        const results: UrlResult[] = [];
 
-      for (let i = startIndex; i < endIndex; i++) {
-        results.push(buildMockUrlResult(i));
-      }
+        for (let i = startIndex; i < endIndex; i++) {
+          results.push(buildMockUrlResult(i));
+        }
 
-      return {
-        results,
-        pagination: {
-          page,
-          pageSize,
-          total: totalRows,
-          pages: Math.ceil(totalRows / pageSize),
-        },
-      };
+        return {
+          results,
+          pagination: {
+            page,
+            pageSize,
+            total: totalRows,
+            pages: Math.ceil(totalRows / pageSize),
+          },
+        };
       },
     );
 
@@ -513,25 +513,26 @@ describe('SC-002 CSV Export Performance Validation (T122)', () => {
 
       // Mock paginated results
       mockJobsService.getJobResults.mockImplementation(
-      async (jobId: string, page: number, pageSize: number) => {
-        const startIndex = (page - 1) * pageSize;
-        const endIndex = Math.min(startIndex + pageSize, totalRows);
-        const results: UrlResult[] = [];
+        async (jobId: string, page: number, pageSize: number) => {
+          const startIndex = (page - 1) * pageSize;
+          const endIndex = Math.min(startIndex + pageSize, totalRows);
+          const results: UrlResult[] = [];
 
-        for (let i = startIndex; i < endIndex; i++) {
-          results.push(buildMockUrlResult(i));
-        }
+          for (let i = startIndex; i < endIndex; i++) {
+            results.push(buildMockUrlResult(i));
+          }
 
-        return {
-          results,
-          pagination: {
-            page,
-            pageSize,
-            total: totalRows,
-            pages: Math.ceil(totalRows / pageSize),
-          },
-        };
-      });
+          return {
+            results,
+            pagination: {
+              page,
+              pageSize,
+              total: totalRows,
+              pages: Math.ceil(totalRows / pageSize),
+            },
+          };
+        },
+      );
 
       // Start performance measurement
       const startTime = performance.now();

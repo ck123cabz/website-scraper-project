@@ -328,7 +328,8 @@ describe('Retry Logic with Exponential Backoff (T027)', () => {
     });
 
     it('should retry after 4 seconds on third transient failure', async () => {
-      const mockFn = jest.fn()
+      const mockFn = jest
+        .fn()
         .mockRejectedValueOnce(new Error('ETIMEDOUT'))
         .mockRejectedValueOnce(new Error('ETIMEDOUT'))
         .mockRejectedValueOnce(new Error('ETIMEDOUT'));
@@ -636,18 +637,16 @@ describe('Permanent Failure After 3 Retry Attempts (T028)', () => {
           const isLastAttempt = attempt === maxAttempts - 1;
 
           // Update retry tracking in url_results
-          await supabaseClient
-            .from('url_results')
-            .upsert({
-              url_id: urlId,
-              job_id: jobId,
-              url: url,
-              status: isLastAttempt ? 'failed' : 'processing',
-              retry_count: attemptNumber,
-              last_error: errorMessage.slice(0, 200), // Sanitize error length
-              last_retry_at: new Date().toISOString(),
-              processing_time_ms: Date.now() - startTime,
-            });
+          await supabaseClient.from('url_results').upsert({
+            url_id: urlId,
+            job_id: jobId,
+            url: url,
+            status: isLastAttempt ? 'failed' : 'processing',
+            retry_count: attemptNumber,
+            last_error: errorMessage.slice(0, 200), // Sanitize error length
+            last_retry_at: new Date().toISOString(),
+            processing_time_ms: Date.now() - startTime,
+          });
 
           if (isLastAttempt) {
             // Mark job as failed after max retries

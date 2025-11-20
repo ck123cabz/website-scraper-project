@@ -8,19 +8,21 @@ output_folder: "{config_source}:output_folder"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
 date: system-generated
+sprint_artifacts: "{config_source}:sprint_artifacts"
+story_dir: "{sprint_artifacts}"
 
 # Workflow components
-installed_path: "{project-root}/bmad/bmm/workflows/create-story"
+installed_path: "{project-root}/bmad/bmm/workflows/4-implementation/create-story"
 template: "{installed_path}/template.md"
 instructions: "{installed_path}/instructions.md"
 validation: "{installed_path}/checklist.md"
 
 # Variables and inputs
 variables:
-  story_dir: "{config_source}:dev_story_location" # Directory where stories are stored
+  sprint_status: "{sprint_artifacts}/sprint-status.yaml || {output_folder}/sprint-status.yaml" # Primary source for story tracking
   epics_file: "{output_folder}/epics.md" # Preferred source for epic/story breakdown
-  prd_file: "{output_folder}/prd.md" # Fallback for requirements
-  hla_file: "{output_folder}/high-level-architecture.md" # Optional architecture context
+  prd_file: "{output_folder}/PRD.md" # Fallback for requirements
+  architecture_file: "{output_folder}/architecture.md" # Optional architecture context
   tech_spec_file: "" # Will be auto-discovered from docs as tech-spec-epic-{{epic_num}}-*.md
   tech_spec_search_dir: "{project-root}/docs"
   tech_spec_glob_template: "tech-spec-epic-{{epic_num}}*.md"
@@ -28,45 +30,42 @@ variables:
     - "{project-root}/docs"
     - "{output_folder}"
   arch_docs_file_names: |
-    - tech-stack.md
-    - unified-project-structure.md
-    - coding-standards.md
-    - testing-strategy.md
-    - backend-architecture.md
-    - frontend-architecture.md
-    - data-models.md
-    - database-schema.md
-    - rest-api-spec.md
-    - external-apis.md
+    - *architecture*.md
   story_title: "" # Will be elicited if not derivable
-  epic_num: 1
-  story_num: 1
-  auto_run_context: true # Optionally run story-context after creation
-  non_interactive: true # Generate without elicitation; avoid interactive prompts
 
-# Output configuration
-default_output_file: "{story_dir}/story-{{epic_num}}.{{story_num}}.md"
+default_output_file: "{story_dir}/{{story_key}}.md"
 
-required_tools:
-  - list_files
-  - file_info
-  - read_file
-  - write_file
-  - create_directory
-  - search_repo
-  - glob
+# Smart input file references - handles both whole docs and sharded docs
+# Priority: Whole document first, then sharded version
+# Strategy: SELECTIVE LOAD - only load the specific epic needed for this story
+input_file_patterns:
+  prd:
+    description: "Product requirements (optional)"
+    whole: "{output_folder}/*prd*.md"
+    sharded: "{output_folder}/*prd*/*.md"
+    load_strategy: "FULL_LOAD"
+  tech_spec:
+    description: "Technical specification (Quick Flow track)"
+    whole: "{output_folder}/tech-spec.md"
+    load_strategy: "FULL_LOAD"
+  architecture:
+    description: "System architecture and decisions"
+    whole: "{output_folder}/*architecture*.md"
+    sharded: "{output_folder}/*architecture*/*.md"
+    load_strategy: "FULL_LOAD"
+  ux_design:
+    description: "UX design specification (if UI)"
+    whole: "{output_folder}/*ux*.md"
+    sharded: "{output_folder}/*ux*/*.md"
+    load_strategy: "FULL_LOAD"
+  epics:
+    description: "Epic containing this story"
+    whole: "{output_folder}/*epic*.md"
+    sharded_index: "{output_folder}/*epic*/index.md"
+    sharded_single: "{output_folder}/*epic*/epic-{{epic_num}}.md"
+    load_strategy: "SELECTIVE_LOAD"
+  document_project:
+    sharded: "{output_folder}/index.md"
+    load_strategy: "INDEX_GUIDED"
 
-recommended_inputs:
-  - epics: "Epic breakdown (epic-list.md)"
-  - prd: "PRD document"
-  - hla: "High-Level Architecture (optional)"
-
-tags:
-  - story-generation
-  - planning
-  - bmad-v6
-
-execution_hints:
-  interactive: false
-  autonomous: true
-  iterative: true
+standalone: true

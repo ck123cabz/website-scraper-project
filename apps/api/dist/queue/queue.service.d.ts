@@ -27,4 +27,5 @@ export declare class QueueService {
     pauseJob(jobId: string): Promise<void>;
     resumeJob(jobId: string): Promise<void>;
     cancelJob(jobId: string): Promise<void>;
+    retryJob(jobId: string): Promise<void>;
 }

@@ -1,0 +1,134 @@
+================================================================================
+                        WEB APP TEST COVERAGE SUMMARY
+                           Date: 2025-11-18
+================================================================================
+
+Command Run: npm run test:coverage
+Working Directory: apps/web
+
+--------------------------------------------------------------------------------
+OVERALL METRICS
+--------------------------------------------------------------------------------
+Statements   : 47.81% ❌ (Target: 80%)
+Branches     : 47.29% ❌ (Target: 80%)
+Functions    : 41.88% ❌ (Target: 80%)
+Lines        : 48.26% ❌ (Target: 80%)
+
+Test Pass Rate: 79.7% (482 passing / 123 failing / 605 total)
+Test Suites   : 21 passed / 10 failed / 31 total
+
+--------------------------------------------------------------------------------
+HOOKS COVERAGE (Tech Spec Requirement: >80%)
+--------------------------------------------------------------------------------
+Overall Hooks Coverage: 40.96% ❌ DOES NOT MEET REQUIREMENT
+
+Gap to Target: 39.04 percentage points
+
+Individual Hook Files:
+  ✅ job-transform.ts          : 100.00% (Perfect)
+  ✅ use-current-url-timer.ts  : 100.00% (Perfect)
+  ✅ use-export-results.ts     : 100.00% (Needs branch improvement)
+  ✅ use-user-preferences.ts   : 100.00% (Perfect)
+  ✅ useQueuePolling.ts        :  90.32% (Good, needs branch improvement)
+  ⚠️  useSettings.ts           : 100.00% statements (66.66% branches)
+  ❌ use-activity-logs.ts      :   0.00% (97 lines untested)
+  ❌ use-jobs.ts               :  19.56% (188 lines untested)
+  ❌ use-results.ts            :   0.00% (84 lines untested)
+  ❌ use-toast.ts              :   0.00% (194 lines untested)
+
+Files Meeting Threshold : 5/10 (50%)
+Files Below Threshold   : 5/10 (50%)
+
+--------------------------------------------------------------------------------
+CRITICAL COVERAGE GAPS
+--------------------------------------------------------------------------------
+
+Priority 1 - Completely Untested Hooks (0% coverage):
+  • use-toast.ts         (194 lines) - Critical UI functionality
+  • use-activity-logs.ts  (97 lines) - Core activity tracking
+  • use-results.ts        (84 lines) - Core data fetching
+
+Priority 2 - Severely Under-Tested Hooks (<20% coverage):
+  • use-jobs.ts           (19.56%) - Critical job management
+
+Priority 3 - Infrastructure (0% coverage):
+  • api-client.ts         (14.28%) - Core API layer
+  • realtime-service.ts    (0.00%) - Real-time updates
+  • supabase-client.ts     (0.00%) - Database client
+
+--------------------------------------------------------------------------------
+EFFORT ESTIMATE TO REACH >80% HOOKS COVERAGE
+--------------------------------------------------------------------------------
+
+Additional Tests Required: 62-80 test cases
+Estimated Developer Time : 3-4 days
+Complexity Level        : Medium-High
+  - Requires React Query mocking
+  - Async state management testing
+  - Toast notification testing
+  - Activity log integration testing
+
+--------------------------------------------------------------------------------
+RECOMMENDED ACTION PLAN
+--------------------------------------------------------------------------------
+
+Week 1 - Fix Existing Tests & Critical Hooks:
+  ☐ Fix 123 failing tests (achieve 100% pass rate)
+  ☐ Add comprehensive tests for use-toast.ts
+  ☐ Add comprehensive tests for use-activity-logs.ts
+  Target: Bring 2 critical hooks to 80%+
+
+Week 2 - Core Data Hooks:
+  ☐ Add comprehensive tests for use-results.ts
+  ☐ Expand use-jobs.ts tests to 80%+ coverage
+  Target: Achieve 80%+ coverage for 8/10 hook files
+
+Week 3 - Infrastructure & Polish:
+  ☐ Improve branch coverage for partial hooks
+  ☐ Add api-client.ts tests
+  ☐ Add realtime-service.ts tests
+  Target: Achieve overall >80% hooks coverage
+
+--------------------------------------------------------------------------------
+WELL-TESTED COMPONENTS (>80% coverage)
+--------------------------------------------------------------------------------
+✅ badge.tsx, button.tsx, card.tsx, checkbox.tsx, input.tsx
+✅ label.tsx, radio-group.tsx, skeleton.tsx, slider.tsx, tabs.tsx
+✅ textarea.tsx, utils.ts
+
+--------------------------------------------------------------------------------
+FILES REQUIRING ATTENTION
+--------------------------------------------------------------------------------
+
+UI Components (0% coverage):
+  • toast.tsx, toaster.tsx, tooltip.tsx, command.tsx
+  • scroll-area.tsx, separator.tsx, switch.tsx
+
+Services (0% coverage):
+  • realtime-service.ts
+  • supabase-client.ts
+
+Low Coverage (<20%):
+  • api-client.ts (14.28%)
+
+--------------------------------------------------------------------------------
+COVERAGE REPORT LOCATIONS
+--------------------------------------------------------------------------------
+
+HTML Report (Interactive):
+  coverage/lcov-report/index.html
+
+Coverage Data (JSON):
+  coverage/coverage-final.json
+
+LCOV Info:
+  coverage/lcov.info
+
+Detailed Analysis:
+  TEST_COVERAGE_REPORT.md
+
+================================================================================
+CONCLUSION: Hooks coverage is at 40.96%, significantly below the >80%
+requirement. Immediate action required to test 5 critical hook files.
+Estimated 3-4 developer days to achieve compliance.
+================================================================================

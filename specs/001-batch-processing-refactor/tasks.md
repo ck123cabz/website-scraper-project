@@ -138,25 +138,25 @@ This is a **monorepo** project with three workspaces:
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T056 [P] [US3] Write contract test for POST /jobs/:jobId/export endpoint with format and filter parameters in apps/api/src/jobs/__tests__/jobs.controller.spec.ts
-- [ ] T057 [P] [US3] Write unit test for complete CSV format (48 columns: 10 core + 5 L1 + 10 L2 + 15 L3) in apps/api/src/jobs/__tests__/export.service.spec.ts
-- [ ] T058 [P] [US3] Write unit test for all format options (summary 7 cols, layer1 15 cols, layer2 20 cols, layer3 25 cols) in apps/api/src/jobs/__tests__/export.service.spec.ts
-- [ ] T059 [P] [US3] Write unit test for CSV escaping (commas, quotes, newlines per RFC 4180) in apps/api/src/jobs/__tests__/export.service.spec.ts
-- [ ] T060 [P] [US3] Write performance test for 10k row export (<5s) with streaming in apps/api/src/jobs/__tests__/export.service.spec.ts
+- [X] T056 [P] [US3] Write contract test for POST /jobs/:jobId/export endpoint with format and filter parameters in apps/api/src/jobs/__tests__/jobs.controller.spec.ts
+- [X] T057 [P] [US3] Write unit test for complete CSV format (48 columns: 10 core + 5 L1 + 10 L2 + 15 L3) in apps/api/src/jobs/__tests__/export.service.spec.ts
+- [X] T058 [P] [US3] Write unit test for all format options (summary 7 cols, layer1 15 cols, layer2 20 cols, layer3 25 cols) in apps/api/src/jobs/__tests__/export.service.spec.ts
+- [X] T059 [P] [US3] Write unit test for CSV escaping (commas, quotes, newlines per RFC 4180) in apps/api/src/jobs/__tests__/export.service.spec.ts
+- [X] T060 [P] [US3] Write performance test for 10k row export (<5s) with streaming in apps/api/src/jobs/__tests__/export.service.spec.ts
 
 ### Implementation for User Story 3
 
-- [ ] T061 [US3] Create ExportService with streamCSVExport() method in apps/api/src/jobs/services/export.service.ts
-- [ ] T062 [P] [US3] Implement generateCompleteColumns() for 48-column format (10 core + 5 L1 + 10 L2 + 15 L3) in apps/api/src/jobs/services/export.service.ts
-- [ ] T063 [P] [US3] Implement generateSummaryColumns() for 7-column format in apps/api/src/jobs/services/export.service.ts
-- [ ] T064 [P] [US3] Implement generateLayerColumns() for Layer1 (15 cols), Layer2 (20 cols), Layer3 (25 cols) formats in apps/api/src/jobs/services/export.service.ts
-- [ ] T065 [US3] Implement streaming with 100-row batches in apps/api/src/jobs/services/export.service.ts
-- [ ] T066 [US3] Add Excel compatibility (UTF-8 BOM, CRLF, RFC 4180 quoting) in apps/api/src/jobs/services/export.service.ts
-- [ ] T067 [US3] Implement POST /jobs/:jobId/export endpoint in apps/api/src/jobs/jobs.controller.ts
-- [ ] T068 [US3] Add CSV download button to results page in apps/web/components/results/ResultsTable.tsx
-- [ ] T069 [US3] Add format selector (complete/summary/layer1/layer2/layer3) with filter options (decision, confidence, layer) to export dialog in apps/web/components/results/ExportDialog.tsx
-- [ ] T070 [US3] Implement filtered export capability (filters apply to any format - not a separate format) in apps/api/src/jobs/services/export.service.ts
-- [ ] T071 [US3] Verify all User Story 3 tests pass (T056-T060)
+- [X] T061 [US3] Create ExportService with streamCSVExport() method in apps/api/src/jobs/services/export.service.ts
+- [X] T062 [P] [US3] Implement generateCompleteColumns() for 48-column format (10 core + 5 L1 + 10 L2 + 15 L3) in apps/api/src/jobs/services/export.service.ts
+- [X] T063 [P] [US3] Implement generateSummaryColumns() for 7-column format in apps/api/src/jobs/services/export.service.ts
+- [X] T064 [P] [US3] Implement generateLayerColumns() for Layer1 (15 cols), Layer2 (20 cols), Layer3 (25 cols) formats in apps/api/src/jobs/services/export.service.ts
+- [X] T065 [US3] Implement streaming with 100-row batches in apps/api/src/jobs/services/export.service.ts
+- [X] T066 [US3] Add Excel compatibility (UTF-8 BOM, CRLF, RFC 4180 quoting) in apps/api/src/jobs/services/export.service.ts
+- [X] T067 [US3] Implement POST /jobs/:jobId/export endpoint in apps/api/src/jobs/jobs.controller.ts
+- [X] T068 [US3] Add CSV download button to results page in apps/web/components/results/ResultsTable.tsx
+- [X] T069 [US3] Add format selector (complete/summary/layer1/layer2/layer3) with filter options (decision, confidence, layer) to export dialog in apps/web/components/results/ExportDialog.tsx
+- [X] T070 [US3] Implement filtered export capability (filters apply to any format - not a separate format) in apps/api/src/jobs/services/export.service.ts
+- [X] T071 [US3] Verify all User Story 3 tests pass (T056-T060)
 
 **Checkpoint**: Rich CSV export complete - users can download complete analysis data for external review
 
@@ -170,27 +170,27 @@ This is a **monorepo** project with three workspaces:
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T072 [P] [US4] Write contract test for GET /queue/status endpoint in apps/api/src/jobs/__tests__/jobs.controller.spec.ts
-- [ ] T073 [P] [US4] Write React test for JobDashboard with active jobs section in apps/web/app/dashboard/__tests__/page.test.tsx
-- [ ] T074 [P] [US4] Write React test for progress bar updates in apps/web/components/dashboard/__tests__/JobProgressCard.test.tsx
-- [ ] T075 [P] [US4] Write React test for polling every 5 seconds in apps/web/components/dashboard/__tests__/JobDashboard.test.tsx
-- [ ] T076 [P] [US4] Write React test for polling stops when job completes in apps/web/components/dashboard/__tests__/JobDashboard.test.tsx
+- [X] T072 [P] [US4] Write contract test for GET /queue/status endpoint in apps/api/src/jobs/__tests__/jobs.controller.spec.ts
+- [X] T073 [P] [US4] Write React test for JobDashboard with active jobs section in apps/web/app/dashboard/__tests__/page.test.tsx
+- [X] T074 [P] [US4] Write React test for progress bar updates in apps/web/components/dashboard/__tests__/JobProgressCard.test.tsx
+- [X] T075 [P] [US4] Write React test for polling every 5 seconds in apps/web/components/dashboard/__tests__/JobDashboard.test.tsx
+- [X] T076 [P] [US4] Write React test for polling stops when job completes in apps/web/components/dashboard/__tests__/JobDashboard.test.tsx
 
 ### Implementation for User Story 4
 
-- [ ] T077 [US4] Implement GET /queue/status endpoint in apps/api/src/jobs/jobs.controller.ts
-- [ ] T078 [US4] Implement calculateProgress() helper in apps/api/src/jobs/jobs.service.ts
-- [ ] T079 [US4] Implement getQueuePosition() helper in apps/api/src/jobs/jobs.service.ts
-- [ ] T080 [US4] Implement getEstimatedWaitTime() helper in apps/api/src/jobs/jobs.service.ts
-- [ ] T081 [P] [US4] Create JobDashboard page component in apps/web/app/dashboard/page.tsx
-- [ ] T082 [P] [US4] Create JobProgressCard component with progress bar in apps/web/components/dashboard/JobProgressCard.tsx
-- [ ] T083 [P] [US4] Create LayerBreakdown component showing elimination counts in apps/web/components/dashboard/LayerBreakdown.tsx
-- [ ] T084 [P] [US4] Create CompletedJobsSection component in apps/web/components/dashboard/CompletedJobsSection.tsx
-- [ ] T085 [US4] Integrate React Query polling (5s interval) in apps/web/app/dashboard/page.tsx
-- [ ] T086 [US4] Implement conditional polling (stop when job completes) in apps/web/app/dashboard/page.tsx
-- [ ] T087 [US4] Add quick CSV download button to completed jobs section
-- [ ] T088 [US4] Display queue position for queued jobs ("Queued - position #3")
-- [ ] T089 [US4] Verify all User Story 4 tests pass (T072-T076)
+- [X] T077 [US4] Implement GET /queue/status endpoint in apps/api/src/jobs/jobs.controller.ts
+- [X] T078 [US4] Implement calculateProgress() helper in apps/api/src/jobs/jobs.service.ts
+- [X] T079 [US4] Implement getQueuePosition() helper in apps/api/src/jobs/jobs.service.ts
+- [X] T080 [US4] Implement getEstimatedWaitTime() helper in apps/api/src/jobs/jobs.service.ts
+- [X] T081 [P] [US4] Create JobDashboard page component in apps/web/app/dashboard/page.tsx
+- [X] T082 [P] [US4] Create JobProgressCard component with progress bar in apps/web/components/dashboard/JobProgressCard.tsx
+- [X] T083 [P] [US4] Create LayerBreakdown component showing elimination counts in apps/web/components/dashboard/LayerBreakdown.tsx
+- [X] T084 [P] [US4] Create CompletedJobsSection component in apps/web/components/dashboard/CompletedJobsSection.tsx
+- [X] T085 [US4] Integrate React Query polling (5s interval) in apps/web/app/dashboard/page.tsx
+- [X] T086 [US4] Implement conditional polling (stop when job completes) in apps/web/app/dashboard/page.tsx
+- [X] T087 [US4] Add quick CSV download button to completed jobs section
+- [X] T088 [US4] Display queue position for queued jobs ("Queued - position #3")
+- [X] T089 [US4] Verify all User Story 4 tests pass (T072-T076)
 
 **Checkpoint**: Real-time dashboard complete - users can monitor active jobs and access completed results
 
@@ -205,24 +205,24 @@ This is a **monorepo** project with three workspaces:
 ### Implementation for User Story 5
 
 **Frontend Cleanup**:
-- [ ] T090 [P] [US5] Remove /manual-review route (redirect to 404) in apps/web/app/manual-review/page.tsx
-- [ ] T091 [P] [US5] Delete ManualReviewQueue component from apps/web/components/manual-review/ManualReviewQueue.tsx
-- [ ] T092 [P] [US5] Delete ReviewDialog component from apps/web/components/manual-review/ReviewDialog.tsx
-- [ ] T093 [P] [US5] Remove manual review badge from navigation in apps/web/components/layout/Navigation.tsx
-- [ ] T094 [P] [US5] Remove manual review related imports and references from apps/web/
+- [X] T090 [P] [US5] Remove /manual-review route (redirect to 404) in apps/web/app/manual-review/page.tsx
+- [X] T091 [P] [US5] Delete ManualReviewQueue component from apps/web/components/manual-review/ManualReviewQueue.tsx
+- [X] T092 [P] [US5] Delete ReviewDialog component from apps/web/components/manual-review/ReviewDialog.tsx
+- [X] T093 [P] [US5] Remove manual review badge from navigation in apps/web/components/layout/Navigation.tsx
+- [X] T094 [P] [US5] Remove manual review related imports and references from apps/web/
 
 **Backend Cleanup**:
-- [ ] T095 [P] [US5] Comment out ManualReviewModule import in apps/api/src/app.module.ts
-- [ ] T096 [P] [US5] Comment out NotificationService calls in apps/api/src/queue/queue.service.ts
-- [ ] T097 [P] [US5] Comment out StaleQueueMarkerProcessor cron job in apps/api/src/jobs/jobs.module.ts
-- [ ] T098 [US5] Verify QueueService has no routing logic to manual_review_queue table
-- [ ] T099 [US5] Add deprecation comments to manual review code explaining removal plan
+- [X] T095 [P] [US5] Comment out ManualReviewModule import in apps/api/src/app.module.ts
+- [X] T096 [P] [US5] Comment out NotificationService calls in apps/api/src/queue/queue.service.ts
+- [X] T097 [P] [US5] Comment out StaleQueueMarkerProcessor cron job in apps/api/src/jobs/jobs.module.ts
+- [X] T098 [US5] Verify QueueService has no routing logic to manual_review_queue table
+- [X] T099 [US5] Add deprecation comments to manual review code explaining removal plan
 
 **Database Migration (⚠️ EXECUTE AFTER 2 WEEKS PRODUCTION STABILITY - ADD CALENDAR REMINDER)**:
-- [ ] T100 Create migration to drop manual_review_queue_archived table in supabase/migrations/20251127000001_drop_manual_review_queue_archived.sql
-- [ ] T101 Create migration to drop manual_review_activity table in supabase/migrations/20251127000002_drop_manual_review_activity.sql
-- [ ] T102 Remove @slack/webhook from package.json if only used for manual review
-- [ ] T103 Remove @nestjs/schedule from package.json if only used for manual review
+- [ ] T100 Create migration to drop manual_review_queue_archived table in supabase/migrations/20251127000001_drop_manual_review_queue_archived.sql (See PENDING_MANUAL_REVIEW_CLEANUP.md)
+- [ ] T101 Create migration to drop manual_review_activity table in supabase/migrations/20251127000002_drop_manual_review_activity.sql (See PENDING_MANUAL_REVIEW_CLEANUP.md)
+- [ ] T102 Remove @slack/webhook from package.json if only used for manual review (See PENDING_MANUAL_REVIEW_CLEANUP.md)
+- [ ] T103 Remove @nestjs/schedule from package.json if only used for manual review (NOTE: Still needed for ArchivalService/CleanupService - DO NOT REMOVE)
 
 **Checkpoint**: Manual review system removed - codebase simplified, zero references to manual_review_queue in active code
 
@@ -234,17 +234,17 @@ This is a **monorepo** project with three workspaces:
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T104 [P] Add error handling for NULL factor values in CSV export
-- [ ] T105 [P] Add comprehensive logging for job lifecycle events in apps/api/src/jobs/jobs.service.ts
-- [ ] T106 [P] Update API documentation (OpenAPI spec) with new endpoints in apps/api/src/main.ts
-- [ ] T107 [P] Add performance monitoring for CSV export generation
-- [ ] T108 Create migration script to export manual_review_queue to CSV (url, job_id, confidence_score, routed_at, layer2_factors, layer3_factors), mark jobs as "requires_manual_completion", and rename table to manual_review_queue_archived in supabase/migrations/20251113000005_migrate_manual_review_items.sql
-- [ ] T109 Create ArchivalService with daily cron (2 AM UTC) to mark jobs completed_at > 90 days as status='archived' in apps/api/src/jobs/services/archival.service.ts
-- [ ] T110 Create CleanupService with daily cron (2 AM UTC) to hard-delete archived jobs with archived_at > 90 days in apps/api/src/jobs/services/cleanup.service.ts
-- [ ] T111 [P] Update README with new batch processing workflow documentation
-- [ ] T111a [P] Add integration test verifying open access model: all endpoints return all jobs without user filtering in apps/api/src/__tests__/integration/open-access.spec.ts
-- [ ] T112 Run all tests and verify no linting errors (npm test && npm run lint)
-- [ ] T113 Run quickstart.md validation scenarios
+- [X] T104 [P] Add error handling for NULL factor values in CSV export
+- [X] T105 [P] Add comprehensive logging for job lifecycle events in apps/api/src/jobs/jobs.service.ts
+- [X] T106 [P] Update API documentation (OpenAPI spec) with new endpoints in apps/api/src/main.ts
+- [X] T107 [P] Add performance monitoring for CSV export generation
+- [X] T108 Create migration script to export manual_review_queue to CSV (url, job_id, confidence_score, routed_at, layer2_factors, layer3_factors), mark jobs as "requires_manual_completion", and rename table to manual_review_queue_archived in supabase/migrations/20251113000005_migrate_manual_review_items.sql
+- [X] T109 Create ArchivalService with daily cron (2 AM UTC) to mark jobs completed_at > 90 days as status='archived' in apps/api/src/jobs/services/archival.service.ts
+- [X] T110 Create CleanupService with daily cron (2 AM UTC) to hard-delete archived jobs with archived_at > 90 days in apps/api/src/jobs/services/cleanup.service.ts
+- [X] T111 [P] Update README with new batch processing workflow documentation
+- [X] T111a [P] Add integration test verifying open access model: all endpoints return all jobs without user filtering in apps/api/src/__tests__/integration/open-access.spec.ts
+- [X] T112 Run all tests and verify no linting errors (npm test && npm run lint)
+- [X] T113 Run quickstart.md validation scenarios
 
 ---
 
@@ -254,14 +254,14 @@ This is a **monorepo** project with three workspaces:
 
 **⚠️ CRITICAL**: These tests validate production readiness metrics
 
-- [ ] T114 [P] Write load test for SC-001: Process 10,000 URLs end-to-end in <3 hours in apps/api/src/__tests__/load/batch-processing.load.spec.ts
-- [ ] T115 [P] Write performance test for SC-003: Results table pagination handles 100,000+ rows with <500ms page load in apps/web/__tests__/performance/results-pagination.perf.spec.ts
-- [ ] T116 [P] Write performance test for SC-006: Expandable row data loads in <500ms in apps/web/__tests__/performance/expand-row.perf.spec.ts
-- [ ] T117 [P] Write performance test for SC-007: Dashboard updates with <5s latency from actual job state in apps/web/__tests__/performance/dashboard-realtime.perf.spec.ts
-- [ ] T118 [P] Write concurrency test for SC-009: System processes 5 concurrent jobs without performance degradation in apps/api/src/__tests__/load/concurrent-jobs.load.spec.ts
-- [ ] T119 [P] Write storage test for SC-010: Database storage increases <50MB per 10k URLs in apps/api/src/__tests__/integration/storage-growth.spec.ts
-- [ ] T120 [P] Write reliability test for SC-011: Transient failures result in <1% permanent failure rate in apps/api/src/__tests__/integration/retry-reliability.spec.ts
-- [ ] T121 Run all performance tests and verify SC-001, SC-003, SC-006, SC-007, SC-009, SC-010, SC-011 pass
+- [X] T114 [P] Write load test for SC-001: Process 10,000 URLs end-to-end in <3 hours in apps/api/src/__tests__/load/batch-processing.load.spec.ts
+- [X] T115 [P] Write performance test for SC-003: Results table pagination handles 100,000+ rows with <500ms page load in apps/web/__tests__/performance/results-pagination.perf.spec.ts
+- [X] T116 [P] Write performance test for SC-006: Expandable row data loads in <500ms in apps/web/__tests__/performance/expand-row.perf.spec.ts
+- [X] T117 [P] Write performance test for SC-007: Dashboard updates with <5s latency from actual job state in apps/web/__tests__/performance/dashboard-realtime.perf.spec.ts
+- [X] T118 [P] Write concurrency test for SC-009: System processes 5 concurrent jobs without performance degradation in apps/api/src/__tests__/load/concurrent-jobs.load.spec.ts
+- [X] T119 [P] Write storage test for SC-010: Database storage increases <50MB per 10k URLs in apps/api/src/__tests__/integration/storage-growth.spec.ts
+- [X] T120 [P] Write reliability test for SC-011: Transient failures result in <1% permanent failure rate in apps/api/src/__tests__/integration/retry-reliability.spec.ts
+- [X] T121 Run all performance tests and verify SC-001, SC-003, SC-006, SC-007, SC-009, SC-010, SC-011 pass
 
 ---
 

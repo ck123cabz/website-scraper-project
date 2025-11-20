@@ -98,7 +98,7 @@ export function RecentURLsList({ jobId, className }: RecentURLsListProps) {
                       {truncateUrl(result.url)}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {getRelativeTime(result.processed_at)}
+                      {getRelativeTime(result.updated_at)}
                     </p>
                   </div>
                 </div>

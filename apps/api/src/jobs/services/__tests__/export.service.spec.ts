@@ -27,11 +27,10 @@ describe('ExportService', () => {
     retry_count: 0,
     last_error: null,
     last_retry_at: null,
-    processed_at: new Date('2025-01-13T10:00:00Z'),
+    updated_at: new Date('2025-01-13T10:00:00Z'),
     status: 'approved',
     reviewer_notes: null,
     created_at: new Date('2025-01-13T09:00:00Z'),
-    updated_at: new Date('2025-01-13T10:00:00Z'),
     layer1_factors: {
       tld_type: 'gtld',
       tld_value: '.com',
@@ -129,7 +128,10 @@ describe('ExportService', () => {
       } as any);
 
       // Act
-      const stream = await service.streamCSVExport('123e4567-e89b-12d3-a456-426614174001', 'complete');
+      const stream = await service.streamCSVExport(
+        '123e4567-e89b-12d3-a456-426614174001',
+        'complete',
+      );
 
       // Assert
       const chunks: Buffer[] = [];
@@ -160,7 +162,10 @@ describe('ExportService', () => {
       } as any);
 
       // Act
-      const stream = await service.streamCSVExport('123e4567-e89b-12d3-a456-426614174001', 'complete');
+      const stream = await service.streamCSVExport(
+        '123e4567-e89b-12d3-a456-426614174001',
+        'complete',
+      );
 
       // Assert
       const chunks: Buffer[] = [];
@@ -192,7 +197,10 @@ describe('ExportService', () => {
       } as any);
 
       // Act
-      const stream = await service.streamCSVExport('123e4567-e89b-12d3-a456-426614174001', 'summary');
+      const stream = await service.streamCSVExport(
+        '123e4567-e89b-12d3-a456-426614174001',
+        'summary',
+      );
 
       // Assert
       const chunks: Buffer[] = [];
@@ -221,7 +229,10 @@ describe('ExportService', () => {
       } as any);
 
       // Act
-      const stream = await service.streamCSVExport('123e4567-e89b-12d3-a456-426614174001', 'layer1');
+      const stream = await service.streamCSVExport(
+        '123e4567-e89b-12d3-a456-426614174001',
+        'layer1',
+      );
 
       // Assert
       const chunks: Buffer[] = [];
@@ -247,7 +258,10 @@ describe('ExportService', () => {
       } as any);
 
       // Act
-      const stream = await service.streamCSVExport('123e4567-e89b-12d3-a456-426614174001', 'layer2');
+      const stream = await service.streamCSVExport(
+        '123e4567-e89b-12d3-a456-426614174001',
+        'layer2',
+      );
 
       // Assert
       const chunks: Buffer[] = [];
@@ -273,7 +287,10 @@ describe('ExportService', () => {
       } as any);
 
       // Act
-      const stream = await service.streamCSVExport('123e4567-e89b-12d3-a456-426614174001', 'layer3');
+      const stream = await service.streamCSVExport(
+        '123e4567-e89b-12d3-a456-426614174001',
+        'layer3',
+      );
 
       // Assert
       const chunks: Buffer[] = [];
@@ -357,7 +374,10 @@ describe('ExportService', () => {
       });
 
       // Act
-      const stream = await service.streamCSVExport('123e4567-e89b-12d3-a456-426614174001', 'summary');
+      const stream = await service.streamCSVExport(
+        '123e4567-e89b-12d3-a456-426614174001',
+        'summary',
+      );
 
       const chunks: Buffer[] = [];
       stream.on('data', (chunk) => chunks.push(chunk));
@@ -366,9 +386,33 @@ describe('ExportService', () => {
 
       // Assert
       expect(jobsService.getJobResults).toHaveBeenCalledTimes(3);
-      expect(jobsService.getJobResults).toHaveBeenNthCalledWith(1, expect.any(String), 1, 100, undefined, undefined, undefined);
-      expect(jobsService.getJobResults).toHaveBeenNthCalledWith(2, expect.any(String), 2, 100, undefined, undefined, undefined);
-      expect(jobsService.getJobResults).toHaveBeenNthCalledWith(3, expect.any(String), 3, 100, undefined, undefined, undefined);
+      expect(jobsService.getJobResults).toHaveBeenNthCalledWith(
+        1,
+        expect.any(String),
+        1,
+        100,
+        undefined,
+        undefined,
+        undefined,
+      );
+      expect(jobsService.getJobResults).toHaveBeenNthCalledWith(
+        2,
+        expect.any(String),
+        2,
+        100,
+        undefined,
+        undefined,
+        undefined,
+      );
+      expect(jobsService.getJobResults).toHaveBeenNthCalledWith(
+        3,
+        expect.any(String),
+        3,
+        100,
+        undefined,
+        undefined,
+        undefined,
+      );
 
       const csv = Buffer.concat(chunks).toString('utf-8');
       const lines = csv.split('\r\n').filter((line) => line.trim());
@@ -391,7 +435,11 @@ describe('ExportService', () => {
       };
 
       // Act
-      const stream = await service.streamCSVExport('123e4567-e89b-12d3-a456-426614174001', 'complete', filters);
+      const stream = await service.streamCSVExport(
+        '123e4567-e89b-12d3-a456-426614174001',
+        'complete',
+        filters,
+      );
 
       const chunks: Buffer[] = [];
       stream.on('data', (chunk) => chunks.push(chunk));
@@ -405,7 +453,7 @@ describe('ExportService', () => {
         100,
         'approved',
         'layer3',
-        'high'
+        'high',
       );
     });
 
@@ -418,7 +466,10 @@ describe('ExportService', () => {
       } as any);
 
       // Act
-      const stream = await service.streamCSVExport('123e4567-e89b-12d3-a456-426614174001', 'summary');
+      const stream = await service.streamCSVExport(
+        '123e4567-e89b-12d3-a456-426614174001',
+        'summary',
+      );
 
       const chunks: Buffer[] = [];
       stream.on('data', (chunk) => chunks.push(chunk));
@@ -441,7 +492,10 @@ describe('ExportService', () => {
       } as any);
 
       // Act
-      const stream = await service.streamCSVExport('123e4567-e89b-12d3-a456-426614174001', 'summary');
+      const stream = await service.streamCSVExport(
+        '123e4567-e89b-12d3-a456-426614174001',
+        'summary',
+      );
 
       const chunks: Buffer[] = [];
       stream.on('data', (chunk) => chunks.push(chunk));
@@ -472,7 +526,10 @@ describe('ExportService', () => {
       } as any);
 
       // Act
-      const stream = await service.streamCSVExport('123e4567-e89b-12d3-a456-426614174001', 'complete');
+      const stream = await service.streamCSVExport(
+        '123e4567-e89b-12d3-a456-426614174001',
+        'complete',
+      );
 
       const chunks: Buffer[] = [];
       stream.on('data', (chunk) => chunks.push(chunk));
@@ -490,23 +547,30 @@ describe('ExportService', () => {
 
   describe('Error Handling', () => {
     it('should throw error for invalid UUID format', async () => {
-      await expect(service.streamCSVExport('invalid-uuid', 'complete')).rejects.toThrow('Invalid job ID format');
+      await expect(service.streamCSVExport('invalid-uuid', 'complete')).rejects.toThrow(
+        'Invalid job ID format',
+      );
     });
 
     it('should throw error for invalid format', async () => {
-      await expect(service.streamCSVExport('123e4567-e89b-12d3-a456-426614174001', 'invalid' as any)).rejects.toThrow('Invalid format');
+      await expect(
+        service.streamCSVExport('123e4567-e89b-12d3-a456-426614174001', 'invalid' as any),
+      ).rejects.toThrow('Invalid format');
     });
 
     it('should throw error if job not found', async () => {
       jobsService.getJobById.mockResolvedValue(null);
 
-      const stream = await service.streamCSVExport('123e4567-e89b-12d3-a456-426614174001', 'complete');
+      const stream = await service.streamCSVExport(
+        '123e4567-e89b-12d3-a456-426614174001',
+        'complete',
+      );
 
       await expect(
         new Promise((resolve, reject) => {
           stream.on('error', reject);
           stream.on('end', resolve);
-        })
+        }),
       ).rejects.toThrow('Job not found');
     });
 
@@ -514,13 +578,16 @@ describe('ExportService', () => {
       jobsService.getJobById.mockResolvedValue({ id: 'test-job', status: 'completed' } as any);
       jobsService.getJobResults.mockRejectedValue(new Error('Database connection error'));
 
-      const stream = await service.streamCSVExport('123e4567-e89b-12d3-a456-426614174001', 'complete');
+      const stream = await service.streamCSVExport(
+        '123e4567-e89b-12d3-a456-426614174001',
+        'complete',
+      );
 
       await expect(
         new Promise((resolve, reject) => {
           stream.on('error', reject);
           stream.on('end', resolve);
-        })
+        }),
       ).rejects.toThrow('Database connection error');
     });
   });

@@ -301,8 +301,8 @@ export class JobsService {
       query = query.eq('confidence_band', confidence);
     }
 
-    // Order by processed_at DESC (newest first)
-    query = query.order('processed_at', { ascending: false });
+    // Order by updated_at DESC (newest first)
+    query = query.order('updated_at', { ascending: false });
 
     // Apply pagination
     query = query.range(offset, offset + normalizedPageSize - 1);
@@ -734,6 +734,7 @@ export class JobsService {
     return jobs.map((job) => ({
       id: job.id,
       name: job.name || 'Untitled Job',
+      status: 'completed',
       completedAt: job.completed_at,
       urlCount: job.total_urls || 0,
       totalCost: job.total_cost || 0,

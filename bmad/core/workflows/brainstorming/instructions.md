@@ -9,19 +9,23 @@
 <step n="1" goal="Session Setup">
 
 <action>Check if context data was provided with workflow invocation</action>
-<check>If data attribute was passed to this workflow:</check>
-<action>Load the context document from the data file path</action>
-<action>Study the domain knowledge and session focus</action>
-<action>Use the provided context to guide the session</action>
-<action>Acknowledge the focused brainstorming goal</action>
-<ask response="session_refinement">I see we're brainstorming about the specific domain outlined in the context. What particular aspect would you like to explore?</ask>
-<check>Else (no context data provided):</check>
-<action>Proceed with generic context gathering</action>
-<ask response="session_topic">1. What are we brainstorming about?</ask>
-<ask response="stated_goals">2. Are there any constraints or parameters we should keep in mind?</ask>
-<ask>3. Is the goal broad exploration or focused ideation on specific aspects?</ask>
+
+<check if="data attribute was passed to this workflow">
+  <action>Load the context document from the data file path</action>
+  <action>Study the domain knowledge and session focus</action>
+  <action>Use the provided context to guide the session</action>
+  <action>Acknowledge the focused brainstorming goal</action>
+  <ask response="session_refinement">I see we're brainstorming about the specific domain outlined in the context. What particular aspect would you like to explore?</ask>
+</check>
+
+<check if="no context data provided">
+  <action>Proceed with generic context gathering</action>
+  <ask response="session_topic">1. What are we brainstorming about?</ask>
+  <ask response="stated_goals">2. Are there any constraints or parameters we should keep in mind?</ask>
+  <ask>3. Is the goal broad exploration or focused ideation on specific aspects?</ask>
 
 <critical>Wait for user response before proceeding. This context shapes the entire session.</critical>
+</check>
 
 <template-output>session_topic, stated_goals</template-output>
 
@@ -40,19 +44,19 @@ Based on the context from Step 1, present these four approach options:
 Which approach would you prefer? (Enter 1-4)
 </ask>
 
-<check>Based on selection, proceed to appropriate sub-step</check>
-
   <step n="2a" title="User-Selected Techniques" if="selection==1">
     <action>Load techniques from {brain_techniques} CSV file</action>
     <action>Parse: category, technique_name, description, facilitation_prompts</action>
 
-    <check>If strong context from Step 1 (specific problem/goal)</check>
-    <action>Identify 2-3 most relevant categories based on stated_goals</action>
-    <action>Present those categories first with 3-5 techniques each</action>
-    <action>Offer "show all categories" option</action>
+    <check if="strong context from Step 1 (specific problem/goal)">
+      <action>Identify 2-3 most relevant categories based on stated_goals</action>
+      <action>Present those categories first with 3-5 techniques each</action>
+      <action>Offer "show all categories" option</action>
+    </check>
 
-    <check>Else (open exploration)</check>
-    <action>Display all 7 categories with helpful descriptions</action>
+    <check if="open exploration">
+      <action>Display all 7 categories with helpful descriptions</action>
+    </check>
 
     Category descriptions to guide selection:
     - **Structured:** Systematic frameworks for thorough exploration
@@ -154,6 +158,7 @@ Which approach would you prefer? (Enter 1-4)
 
   </step>
 
+<critical>Create the output document using the template, and record at the {{session_start_plan}} documenting the chosen techniques, along with which approach was used. For all remaining steps, progressively add to the document throughout the brainstorming</critical>
 </step>
 
 <step n="3" goal="Execute Techniques Interactively">
@@ -198,7 +203,7 @@ Example facilitation flow for any technique:
 
 4. Next Prompt: Pull next facilitation_prompt when ready to advance
 
-5. Monitor Energy: After 10-15 minutes, check if they want to continue or switch
+5. Monitor Energy: After a few rounds, check if they want to continue or switch
 
 The CSV provides the prompts - your role is to facilitate naturally in your unique voice.
 </example>
@@ -211,7 +216,7 @@ Continue engaging with the technique until the user indicates they want to:
 - End the session
 
 <energy-checkpoint>
-  After 15-20 minutes with a technique, check: "Should we continue with this technique or try something new?"
+  After 4 rounds with a technique, check: "Should we continue with this technique or try something new?"
 </energy-checkpoint>
 
 <template-output>technique_sessions</template-output>
@@ -250,7 +255,7 @@ Analyze the session to identify deeper patterns:
 2. **Surface key insights** - What realizations emerged during the process? -> insights_learnings
 3. **Note surprising connections** - What unexpected relationships were discovered? -> insights_learnings
 
-<elicit-required/>
+<invoke-task halt="true">{project-root}/bmad/core/tasks/advanced-elicitation.xml</invoke-task>
 
 <template-output>key_themes, insights_learnings</template-output>
 

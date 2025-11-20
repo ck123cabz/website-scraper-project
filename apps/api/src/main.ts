@@ -63,6 +63,8 @@ async function bootstrap() {
   const allowedOrigins = [
     process.env.FRONTEND_URL || 'http://localhost:3000',
     'http://localhost:3000', // Always allow local development
+    'http://localhost:3001', // API itself
+    'http://localhost:3002', // Frontend (when port 3000 is in use)
   ];
 
   app.enableCors({
@@ -102,13 +104,10 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('Batch Processing Workflow API')
     .setDescription(
-      'RESTful API for automated batch URL processing and analysis using Layer 1/2/3 evaluation framework'
+      'RESTful API for automated batch URL processing and analysis using Layer 1/2/3 evaluation framework',
     )
     .setVersion('1.0.0')
-    .addServer(
-      process.env.API_URL || 'http://localhost:3001',
-      'API Server'
-    )
+    .addServer(process.env.API_URL || 'http://localhost:3001', 'API Server')
     .addTag('Jobs', 'Job management endpoints')
     .addTag('Results', 'Result retrieval and export endpoints')
     .addTag('Queue', 'Queue status and monitoring endpoints')

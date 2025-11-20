@@ -8,7 +8,7 @@
 -- 1. idx_url_results_eliminated_at_layer - Filter by elimination layer (pipeline analytics)
 -- 2. idx_url_results_status - Filter by status (already exists in base table, adding for idempotency)
 -- 3. idx_url_results_confidence_score - Sort/filter by confidence scores
--- 4. idx_url_results_job_id_processed_at - Composite index for job result pagination
+-- 4. idx_url_results_job_id_updated_at - Composite index for job result pagination
 --
 -- Performance expectations:
 -- - Index overhead: ~5% of column data size (B-tree indexes)
@@ -33,9 +33,9 @@ CREATE INDEX IF NOT EXISTS idx_url_results_confidence_score
   ON url_results (confidence_score DESC NULLS LAST)
   WHERE confidence_score IS NOT NULL;
 
--- Composite index for paginated job results sorted by processing time
+-- Composite index for paginated job results sorted by update time
 -- Use case: "Get latest processed results for job X" (most common query pattern)
-CREATE INDEX IF NOT EXISTS idx_url_results_job_id_processed_at
+CREATE INDEX IF NOT EXISTS idx_url_results_job_id_updated_at
   ON url_results (job_id, updated_at DESC);
 
 -- Add comments for documentation
@@ -48,5 +48,5 @@ COMMENT ON INDEX idx_url_results_status IS
 COMMENT ON INDEX idx_url_results_confidence_score IS
   'Index for filtering and sorting by confidence score (DESC order, NULLs last). Supports confidence band analytics and manual review prioritization.';
 
-COMMENT ON INDEX idx_url_results_job_id_processed_at IS
-  'Composite index for efficient job result pagination sorted by processing time (most recent first). Supports "Get latest results for job X" queries.';
+COMMENT ON INDEX idx_url_results_job_id_updated_at IS
+  'Composite index for efficient job result pagination sorted by update time (most recent first). Supports "Get latest results for job X" queries.';

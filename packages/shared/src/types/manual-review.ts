@@ -1,4 +1,11 @@
 /**
+ * @deprecated This file is deprecated as of Phase 7, User Story 5
+ * Manual review system has been removed from the codebase.
+ * This file is kept temporarily for backward compatibility.
+ * Scheduled for deletion after 2 weeks of production stability.
+ */
+
+/**
  * Sophistication signal from Layer 3 analysis
  */
 export interface SophisticationSignal {
@@ -7,8 +14,9 @@ export interface SophisticationSignal {
 }
 
 /**
- * Manual Review Settings
+ * @deprecated Manual Review Settings - System removed in Phase 7, US5
  * Configuration for manual review queue and routing
+ * All URLs now process through Layer 1/2/3 automatically without manual review routing
  */
 export interface ManualReviewSettings {
   /** Whether manual review is enabled */
@@ -28,7 +36,7 @@ export interface ManualReviewSettings {
 }
 
 /**
- * Default manual review settings
+ * @deprecated Default manual review settings - System removed in Phase 7, US5
  */
 export const DEFAULT_MANUAL_REVIEW_SETTINGS: ManualReviewSettings = {
   enabled: true,

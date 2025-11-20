@@ -216,9 +216,9 @@ describe('ExportService - Basic Tests (T061)', () => {
     it('should reject invalid format', async () => {
       const jobId = '550e8400-e29b-41d4-a716-446655440000';
 
-      await expect(
-        exportService.streamCSVExport(jobId, 'invalid-format' as any),
-      ).rejects.toThrow('Invalid format');
+      await expect(exportService.streamCSVExport(jobId, 'invalid-format' as any)).rejects.toThrow(
+        'Invalid format',
+      );
     });
 
     it('should emit UTF-8 BOM at start of stream', async () => {

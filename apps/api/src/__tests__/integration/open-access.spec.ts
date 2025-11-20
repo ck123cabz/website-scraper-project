@@ -39,29 +39,23 @@ describe('Open Access Model Integration Tests (E2E)', () => {
 
     beforeEach(async () => {
       // Create two test jobs (simulating different users)
-      const job1Response = await request(app.getHttpServer())
-        .post('/jobs')
-        .send({
-          name: 'Job 1 - User A',
-          totalUrls: 2,
-        });
+      const job1Response = await request(app.getHttpServer()).post('/jobs').send({
+        name: 'Job 1 - User A',
+        totalUrls: 2,
+      });
 
       jobId1 = job1Response.body.data.id;
 
-      const job2Response = await request(app.getHttpServer())
-        .post('/jobs')
-        .send({
-          name: 'Job 2 - User B',
-          totalUrls: 2,
-        });
+      const job2Response = await request(app.getHttpServer()).post('/jobs').send({
+        name: 'Job 2 - User B',
+        totalUrls: 2,
+      });
 
       jobId2 = job2Response.body.data.id;
     });
 
     it('should allow GET /jobs to list ALL jobs without filtering', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/jobs')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/jobs').expect(200);
 
       const jobIds = response.body.data.map((job: any) => job.id);
 
@@ -74,17 +68,13 @@ describe('Open Access Model Integration Tests (E2E)', () => {
 
     it('should allow GET /jobs/:jobId for any job', async () => {
       // Get job created by "User A"
-      const response1 = await request(app.getHttpServer())
-        .get(`/jobs/${jobId1}`)
-        .expect(200);
+      const response1 = await request(app.getHttpServer()).get(`/jobs/${jobId1}`).expect(200);
 
       expect(response1.body.data.id).toBe(jobId1);
       expect(response1.body.data.name).toBe('Job 1 - User A');
 
       // Get job created by "User B"
-      const response2 = await request(app.getHttpServer())
-        .get(`/jobs/${jobId2}`)
-        .expect(200);
+      const response2 = await request(app.getHttpServer()).get(`/jobs/${jobId2}`).expect(200);
 
       expect(response2.body.data.id).toBe(jobId2);
       expect(response2.body.data.name).toBe('Job 2 - User B');
@@ -125,9 +115,7 @@ describe('Open Access Model Integration Tests (E2E)', () => {
     });
 
     it('should allow GET /jobs/queue/status to show ALL active jobs', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/jobs/queue/status')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/jobs/queue/status').expect(200);
 
       const jobIds = response.body.data.activeJobs.map((job: any) => job.jobId);
 
@@ -143,18 +131,17 @@ describe('Open Access Model Integration Tests (E2E)', () => {
 
     beforeEach(async () => {
       // Create a test job
-      const jobResponse = await request(app.getHttpServer())
-        .post('/jobs')
-        .send({
-          name: 'Test Job',
-          totalUrls: 1,
-        });
+      const jobResponse = await request(app.getHttpServer()).post('/jobs').send({
+        name: 'Test Job',
+        totalUrls: 1,
+      });
 
       jobId = jobResponse.body.data.id;
 
       // Get first result (if any exist)
-      const resultsResponse = await request(app.getHttpServer())
-        .get(`/jobs/${jobId}/results?page=1`);
+      const resultsResponse = await request(app.getHttpServer()).get(
+        `/jobs/${jobId}/results?page=1`,
+      );
 
       if (resultsResponse.body.data && resultsResponse.body.data.length > 0) {
         resultId = resultsResponse.body.data[0].id;
@@ -180,9 +167,7 @@ describe('Open Access Model Integration Tests (E2E)', () => {
   describe('No Authentication Required', () => {
     it('should accept requests without authentication headers', async () => {
       // Make request without any auth headers
-      const response = await request(app.getHttpServer())
-        .get('/jobs')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/jobs').expect(200);
 
       expect(response.body).toHaveProperty('data');
     });
@@ -199,12 +184,10 @@ describe('Open Access Model Integration Tests (E2E)', () => {
 
     it('should allow anonymous CSV export', async () => {
       // Create a job
-      const jobResponse = await request(app.getHttpServer())
-        .post('/jobs')
-        .send({
-          name: 'Anonymous Export Test',
-          totalUrls: 1,
-        });
+      const jobResponse = await request(app.getHttpServer()).post('/jobs').send({
+        name: 'Anonymous Export Test',
+        totalUrls: 1,
+      });
 
       const jobId = jobResponse.body.data.id;
 
@@ -223,9 +206,7 @@ describe('Open Access Model Integration Tests (E2E)', () => {
       // This test verifies the architectural decision:
       // All jobs are returned regardless of who created them
 
-      const response = await request(app.getHttpServer())
-        .get('/jobs')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/jobs').expect(200);
 
       // Response should return all jobs without user filtering
       expect(response.body).toHaveProperty('data');
@@ -239,19 +220,15 @@ describe('Open Access Model Integration Tests (E2E)', () => {
     it('should confirm no organization filtering in results', async () => {
       // Create multiple jobs and verify all results are accessible
 
-      const job1 = await request(app.getHttpServer())
-        .post('/jobs')
-        .send({
-          name: 'Org A Job',
-          totalUrls: 1,
-        });
+      const job1 = await request(app.getHttpServer()).post('/jobs').send({
+        name: 'Org A Job',
+        totalUrls: 1,
+      });
 
-      const job2 = await request(app.getHttpServer())
-        .post('/jobs')
-        .send({
-          name: 'Org B Job',
-          totalUrls: 1,
-        });
+      const job2 = await request(app.getHttpServer()).post('/jobs').send({
+        name: 'Org B Job',
+        totalUrls: 1,
+      });
 
       // Results from job1 should be accessible
       const results1 = await request(app.getHttpServer())
@@ -270,12 +247,10 @@ describe('Open Access Model Integration Tests (E2E)', () => {
 
     it('should confirm job operations work without user context', async () => {
       // Create a job
-      const createResponse = await request(app.getHttpServer())
-        .post('/jobs')
-        .send({
-          name: 'Test Job Operations',
-          totalUrls: 1,
-        });
+      const createResponse = await request(app.getHttpServer()).post('/jobs').send({
+        name: 'Test Job Operations',
+        totalUrls: 1,
+      });
 
       const jobId = createResponse.body.data.id;
 
@@ -303,24 +278,18 @@ describe('Open Access Model Integration Tests (E2E)', () => {
 
     it('should confirm queue status is not filtered by user', async () => {
       // Create multiple jobs
-      await request(app.getHttpServer())
-        .post('/jobs')
-        .send({
-          name: 'Queue Test 1',
-          totalUrls: 1,
-        });
+      await request(app.getHttpServer()).post('/jobs').send({
+        name: 'Queue Test 1',
+        totalUrls: 1,
+      });
 
-      await request(app.getHttpServer())
-        .post('/jobs')
-        .send({
-          name: 'Queue Test 2',
-          totalUrls: 1,
-        });
+      await request(app.getHttpServer()).post('/jobs').send({
+        name: 'Queue Test 2',
+        totalUrls: 1,
+      });
 
       // Get queue status without any user context
-      const response = await request(app.getHttpServer())
-        .get('/jobs/queue/status')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/jobs/queue/status').expect(200);
 
       // All jobs should be visible in queue
       expect(response.body.data).toHaveProperty('activeJobs');
@@ -349,9 +318,7 @@ describe('Open Access Model Integration Tests (E2E)', () => {
       }
 
       // Verify all jobs are accessible through GET /jobs
-      const allJobsResponse = await request(app.getHttpServer())
-        .get('/jobs')
-        .expect(200);
+      const allJobsResponse = await request(app.getHttpServer()).get('/jobs').expect(200);
 
       const retrievedJobIds = allJobsResponse.body.data.map((job: any) => job.id);
 
@@ -362,9 +329,7 @@ describe('Open Access Model Integration Tests (E2E)', () => {
 
       // Verify each job is individually accessible
       for (const jobId of jobIds) {
-        await request(app.getHttpServer())
-          .get(`/jobs/${jobId}`)
-          .expect(200);
+        await request(app.getHttpServer()).get(`/jobs/${jobId}`).expect(200);
       }
     });
 
@@ -392,12 +357,10 @@ describe('Open Access Model Integration Tests (E2E)', () => {
 
     it('should confirm POST endpoints work without user identification', async () => {
       // Create job without any user identification
-      const createResponse = await request(app.getHttpServer())
-        .post('/jobs')
-        .send({
-          name: 'No User Context Job',
-          totalUrls: 1,
-        });
+      const createResponse = await request(app.getHttpServer()).post('/jobs').send({
+        name: 'No User Context Job',
+        totalUrls: 1,
+      });
 
       expect(createResponse.status).toBe(200);
       expect(createResponse.body.success).toBe(true);
@@ -405,9 +368,7 @@ describe('Open Access Model Integration Tests (E2E)', () => {
 
       // Job should be immediately accessible without auth
       const jobId = createResponse.body.data.id;
-      const getResponse = await request(app.getHttpServer())
-        .get(`/jobs/${jobId}`)
-        .expect(200);
+      const getResponse = await request(app.getHttpServer()).get(`/jobs/${jobId}`).expect(200);
 
       expect(getResponse.body.data.id).toBe(jobId);
     });
@@ -416,39 +377,29 @@ describe('Open Access Model Integration Tests (E2E)', () => {
   describe('Cross-Job Operations', () => {
     it('should allow accessing any job regardless of creation order', async () => {
       // Create first job
-      const job1Response = await request(app.getHttpServer())
-        .post('/jobs')
-        .send({
-          name: 'First Job',
-          totalUrls: 1,
-        });
+      const job1Response = await request(app.getHttpServer()).post('/jobs').send({
+        name: 'First Job',
+        totalUrls: 1,
+      });
 
       const jobId1 = job1Response.body.data.id;
 
       // Create second job
-      const job2Response = await request(app.getHttpServer())
-        .post('/jobs')
-        .send({
-          name: 'Second Job',
-          totalUrls: 1,
-        });
+      const job2Response = await request(app.getHttpServer()).post('/jobs').send({
+        name: 'Second Job',
+        totalUrls: 1,
+      });
 
       const jobId2 = job2Response.body.data.id;
 
       // Access first job from "different context"
-      await request(app.getHttpServer())
-        .get(`/jobs/${jobId1}`)
-        .expect(200);
+      await request(app.getHttpServer()).get(`/jobs/${jobId1}`).expect(200);
 
       // Access second job from "different context"
-      await request(app.getHttpServer())
-        .get(`/jobs/${jobId2}`)
-        .expect(200);
+      await request(app.getHttpServer()).get(`/jobs/${jobId2}`).expect(200);
 
       // Verify both jobs appear in list
-      const listResponse = await request(app.getHttpServer())
-        .get('/jobs')
-        .expect(200);
+      const listResponse = await request(app.getHttpServer()).get('/jobs').expect(200);
 
       const jobIds = listResponse.body.data.map((job: any) => job.id);
       expect(jobIds).toContain(jobId1);
@@ -457,19 +408,15 @@ describe('Open Access Model Integration Tests (E2E)', () => {
 
     it('should allow exporting results from any job', async () => {
       // Create two jobs
-      const job1 = await request(app.getHttpServer())
-        .post('/jobs')
-        .send({
-          name: 'Export Test 1',
-          totalUrls: 1,
-        });
+      const job1 = await request(app.getHttpServer()).post('/jobs').send({
+        name: 'Export Test 1',
+        totalUrls: 1,
+      });
 
-      const job2 = await request(app.getHttpServer())
-        .post('/jobs')
-        .send({
-          name: 'Export Test 2',
-          totalUrls: 1,
-        });
+      const job2 = await request(app.getHttpServer()).post('/jobs').send({
+        name: 'Export Test 2',
+        totalUrls: 1,
+      });
 
       const jobId1 = job1.body.data.id;
       const jobId2 = job2.body.data.id;
@@ -495,12 +442,10 @@ describe('Open Access Model Integration Tests (E2E)', () => {
   describe('API Endpoint Accessibility', () => {
     it('should confirm all documented endpoints are accessible without auth', async () => {
       // Test that all major API endpoints respond without requiring authentication
-      const testJob = await request(app.getHttpServer())
-        .post('/jobs')
-        .send({
-          name: 'Auth Test Job',
-          totalUrls: 1,
-        });
+      const testJob = await request(app.getHttpServer()).post('/jobs').send({
+        name: 'Auth Test Job',
+        totalUrls: 1,
+      });
 
       const jobId = testJob.body.data.id;
 
@@ -510,7 +455,12 @@ describe('Open Access Model Integration Tests (E2E)', () => {
         { method: 'get', path: `/jobs/${jobId}`, expectedStatus: 200 },
         { method: 'get', path: `/jobs/${jobId}/results`, expectedStatus: 200 },
         { method: 'get', path: '/jobs/queue/status', expectedStatus: 200 },
-        { method: 'post', path: `/jobs/${jobId}/export`, query: { format: 'summary' }, expectedStatus: 200 },
+        {
+          method: 'post',
+          path: `/jobs/${jobId}/export`,
+          query: { format: 'summary' },
+          expectedStatus: 200,
+        },
         { method: 'patch', path: `/jobs/${jobId}/pause`, expectedStatus: 200 },
       ];
 

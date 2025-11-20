@@ -1,0 +1,315 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>ui-overhaul</epicId>
+    <storyId>4</storyId>
+    <title>Analytics & Settings</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint_artifacts/story-ui-overhaul-4.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a user who wants to understand system performance and customize my experience</asA>
+    <iWant>an analytics dashboard showing metrics and charts, plus a settings page</iWant>
+    <soThat>I can gain insights into job performance and personalize the application to my preferences</soThat>
+    <tasks>
+1. Create Analytics page (app/analytics/page.tsx) - 1h
+2. Install recharts (~2.12.0) - 30min
+3. Create MetricsCard component with trend indicators - 2h
+4. Fetch analytics data (hooks/API calls, calculate success rate, avg processing time, aggregate for charts) - 2h
+5. Create SuccessRateChart (Pie/donut, recharts) - 2-3h
+6. Create ProcessingTimeChart (Line chart, last 30 days, recharts) - 2-3h
+7. Create ActivityChart (Bar chart, jobs per day, last 30 days, recharts) - 2-3h
+8. Compose Analytics page (add all components, loading states, test with real data) - 1h
+9. Create Settings page (app/settings/page.tsx, tabbed layout) - 1h
+10. Create SettingsTabs (shadcn Tabs, General/Scraping/Appearance tabs) - 1-2h
+11. Create GeneralSettings panel (form fields, save button) - 2h
+12. Create ScrapingSettings panel (configuration options, save with confirmation) - 2h
+13. Create AppearanceSettings panel (theme, view mode, sidebar toggle, wire to use-user-preferences) - 2-3h
+14. Test preferences persistence (change settings, reload, verify persist across tabs/windows) - 1h
+15. Write tests (unit tests for all components, E2E analytics, E2E settings changes, test preferences persist) - 4-6h
+16. Polish and verify (responsive testing, accessibility check, chart interactions, visual polish) - 2h
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+**Analytics Page:**
+- AC1: Accessible at `/analytics` route
+- AC2: Shows key metrics in cards at top
+- AC3: Charts display below metrics
+- AC4: Page responsive and accessible
+- AC5: Data loads from existing APIs
+
+**Metrics Cards:**
+- AC6: Total Jobs Processed (all-time count)
+- AC7: Success Rate (percentage with trend)
+- AC8: Average Processing Time (with trend)
+- AC9: Active Jobs (current count)
+- AC10: Cards use shadcn Card component
+- AC11: Loading skeletons while data fetches
+
+**Charts:**
+- AC12: Success/Failure Rate chart (pie or donut chart)
+- AC13: Processing Time Trends (line chart, last 30 days)
+- AC14: Activity Over Time (bar chart, jobs per day, last 30 days)
+- AC15: Charts use recharts library
+- AC16: Responsive and interactive (hover for details)
+- AC17: Empty state if no data
+- AC18: Loading indicator
+
+**Settings Page:**
+- AC19: Accessible at `/settings` route
+- AC20: Tabbed navigation (General, Scraping, Appearance)
+- AC21: Uses shadcn Tabs component
+- AC22: Active tab highlighted
+- AC23: Tab selection in URL (/settings?tab=appearance)
+
+**General Settings:**
+- AC24: User name/email display (if auth exists)
+- AC25: Notification preferences toggles (email, in-app)
+- AC26: Data retention settings (if applicable)
+- AC27: Save button at bottom
+- AC28: Success toast on save
+
+**Scraping Settings:**
+- AC29: Default scraping configuration options
+- AC30: Timeout settings
+- AC31: Retry configuration
+- AC32: API key management (if applicable)
+- AC33: Save button with confirmation
+
+**Appearance Settings:**
+- AC34: Theme selection (Light, Dark, System)
+- AC35: Default view mode (Cards, Table)
+- AC36: Sidebar collapsed by default toggle
+- AC37: Compact/Comfortable density option (if implemented)
+- AC38: Changes apply immediately (no save needed)
+- AC39: Uses preferences from Story 1
+
+**Preferences Integration:**
+- AC40: Settings read from user_preferences table
+- AC41: Updates save to backend via PATCH /preferences
+- AC42: React Query optimistic updates
+- AC43: Changes persist across sessions
+- AC44: Error handling if save fails
+
+**Testing:**
+- AC45: Unit tests for all analytics components
+- AC46: Unit tests for all settings components
+- AC47: E2E: View analytics, verify charts render
+- AC48: E2E: Change settings, reload, verify persisted
+- AC49: E2E: Switch tabs in settings
+- AC50: All tests pass
+
+**Performance:**
+- AC51: Charts render in <1s
+- AC52: Settings changes apply instantly
+- AC53: No lag when switching tabs
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/sprint_artifacts/tech-spec-epic-ui-overhaul.md</path>
+        <title>Epic Technical Specification: UI/UX Modernization Overhaul</title>
+        <section>Story 4 Implementation Details (Analytics &amp; Settings)</section>
+        <snippet>Analytics page with recharts (lazy load for performance), Settings page with tabbed navigation (General, Scraping, Appearance), user preferences integration via /preferences API endpoint with React Query optimistic updates.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture-web.md</path>
+        <title>Architecture Documentation - Web Frontend</title>
+        <section>Component Hierarchy, State Management (React Query + Zustand), Styling System (Tailwind + shadcn/ui)</section>
+        <snippet>Next.js 14 with App Router, React Server/Client Components, React Query for server state with polling, Radix UI components with Tailwind CSS. Existing patterns: useJobs() with 10s polling, page components in app/, feature components organized by domain.</snippet>
+      </doc>
+      <doc>
+        <path>docs/integration-architecture.md</path>
+        <title>Integration Architecture</title>
+        <section>API Integration Points, Data Transformation, Error Handling</section>
+        <snippet>RESTful API integration via Axios + React Query. Backend uses snake_case, frontend camelCase with transformation layer. Polling-based real-time updates (10s intervals). CORS enabled for frontend origin.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>apps/web/hooks/use-user-preferences.ts</path>
+        <kind>hook</kind>
+        <symbol>useUserPreferences</symbol>
+        <lines>entire file</lines>
+        <reason>Existing preferences hook for loading and updating user settings (theme, view mode, sidebar). Reuse for Appearance Settings tab.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/web/lib/api/preferences.ts</path>
+        <kind>api-client</kind>
+        <symbol>preferencesApi</symbol>
+        <lines>entire file</lines>
+        <reason>API client for GET/PATCH /preferences endpoint. Already implements optimistic updates pattern.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/web/hooks/use-jobs.ts</path>
+        <kind>hook</kind>
+        <symbol>useJobs</symbol>
+        <lines>entire file</lines>
+        <reason>Pattern for React Query data fetching with polling. Use as reference for analytics data fetching.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/web/hooks/use-results.ts</path>
+        <kind>hook</kind>
+        <symbol>useResults</symbol>
+        <lines>entire file</lines>
+        <reason>Pattern for paginated data fetching with filters. Reference for analytics data aggregation.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/web/app/settings/page.tsx</path>
+        <kind>page</kind>
+        <symbol>SettingsPage</symbol>
+        <lines>entire file</lines>
+        <reason>Existing settings page structure. Reference for layout and tab organization pattern (currently Layer 1/2/3 tabs, will add General/Scraping/Appearance tabs).</reason>
+      </artifact>
+      <artifact>
+        <path>apps/web/components/ui/tabs.tsx</path>
+        <kind>ui-component</kind>
+        <symbol>Tabs, TabsList, TabsTrigger, TabsContent</symbol>
+        <lines>entire file</lines>
+        <reason>Radix UI tabs wrapper. Use for Settings page tabbed interface.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/web/components/ui/card.tsx</path>
+        <kind>ui-component</kind>
+        <symbol>Card, CardHeader, CardTitle, CardContent</symbol>
+        <lines>entire file</lines>
+        <reason>shadcn/ui Card component. Use for metrics cards on analytics page.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/web/components/dashboard/JobProgressCard.tsx</path>
+        <kind>component</kind>
+        <symbol>JobProgressCard</symbol>
+        <lines>entire file</lines>
+        <reason>Reference for card-based metric display with progress indicators and loading states.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package>recharts</package>
+        <version>NOT INSTALLED - Need to add ^2.12.0</version>
+        <usage>Analytics charts (Success/Failure Rate, Processing Time Trends, Activity Over Time)</usage>
+      </node>
+      <node>
+        <package>@tanstack/react-query</package>
+        <version>^5.90.2</version>
+        <usage>Server state management for analytics data fetching</usage>
+      </node>
+      <node>
+        <package>@radix-ui/react-tabs</package>
+        <version>^1.1.13</version>
+        <usage>Settings page tabbed navigation (already installed)</usage>
+      </node>
+      <node>
+        <package>axios</package>
+        <version>^1.12.2</version>
+        <usage>HTTP client for API calls (GET /preferences, PATCH /preferences, analytics endpoints)</usage>
+      </node>
+      <node>
+        <package>next</package>
+        <version>14.2.15</version>
+        <usage>Framework for /analytics and /settings page routing</usage>
+      </node>
+      <node>
+        <package>sonner</package>
+        <version>^2.0.7</version>
+        <usage>Toast notifications for settings save/error feedback</usage>
+      </node>
+      <node>
+        <package>date-fns</package>
+        <version>^3.6.0</version>
+        <usage>Date formatting for analytics time-series data</usage>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+- **Component Organization:** Place analytics components in apps/web/components/analytics/, settings components in apps/web/components/settings/
+- **Server/Client Components:** Use 'use client' directive for interactive components (charts, forms, tabs). Page components default to Server Components.
+- **State Management:** Use React Query for server state (GET /jobs for analytics data, GET/PATCH /preferences), use local state for UI interactions
+- **Code Splitting:** Lazy load recharts library via dynamic imports to reduce initial bundle size: const Chart = dynamic(() => import('./Chart'), { ssr: false })
+- **Styling:** Use Tailwind CSS utility classes, follow existing shadcn/ui component patterns, maintain consistent spacing/typography from theme
+- **Accessibility:** All interactive elements must have aria-labels, keyboard navigation support (Tab/Enter), WCAG 2.1 AA color contrast
+- **Performance:** Charts must render in &lt;1s, settings changes apply instantly, no layout shift during data loading
+- **Error Handling:** Show toast notifications for API errors, graceful degradation if preferences API unavailable (localStorage fallback)
+- **Testing:** Unit tests for all new components (Jest + Testing Library), E2E tests for critical flows (Playwright), 80%+ hook coverage
+- **API Integration:** Follow existing API client patterns (apps/web/lib/api-client.ts), transform snake_case responses to camelCase
+  </constraints>
+  <interfaces>
+    <interface>
+      <name>GET /jobs</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /jobs → { success: boolean, data: Job[] }</signature>
+      <path>Reuse existing endpoint for analytics data aggregation (success rates, processing times)</path>
+    </interface>
+    <interface>
+      <name>GET /preferences</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /preferences → { success: boolean, data: UserPreferences }</signature>
+      <path>Already implemented in apps/api/src/preferences/ (Story 1)</path>
+    </interface>
+    <interface>
+      <name>PATCH /preferences</name>
+      <kind>REST endpoint</kind>
+      <signature>PATCH /preferences (body: UpdatePreferencesDto) → { success: boolean, data: UserPreferences }</signature>
+      <path>Already implemented, use for Appearance Settings tab updates</path>
+    </interface>
+    <interface>
+      <name>useUserPreferences()</name>
+      <kind>React Hook</kind>
+      <signature>useUserPreferences() → { preferences: UserPreferences, updatePreferences: (prefs: Partial&lt;UserPreferences&gt;) =&gt; void, isLoading: boolean }</signature>
+      <path>apps/web/hooks/use-user-preferences.ts (reuse for Appearance Settings)</path>
+    </interface>
+    <interface>
+      <name>Tabs, TabsList, TabsTrigger, TabsContent</name>
+      <kind>UI Component</kind>
+      <signature>Radix UI tabs primitives wrapped by shadcn/ui</signature>
+      <path>apps/web/components/ui/tabs.tsx (use for Settings page tabbed navigation)</path>
+    </interface>
+    <interface>
+      <name>Card, CardHeader, CardTitle, CardContent</name>
+      <kind>UI Component</kind>
+      <signature>shadcn/ui Card components for metric display</signature>
+      <path>apps/web/components/ui/card.tsx (use for MetricsCard on analytics page)</path>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>
+Testing follows Jest (unit tests) + Playwright (E2E) with Testing Library for React components. Test files located in __tests__/ subdirectories next to source files. Coverage targets: 80%+ for hooks, 70%+ for components. Use React Query wrapper for hook tests, mock API responses with MSW or jest.mock(). E2E tests simulate user flows (navigate, interact, verify). Accessibility testing via Lighthouse (score &gt;90). Naming: ComponentName.spec.tsx (unit), feature-name.spec.ts (E2E).
+    </standards>
+    <locations>
+- apps/web/components/analytics/__tests__/ (unit tests for MetricsCard, charts)
+- apps/web/components/settings/__tests__/ (unit tests for settings panels)
+- apps/web/hooks/__tests__/ (unit tests for analytics data hooks)
+- apps/web/tests/e2e/ (E2E tests for analytics viewing, settings persistence)
+    </locations>
+    <ideas>
+**Analytics Tests:**
+- AC45: MetricsCard renders with loading skeleton → data display
+- AC45: SuccessRateChart renders pie chart with correct data percentages
+- AC45: ProcessingTimeChart line chart renders with 30-day data points
+- AC45: ActivityChart bar chart shows jobs per day correctly
+- AC47: E2E test navigates to /analytics, verifies charts visible, hover shows tooltips
+- AC17-18: Empty state displays when no data, loading indicator while fetching
+
+**Settings Tests:**
+- AC46: SettingsTabs switches between General/Scraping/Appearance tabs
+- AC46: AppearanceSettings updates theme via useUserPreferences hook
+- AC46: GeneralSettings form submits and shows success toast
+- AC46: ScrapingSettings saves with confirmation dialog
+- AC48: E2E test changes theme in settings, reloads page, verifies persistence
+- AC49: E2E test switches all tabs, verifies content changes
+- AC38: Appearance settings apply immediately without save button
+- AC23: Tab selection persists in URL query params (/settings?tab=appearance)
+
+**Integration Tests:**
+- AC40-42: Preferences load from /preferences endpoint on page mount
+- AC41: PATCH /preferences saves settings with optimistic updates
+- AC44: Error handling displays toast when save fails, rolls back optimistic update
+- AC43: Settings persist across browser sessions (localStorage + backend)
+    </ideas>
+  </tests>
+</story-context>

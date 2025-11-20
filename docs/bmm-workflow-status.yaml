@@ -1,0 +1,72 @@
+# Workflow Status Template
+
+# This tracks progress through BMM methodology Analysis, Planning, and Solutioning phases.
+# Implementation phase is tracked separately in sprint-status.yaml
+
+# STATUS DEFINITIONS:
+# ==================
+# Initial Status (before completion):
+#   - required: Must be completed to progress
+#   - optional: Can be completed but not required
+#   - recommended: Strongly suggested but not required
+#   - conditional: Required only if certain conditions met (e.g., if_has_ui)
+#
+# Completion Status:
+#   - {file-path}: File created/found (e.g., "docs/product-brief.md")
+#   - skipped: Optional/conditional workflow that was skipped
+
+generated: "2025-11-17T05:09:11Z"
+project: "website-scraper-project"
+project_type: "web-application"
+selected_track: "quick-flow"
+field_type: "brownfield"
+workflow_path: "quick-flow-brownfield.yaml"
+
+workflow_status:
+  # Prerequisites (Run First)
+  - id: "document-project"
+    name: "Document Project"
+    phase: "prerequisite"
+    agent: "analyst"
+    command: "/bmad:bmm:workflows:document-project"
+    output: "Comprehensive project documentation"
+    purpose: "Understand existing codebase before planning"
+    status: "docs/index.md"
+    conditional: "if_undocumented"
+
+  # Phase 0: Discovery (Optional)
+  - id: "brainstorm-project"
+    name: "Brainstorm Project"
+    phase: 0
+    agent: "analyst"
+    command: "/bmad:bmm:workflows:brainstorm-project"
+    status: "skipped"
+    optional: true
+
+  - id: "research"
+    name: "Research"
+    phase: 0
+    agent: "analyst"
+    command: "/bmad:bmm:workflows:research"
+    output: "Technical/domain analysis"
+    status: "recommended"
+    optional: true
+
+  # Phase 1: Planning
+  - id: "tech-spec"
+    name: "Technical Specification"
+    phase: 1
+    agent: "pm"
+    command: "/bmad:bmm:workflows:tech-spec"
+    output: "Technical Specification with stories (auto-detects epic if 2+ stories)"
+    note: "Integrates with existing codebase patterns from document-project"
+    status: "docs/tech-spec.md"
+
+  # Phase 2: Implementation
+  - id: "sprint-planning"
+    name: "Sprint Planning"
+    phase: 2
+    agent: "sm"
+    command: "/bmad:bmm:workflows:sprint-planning"
+    note: "Creates sprint plan with all stories"
+    status: "docs/sprint_artifacts/sprint-status.yaml"
