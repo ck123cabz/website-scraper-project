@@ -490,9 +490,9 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
               </div>
 
               <LayerFactorsDisplay
-                layer1={result.layer1_factors}
-                layer2={result.layer2_factors}
-                layer3={result.layer3_factors}
+                layer1={(result as any).layer1Factors}
+                layer2={(result as any).layer2Factors}
+                layer3={(result as any).layer3Factors}
               />
             </div>
           ))}

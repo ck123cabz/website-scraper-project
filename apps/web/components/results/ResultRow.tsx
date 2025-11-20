@@ -189,9 +189,9 @@ export function ResultRow({ result, jobId }: ResultRowProps) {
               </div>
             ) : detailedResult ? (
               <FactorBreakdown
-                layer1={detailedResult.layer1_factors}
-                layer2={detailedResult.layer2_factors}
-                layer3={detailedResult.layer3_factors}
+                layer1={(detailedResult as any).layer1Factors}
+                layer2={(detailedResult as any).layer2Factors}
+                layer3={(detailedResult as any).layer3Factors}
                 isLoading={false}
               />
             ) : (

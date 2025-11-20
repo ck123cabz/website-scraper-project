@@ -51,26 +51,26 @@ export function LayerFactorsDisplay({ layer1, layer2, layer3 }: LayerFactorsDisp
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <div className="text-xs text-muted-foreground mb-1">TLD Type</div>
-                      <div className="text-sm font-medium">{layer1.tld_type.toUpperCase()}</div>
+                      <div className="text-sm font-medium">{layer1.tldType.toUpperCase()}</div>
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground mb-1">TLD Value</div>
-                      <div className="text-sm font-medium font-mono">{layer1.tld_value}</div>
+                      <div className="text-sm font-medium font-mono">{layer1.tldValue}</div>
                     </div>
                   </div>
 
                   <div>
                     <div className="text-xs text-muted-foreground mb-1">Domain Classification</div>
                     <Badge variant="outline" className="capitalize">
-                      {layer1.domain_classification}
+                      {layer1.domainClassification}
                     </Badge>
                   </div>
 
-                  {layer1.pattern_matches && layer1.pattern_matches.length > 0 && (
+                  {layer1.patternMatches && layer1.patternMatches.length > 0 && (
                     <div>
                       <div className="text-xs text-muted-foreground mb-2">Pattern Matches</div>
                       <div className="flex flex-wrap gap-1">
-                        {layer1.pattern_matches.map((pattern, idx) => (
+                        {layer1.patternMatches.map((pattern, idx) => (
                           <Badge key={idx} variant="secondary" className="text-xs">
                             {pattern}
                           </Badge>
@@ -79,13 +79,13 @@ export function LayerFactorsDisplay({ layer1, layer2, layer3 }: LayerFactorsDisp
                     </div>
                   )}
 
-                  {layer1.target_profile && (
+                  {layer1.targetProfile && (
                     <div>
                       <div className="text-xs text-muted-foreground mb-1">Target Profile</div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{layer1.target_profile.type}</span>
+                        <span className="text-sm font-medium">{layer1.targetProfile.type}</span>
                         <Badge variant="outline" className="text-xs">
-                          {Math.round(layer1.target_profile.confidence * 100)}% confidence
+                          {Math.round(layer1.targetProfile.confidence * 100)}% confidence
                         </Badge>
                       </div>
                     </div>
@@ -138,22 +138,22 @@ export function LayerFactorsDisplay({ layer1, layer2, layer3 }: LayerFactorsDisp
                     <div className="text-xs text-muted-foreground mb-1">Publication Score</div>
                     <div className="flex items-center gap-2">
                       <div className="text-2xl font-bold">
-                        {(layer2.publication_score * 100).toFixed(0)}%
+                        {(layer2.publicationScore * 100).toFixed(0)}%
                       </div>
                       <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                         <div
                           className="h-full bg-primary transition-all"
-                          style={{ width: `${layer2.publication_score * 100}%` }}
+                          style={{ width: `${layer2.publicationScore * 100}%` }}
                         />
                       </div>
                     </div>
                   </div>
 
-                  {layer2.module_scores && (
+                  {layer2.moduleScores && (
                     <div>
                       <div className="text-xs text-muted-foreground mb-2">Module Scores</div>
                       <div className="grid grid-cols-2 gap-2">
-                        {Object.entries(layer2.module_scores).map(([key, value]) => (
+                        {Object.entries(layer2.moduleScores).map(([key, value]) => (
                           <div key={key} className="flex items-center justify-between p-2 rounded bg-background border">
                             <span className="text-xs capitalize">
                               {key.replace(/_/g, ' ')}
@@ -167,11 +167,11 @@ export function LayerFactorsDisplay({ layer1, layer2, layer3 }: LayerFactorsDisp
                     </div>
                   )}
 
-                  {layer2.content_signals && (
+                  {layer2.contentSignals && (
                     <div>
                       <div className="text-xs text-muted-foreground mb-2">Content Signals</div>
                       <div className="flex flex-wrap gap-2">
-                        {Object.entries(layer2.content_signals).map(([key, value]) => (
+                        {Object.entries(layer2.contentSignals).map(([key, value]) => (
                           <div
                             key={key}
                             className="flex items-center gap-1 px-2 py-1 rounded border bg-background text-xs"
@@ -188,11 +188,11 @@ export function LayerFactorsDisplay({ layer1, layer2, layer3 }: LayerFactorsDisp
                     </div>
                   )}
 
-                  {layer2.keywords_found && layer2.keywords_found.length > 0 && (
+                  {layer2.keywordsFound && layer2.keywordsFound.length > 0 && (
                     <div>
                       <div className="text-xs text-muted-foreground mb-2">Keywords Found</div>
                       <div className="flex flex-wrap gap-1">
-                        {layer2.keywords_found.map((keyword, idx) => (
+                        {layer2.keywordsFound.map((keyword, idx) => (
                           <Badge key={idx} variant="secondary" className="text-xs">
                             {keyword}
                           </Badge>
@@ -201,11 +201,11 @@ export function LayerFactorsDisplay({ layer1, layer2, layer3 }: LayerFactorsDisp
                     </div>
                   )}
 
-                  {layer2.ad_networks_detected && layer2.ad_networks_detected.length > 0 && (
+                  {layer2.adNetworksDetected && layer2.adNetworksDetected.length > 0 && (
                     <div>
                       <div className="text-xs text-muted-foreground mb-2">Ad Networks Detected</div>
                       <div className="flex flex-wrap gap-1">
-                        {layer2.ad_networks_detected.map((network, idx) => (
+                        {layer2.adNetworksDetected.map((network, idx) => (
                           <Badge key={idx} variant="outline" className="text-xs">
                             {network}
                           </Badge>
@@ -260,12 +260,12 @@ export function LayerFactorsDisplay({ layer1, layer2, layer3 }: LayerFactorsDisp
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <div className="text-xs text-muted-foreground mb-1">LLM Provider</div>
-                      <div className="text-sm font-medium capitalize">{layer3.llm_provider}</div>
+                      <div className="text-sm font-medium capitalize">{layer3.llmProvider}</div>
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground mb-1">Model Version</div>
                       <div className="text-sm font-medium font-mono text-xs">
-                        {layer3.model_version}
+                        {layer3.modelVersion}
                       </div>
                     </div>
                   </div>
@@ -273,27 +273,27 @@ export function LayerFactorsDisplay({ layer1, layer2, layer3 }: LayerFactorsDisp
                   <div className="grid grid-cols-3 gap-4">
                     <div>
                       <div className="text-xs text-muted-foreground mb-1">Processing Time</div>
-                      <div className="text-sm font-medium">{layer3.processing_time_ms}ms</div>
+                      <div className="text-sm font-medium">{layer3.processingTimeMs}ms</div>
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground mb-1">Cost</div>
-                      <div className="text-sm font-medium">${layer3.cost_usd.toFixed(4)}</div>
+                      <div className="text-sm font-medium">${layer3.costUsd.toFixed(4)}</div>
                     </div>
-                    {layer3.tokens_used && (
+                    {layer3.tokensUsed && (
                       <div>
                         <div className="text-xs text-muted-foreground mb-1">Tokens Used</div>
                         <div className="text-sm font-medium">
-                          {layer3.tokens_used.input + layer3.tokens_used.output}
+                          {layer3.tokensUsed.input + layer3.tokensUsed.output}
                         </div>
                       </div>
                     )}
                   </div>
 
-                  {layer3.sophistication_signals && (
+                  {layer3.sophisticationSignals && (
                     <div>
                       <div className="text-xs text-muted-foreground mb-2">Sophistication Signals</div>
                       <div className="grid gap-2">
-                        {Object.entries(layer3.sophistication_signals).map(([key, signal]) => (
+                        {Object.entries(layer3.sophisticationSignals).map(([key, signal]) => (
                           <div
                             key={key}
                             className="p-3 rounded-lg border bg-background space-y-2"
