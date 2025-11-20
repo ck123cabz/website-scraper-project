@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var JobsController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.JobsController = void 0;
 const common_1 = require("@nestjs/common");
@@ -18,19 +19,23 @@ const platform_express_1 = require("@nestjs/platform-express");
 const jobs_service_1 = require("./jobs.service");
 const file_parser_service_1 = require("./services/file-parser.service");
 const url_validation_service_1 = require("./services/url-validation.service");
+const layer1_domain_analysis_service_1 = require("./services/layer1-domain-analysis.service");
 const queue_service_1 = require("../queue/queue.service");
 const supabase_service_1 = require("../supabase/supabase.service");
 const export_service_1 = require("./services/export.service");
 const create_job_dto_1 = require("./dto/create-job.dto");
 const path_1 = require("path");
-let JobsController = class JobsController {
-    constructor(jobsService, fileParserService, urlValidationService, queueService, supabase, exportService) {
+const common_2 = require("@nestjs/common");
+let JobsController = JobsController_1 = class JobsController {
+    constructor(jobsService, fileParserService, urlValidationService, layer1Analysis, queueService, supabase, exportService) {
         this.jobsService = jobsService;
         this.fileParserService = fileParserService;
         this.urlValidationService = urlValidationService;
+        this.layer1Analysis = layer1Analysis;
         this.queueService = queueService;
         this.supabase = supabase;
         this.exportService = exportService;
+        this.logger = new common_2.Logger(JobsController_1.name);
     }
     async createJobWithUrls(file, body, contentType, req) {
         try {
@@ -73,12 +78,29 @@ let JobsController = class JobsController {
             }
             const uniqueUrls = Array.from(deduplicationMap.values());
             const duplicatesRemovedCount = originalCount - uniqueUrls.length;
-            const { job, urlIds } = await this.jobsService.createJobWithUrls(jobName, uniqueUrls);
+            const layer1StartTime = performance.now();
+            const layer1PassedUrls = [];
+            const layer1RejectedUrls = [];
+            for (const url of uniqueUrls) {
+                const result = this.layer1Analysis.analyzeUrl(url);
+                if (result.passed) {
+                    layer1PassedUrls.push(url);
+                }
+                else {
+                    layer1RejectedUrls.push(url);
+                }
+            }
+            const layer1Duration = performance.now() - layer1StartTime;
+            const layer1EliminationRate = uniqueUrls.length > 0
+                ? ((layer1RejectedUrls.length / uniqueUrls.length) * 100).toFixed(1)
+                : '0.0';
+            this.logger.log(`Layer 1 bulk filtering: ${layer1RejectedUrls.length}/${uniqueUrls.length} URLs rejected (${layer1EliminationRate}% elimination rate) in ${layer1Duration.toFixed(0)}ms`);
+            const { job, urlIds } = await this.jobsService.createJobWithUrls(jobName, layer1PassedUrls);
             await this.jobsService.updateJob(job.id, {
                 status: 'processing',
                 started_at: new Date().toISOString(),
             });
-            const queueJobs = uniqueUrls.map((url, index) => ({
+            const queueJobs = layer1PassedUrls.map((url, index) => ({
                 jobId: job.id,
                 url,
                 urlId: urlIds[index],
@@ -88,9 +110,11 @@ let JobsController = class JobsController {
                 success: true,
                 data: {
                     job_id: job.id,
-                    url_count: uniqueUrls.length,
+                    url_count: layer1PassedUrls.length,
                     duplicates_removed_count: duplicatesRemovedCount,
                     invalid_urls_count: invalidCount,
+                    layer1_rejected_count: layer1RejectedUrls.length,
+                    layer1_elimination_rate: `${layer1EliminationRate}%`,
                     created_at: job.created_at,
                     status: 'processing',
                 },
@@ -524,11 +548,12 @@ __decorate([
     __metadata("design:paramtypes", [String, String, String]),
     __metadata("design:returntype", Promise)
 ], JobsController.prototype, "getQueueStatus", null);
-exports.JobsController = JobsController = __decorate([
+exports.JobsController = JobsController = JobsController_1 = __decorate([
     (0, common_1.Controller)('jobs'),
     __metadata("design:paramtypes", [jobs_service_1.JobsService,
         file_parser_service_1.FileParserService,
         url_validation_service_1.UrlValidationService,
+        layer1_domain_analysis_service_1.Layer1DomainAnalysisService,
         queue_service_1.QueueService,
         supabase_service_1.SupabaseService,
         export_service_1.ExportService])

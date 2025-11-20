@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { JobsService } from './jobs.service';
 import { FileParserService } from './services/file-parser.service';
 import { UrlValidationService } from './services/url-validation.service';
+import { Layer1DomainAnalysisService } from './services/layer1-domain-analysis.service';
 import { QueueService } from '../queue/queue.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { ExportService } from './services/export.service';
@@ -10,10 +11,12 @@ export declare class JobsController {
     private readonly jobsService;
     private readonly fileParserService;
     private readonly urlValidationService;
+    private readonly layer1Analysis;
     private readonly queueService;
     private readonly supabase;
     private readonly exportService;
-    constructor(jobsService: JobsService, fileParserService: FileParserService, urlValidationService: UrlValidationService, queueService: QueueService, supabase: SupabaseService, exportService: ExportService);
+    private readonly logger;
+    constructor(jobsService: JobsService, fileParserService: FileParserService, urlValidationService: UrlValidationService, layer1Analysis: Layer1DomainAnalysisService, queueService: QueueService, supabase: SupabaseService, exportService: ExportService);
     createJobWithUrls(file: Express.Multer.File | undefined, body: CreateJobDto, contentType: string, req: Request): Promise<{
         success: boolean;
         data: {
@@ -21,6 +24,8 @@ export declare class JobsController {
             url_count: number;
             duplicates_removed_count: number;
             invalid_urls_count: number;
+            layer1_rejected_count: number;
+            layer1_elimination_rate: string;
             created_at: string;
             status: string;
         };

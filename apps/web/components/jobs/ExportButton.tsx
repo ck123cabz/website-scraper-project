@@ -13,7 +13,13 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Download } from 'lucide-react';
 import { resultsApi } from '@/lib/api-client';
 import { toast } from 'sonner';
@@ -37,18 +43,21 @@ export function ExportButton({
   const [format, setFormat] = useState<'complete' | 'summary' | 'layer1' | 'layer2' | 'layer3'>(
     'complete'
   );
-  const [includeRejected, setIncludeRejected] = useState(true);
-  const [includeFailed, setIncludeFailed] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'approved' | 'rejected'>('all');
+  const [selectedLayer, setSelectedLayer] = useState<'all' | 'layer1' | 'layer2' | 'layer3' | 'passed_all'>('all');
+  const [selectedConfidence, setSelectedConfidence] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
     setIsExporting(true);
     try {
       // Build export parameters
-      const params: any = { format };
-
-      // No filter logic needed - always export all results
-      // The backend defaults to 'all' when filter is not provided
+      const params: any = {
+        format,
+        filter: selectedFilter !== 'all' ? selectedFilter : undefined,
+        layer: selectedLayer !== 'all' ? selectedLayer : undefined,
+        confidence: selectedConfidence !== 'all' ? selectedConfidence : undefined,
+      };
 
       const blob = await resultsApi.exportJobResults(jobId, params);
 
@@ -86,7 +95,7 @@ export function ExportButton({
           Export Results
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Export Job Results</DialogTitle>
           <DialogDescription>
@@ -163,34 +172,54 @@ export function ExportButton({
 
           {/* Filter Options */}
           <div className="space-y-3">
-            <Label className="text-base font-medium">Include in Export</Label>
+            <Label className="text-base font-medium">Filter Options</Label>
+
+            {/* Approval Filter */}
             <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="include-rejected"
-                  checked={includeRejected}
-                  onCheckedChange={(checked) => setIncludeRejected(checked as boolean)}
-                />
-                <Label
-                  htmlFor="include-rejected"
-                  className="text-sm font-normal cursor-pointer"
-                >
-                  Rejected URLs (didn't pass filters)
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="include-failed"
-                  checked={includeFailed}
-                  onCheckedChange={(checked) => setIncludeFailed(checked as boolean)}
-                />
-                <Label
-                  htmlFor="include-failed"
-                  className="text-sm font-normal cursor-pointer"
-                >
-                  Failed URLs (errors during processing)
-                </Label>
-              </div>
+              <Label htmlFor="filter" className="text-sm">Approval Status</Label>
+              <Select value={selectedFilter} onValueChange={(value) => setSelectedFilter(value as typeof selectedFilter)}>
+                <SelectTrigger id="filter">
+                  <SelectValue placeholder="Select approval status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Results</SelectItem>
+                  <SelectItem value="approved">Approved Only</SelectItem>
+                  <SelectItem value="rejected">Rejected Only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Layer Filter */}
+            <div className="space-y-2">
+              <Label htmlFor="layer" className="text-sm">Filter by Layer</Label>
+              <Select value={selectedLayer} onValueChange={(value) => setSelectedLayer(value as typeof selectedLayer)}>
+                <SelectTrigger id="layer">
+                  <SelectValue placeholder="Select layer" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Layers</SelectItem>
+                  <SelectItem value="layer1">Layer 1 Only</SelectItem>
+                  <SelectItem value="layer2">Layer 2 Only</SelectItem>
+                  <SelectItem value="layer3">Layer 3 Only</SelectItem>
+                  <SelectItem value="passed_all">Passed All Layers</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Confidence Filter */}
+            <div className="space-y-2">
+              <Label htmlFor="confidence" className="text-sm">Filter by Confidence</Label>
+              <Select value={selectedConfidence} onValueChange={(value) => setSelectedConfidence(value as typeof selectedConfidence)}>
+                <SelectTrigger id="confidence">
+                  <SelectValue placeholder="Select confidence level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Confidence Levels</SelectItem>
+                  <SelectItem value="high">High Confidence</SelectItem>
+                  <SelectItem value="medium">Medium Confidence</SelectItem>
+                  <SelectItem value="low">Low Confidence</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>

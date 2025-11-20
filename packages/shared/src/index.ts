@@ -63,4 +63,4 @@ export { resultSchema, resultStatusSchema, classificationResultSchema, llmProvid
 export type { ResultSchema } from './schemas/result';
 
 // Utils
-export { formatDuration, formatNumber, calculateProcessingRate, formatTimestamp, formatTime, formatCurrency } from './utils/format';
+export { formatDuration, formatDurationHumanReadable, formatNumber, calculateProcessingRate, formatTimestamp, formatTime, formatCurrency } from './utils/format';

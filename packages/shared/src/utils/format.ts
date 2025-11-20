@@ -27,6 +27,45 @@ export function formatDuration(seconds: number): string {
 }
 
 /**
+ * Formats a duration in seconds to human-readable format (e.g., "1h 23m 45s")
+ * @param seconds - Duration in seconds
+ * @returns Formatted string in human-readable format
+ * @example
+ * formatDurationHumanReadable(3661) // "1h 1m 1s"
+ * formatDurationHumanReadable(45) // "45s"
+ * formatDurationHumanReadable(3600) // "1h"
+ * formatDurationHumanReadable(90) // "1m 30s"
+ * formatDurationHumanReadable(0) // "0s"
+ */
+export function formatDurationHumanReadable(seconds: number): string {
+  // Handle negative numbers and non-finite values
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    return "0s";
+  }
+
+  // Round to nearest second
+  seconds = Math.floor(seconds);
+
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+
+  const parts: string[] = [];
+
+  if (hours > 0) {
+    parts.push(`${hours}h`);
+  }
+  if (minutes > 0) {
+    parts.push(`${minutes}m`);
+  }
+  if (secs > 0 || parts.length === 0) {
+    parts.push(`${secs}s`);
+  }
+
+  return parts.join(' ');
+}
+
+/**
  * Formats a number with comma separators for readability
  * @param num - Number to format
  * @returns Formatted string with comma separators

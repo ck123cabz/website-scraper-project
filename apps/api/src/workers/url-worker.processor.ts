@@ -61,7 +61,7 @@ import { ConfidenceScoringService } from '../jobs/services/confidence-scoring.se
  * - Cost savings calculation (Layer 1 and Layer 2 eliminations)
  */
 @Processor('url-processing-queue', {
-  concurrency: 5, // T020-T021: Process 5 URLs concurrently (respects ScrapingBee 10 req/sec limit)
+  concurrency: 10, // Process 10 URLs concurrently (optimized for faster processing)
 })
 @Injectable()
 export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
@@ -309,7 +309,7 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
   }
 
   /**
-   * Update current_layer field for real-time dashboard tracking
+   * Update current_layer field and add URL to current_urls array for real-time dashboard tracking
    * @private
    */
   private async updateCurrentLayer(
@@ -317,15 +317,59 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     currentUrl: string,
     layer: 1 | 2 | 3,
   ): Promise<void> {
+    const entry = {
+      url: currentUrl,
+      layer: layer,
+      started_at: new Date().toISOString(),
+    };
+
+    // Add to current_urls array (keeps last 10 for display)
     await this.supabase
       .getClient()
+      .rpc('add_current_url', {
+        p_job_id: jobId,
+        p_url_entry: entry,
+      });
+  }
+
+  /**
+   * Remove URL from current_urls array when processing completes
+   * @private
+   */
+  private async removeCurrentUrl(
+    jobId: string,
+    currentUrl: string,
+  ): Promise<void> {
+    await this.supabase
+      .getClient()
+      .rpc('remove_current_url', {
+        p_job_id: jobId,
+        p_url: currentUrl,
+      });
+  }
+
+  /**
+   * Clear current_url and current_layer fields if array is empty
+   * @private
+   */
+  private async clearCurrentFieldsIfEmpty(jobId: string): Promise<void> {
+    const { data: job } = await this.supabase
+      .getClient()
       .from('jobs')
-      .update({
-        current_url: currentUrl,
-        current_layer: layer,
-        current_url_started_at: new Date().toISOString(),
-      })
-      .eq('id', jobId);
+      .select('current_urls')
+      .eq('id', jobId)
+      .single();
+
+    if (job && (!job.current_urls || job.current_urls.length === 0)) {
+      await this.supabase
+        .getClient()
+        .from('jobs')
+        .update({
+          current_url: null,
+          current_layer: null,
+        })
+        .eq('id', jobId);
+    }
   }
 
   /**
@@ -405,14 +449,16 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     const processedUrls = (job as any)?.processed_urls || 0;
     const progressPercentage = ((processedUrls / jobMeta.total_urls) * 100).toFixed(2);
 
+    // Remove URL from current_urls array and clear fields if needed
+    await this.removeCurrentUrl(jobId, url);
+    await this.clearCurrentFieldsIfEmpty(jobId);
+
     // Update progress percentage separately (non-critical)
     await this.supabase
       .getClient()
       .from('jobs')
       .update({
         progress_percentage: parseFloat(progressPercentage),
-        current_url: null,
-        current_layer: null,
       })
       .eq('id', jobId);
 
@@ -529,13 +575,15 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     const processedUrls = (job as any)?.processed_urls || 0;
     const progressPercentage = ((processedUrls / jobMeta.total_urls) * 100).toFixed(2);
 
+    // Remove URL from current_urls array and clear fields if needed
+    await this.removeCurrentUrl(jobId, url);
+    await this.clearCurrentFieldsIfEmpty(jobId);
+
     await this.supabase
       .getClient()
       .from('jobs')
       .update({
         progress_percentage: parseFloat(progressPercentage),
-        current_url: null,
-        current_layer: null,
       })
       .eq('id', jobId);
 
@@ -715,12 +763,14 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     const gptCostDelta =
       layer3Result.classification.provider === 'gpt' ? layer3Result.classification.cost : 0;
 
+    // Fix counter logic: increment successful_urls only for approved, rejected_urls for rejected
     const { data: job } = await this.supabase
       .getClient()
       .rpc('increment_job_counters', {
         p_job_id: jobId,
         p_processed_urls_delta: 1,
-        p_successful_urls_delta: 1,
+        p_successful_urls_delta: finalStatus === 'approved' ? 1 : 0,
+        p_rejected_urls_delta: finalStatus === 'rejected' ? 1 : 0,
         p_total_cost_delta: layer3Result.classification.cost,
         p_scraping_cost_delta: this.SCRAPING_COST_PER_URL, // Layer 3 incurs scraping cost
         p_gemini_cost_delta: geminiCostDelta,
@@ -732,13 +782,15 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     const totalJobCost = (job as any)?.total_cost || 0;
     const progressPercentage = ((processedUrls / jobMeta.total_urls) * 100).toFixed(2);
 
+    // Remove URL from current_urls array and clear fields if needed
+    await this.removeCurrentUrl(jobId, url);
+    await this.clearCurrentFieldsIfEmpty(jobId);
+
     await this.supabase
       .getClient()
       .from('jobs')
       .update({
         progress_percentage: parseFloat(progressPercentage),
-        current_url: null,
-        current_layer: null,
       })
       .eq('id', jobId);
 
@@ -883,13 +935,15 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     const processedUrls = (job as any)?.processed_urls || 0;
     const progressPercentage = ((processedUrls / jobMeta.total_urls) * 100).toFixed(2);
 
+    // Remove URL from current_urls array and clear fields if needed
+    await this.removeCurrentUrl(jobId, url);
+    await this.clearCurrentFieldsIfEmpty(jobId);
+
     await this.supabase
       .getClient()
       .from('jobs')
       .update({
         progress_percentage: parseFloat(progressPercentage),
-        current_url: null,
-        current_layer: null,
       })
       .eq('id', jobId);
 
@@ -921,6 +975,7 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
       job.total_urls > 0 ? ((job.successful_urls || 0) / job.total_urls) * 100 : 0;
     const avgCostPerUrl = job.processed_urls > 0 ? (job.total_cost || 0) / job.processed_urls : 0;
 
+    // Clear current_urls array and legacy fields on job completion
     await this.supabase
       .getClient()
       .from('jobs')
@@ -929,6 +984,7 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
         completed_at: new Date().toISOString(),
         current_url: null,
         current_layer: null,
+        current_urls: [],
       })
       .eq('id', jobId);
 

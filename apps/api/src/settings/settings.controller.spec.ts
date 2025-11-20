@@ -55,8 +55,8 @@ describe('SettingsController', () => {
       payment_provider_patterns: ['stripe'],
     },
     layer3_rules: {
-      guest_post_red_flags: ['Test indicator'],
-      seo_investment_signals: ['schema_markup'],
+      positive_indicators: ['High-quality content'],
+      negative_indicators: ['Test indicator'],
       llm_temperature: 0.3,
       content_truncation_limit: 10000,
     },
@@ -376,8 +376,8 @@ describe('SettingsController - Validation Tests', () => {
     it('should reject llm_temperature < 0', async () => {
       const dto = plainToClass(UpdateSettingsDto, {
         layer3_rules: {
-          guest_post_red_flags: ['Test'],
-          seo_investment_signals: ['schema_markup'],
+          positive_indicators: ['High-quality content'],
+          negative_indicators: ['Test'],
           llm_temperature: -0.5, // Invalid
           content_truncation_limit: 10000,
         },
@@ -392,8 +392,8 @@ describe('SettingsController - Validation Tests', () => {
     it('should reject llm_temperature > 1', async () => {
       const dto = plainToClass(UpdateSettingsDto, {
         layer3_rules: {
-          guest_post_red_flags: ['Test'],
-          seo_investment_signals: ['schema_markup'],
+          positive_indicators: ['High-quality content'],
+          negative_indicators: ['Test'],
           llm_temperature: 2.0, // Invalid - THE BUG WE'RE FIXING!
           content_truncation_limit: 10000,
         },
@@ -408,8 +408,8 @@ describe('SettingsController - Validation Tests', () => {
     it('should reject content_truncation_limit < 1000', async () => {
       const dto = plainToClass(UpdateSettingsDto, {
         layer3_rules: {
-          guest_post_red_flags: ['Test'],
-          seo_investment_signals: ['schema_markup'],
+          positive_indicators: ['High-quality content'],
+          negative_indicators: ['Test'],
           llm_temperature: 0.3,
           content_truncation_limit: 500, // Invalid
         },
@@ -424,8 +424,8 @@ describe('SettingsController - Validation Tests', () => {
     it('should reject content_truncation_limit > 50000', async () => {
       const dto = plainToClass(UpdateSettingsDto, {
         layer3_rules: {
-          guest_post_red_flags: ['Test'],
-          seo_investment_signals: ['schema_markup'],
+          positive_indicators: ['High-quality content'],
+          negative_indicators: ['Test'],
           llm_temperature: 0.3,
           content_truncation_limit: 60000, // Invalid
         },
@@ -440,8 +440,8 @@ describe('SettingsController - Validation Tests', () => {
     it('should accept valid layer3 values', async () => {
       const dto = plainToClass(UpdateSettingsDto, {
         layer3_rules: {
-          guest_post_red_flags: ['Test'],
-          seo_investment_signals: ['schema_markup'],
+          positive_indicators: ['High-quality content'],
+          negative_indicators: ['Test'],
           llm_temperature: 0.3,
           content_truncation_limit: 10000,
         },
@@ -552,15 +552,15 @@ describe('SettingsController - Integration Tests', () => {
         layer3_rules: {
           llm_temperature: 0.5,
           content_truncation_limit: 15000,
-          guest_post_red_flags: ['Custom indicator'],
-          seo_investment_signals: ['custom_signal'],
+          positive_indicators: ['High-quality content'],
+          negative_indicators: ['Custom indicator'],
         },
       };
 
       // Verify layer3_rules structure is used
       expect(mockSettings.layer3_rules.llm_temperature).toBe(0.5);
       expect(mockSettings.layer3_rules.content_truncation_limit).toBe(15000);
-      expect(mockSettings.layer3_rules.guest_post_red_flags).toContain('Custom indicator');
+      expect(mockSettings.layer3_rules.negative_indicators).toContain('Custom indicator');
     });
 
     it('should fallback to V1 fields when layer3_rules not available', async () => {
@@ -624,8 +624,8 @@ describe('SettingsController - Integration Tests', () => {
           min_design_quality_score: 6,
         },
         layer3_rules: {
-          guest_post_red_flags: ['Test'],
-          seo_investment_signals: ['schema_markup'],
+          positive_indicators: ['High-quality content'],
+          negative_indicators: ['Test'],
           llm_temperature: 0.3,
           content_truncation_limit: 10000,
         },

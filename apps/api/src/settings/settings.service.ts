@@ -340,12 +340,22 @@ export class SettingsService {
       },
     ];
 
-    const v1ClassificationIndicators = [
+    // Default positive indicators for Layer 3 LLM classification
+    const defaultPositiveIndicators = [
+      'High-quality editorial content with depth and professional tone',
+      'Multiple authors with detailed profiles and credentials',
+      'Active audience engagement (comments, social shares, community interaction)',
+      'Strong SEO investment (meta tags, schema markup, structured data)',
+      'Regular publishing cadence with diverse, well-researched content',
+    ];
+
+    // Default negative indicators for Layer 3 LLM classification
+    const defaultNegativeIndicators = [
       'Explicit "Write for Us" or "Guest Post Guidelines" pages',
-      'Author bylines with external contributors',
-      'Contributor sections or editorial team listings',
-      'Writing opportunities or submission guidelines',
-      'Clear evidence of accepting external content',
+      'Guest post solicitation or payment requests',
+      'Low-quality, thin, or spammy content',
+      'Excessive advertising or aggressive affiliate marketing',
+      'Link farms or content mills characteristics',
     ];
 
     // Layer-structured defaults (Story 3.0)
@@ -393,8 +403,8 @@ export class SettingsService {
     };
 
     const layer3_rules: Layer3Rules = {
-      guest_post_red_flags: v1ClassificationIndicators,
-      seo_investment_signals: ['schema_markup', 'open_graph', 'structured_data'],
+      positive_indicators: defaultPositiveIndicators,
+      negative_indicators: defaultNegativeIndicators,
       llm_temperature: this.DEFAULT_TEMPERATURE,
       content_truncation_limit: this.DEFAULT_CONTENT_LIMIT,
     };
@@ -417,7 +427,7 @@ export class SettingsService {
       id: 'default',
       // V1 backward compatibility fields
       prefilter_rules: v1PrefilterRules,
-      classification_indicators: v1ClassificationIndicators,
+      classification_indicators: defaultNegativeIndicators, // V1 fallback: use negative indicators
       llm_temperature: this.DEFAULT_TEMPERATURE,
       confidence_threshold: this.DEFAULT_CONFIDENCE_THRESHOLD,
       content_truncation_limit: this.DEFAULT_CONTENT_LIMIT,

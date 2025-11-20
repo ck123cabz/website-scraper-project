@@ -60,10 +60,10 @@ export interface Layer1Rules {
  * Controls LLM-based content classification
  */
 export interface Layer3Rules {
-  /** Guest post red flags - signals that indicate low-quality link farms (sites WITH these should be marked NOT suitable) */
-  guest_post_red_flags: string[]; // ["Write for us", "Guest post guidelines", ...]
-  /** SEO investment signals */
-  seo_investment_signals: string[]; // ["schema_markup", "open_graph", "structured_data"]
+  /** Positive indicators - signals that indicate a site IS suitable for outreach (one per line) */
+  positive_indicators: string[]; // ["High-quality editorial content", "Multiple authors with profiles", ...]
+  /** Negative indicators - signals that indicate a site is NOT suitable for outreach (one per line) */
+  negative_indicators: string[]; // ["Write for us pages", "Guest post solicitation", ...]
   /** LLM temperature (0-1, default 0.3) */
   llm_temperature: number;
   /** Content truncation limit in characters (default 10000) */

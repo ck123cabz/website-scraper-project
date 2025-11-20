@@ -32,7 +32,9 @@ interface ExportDialogProps {
 
 export function ExportDialog({ jobId, jobName, isOpen, onOpenChange }: ExportDialogProps) {
   const [selectedFormat, setSelectedFormat] = useState<ExportResultsParams['format']>('complete');
-  const [selectedStatus, setSelectedStatus] = useState<'all' | 'success' | 'rejected' | 'failed'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'approved' | 'rejected'>('all');
+  const [selectedLayer, setSelectedLayer] = useState<'all' | 'layer1' | 'layer2' | 'layer3' | 'passed_all'>('all');
+  const [selectedConfidence, setSelectedConfidence] = useState<'all' | 'high' | 'medium' | 'low'>('all');
 
   const { mutate: exportResults, isPending, error, reset } = useExportResults({ jobId, jobName });
 
@@ -47,13 +49,15 @@ export function ExportDialog({ jobId, jobName, isOpen, onOpenChange }: ExportDia
   const handleExport = () => {
     exportResults({
       format: selectedFormat,
-      status: selectedStatus !== 'all' ? selectedStatus : undefined,
+      filter: selectedFilter !== 'all' ? selectedFilter : undefined,
+      layer: selectedLayer !== 'all' ? selectedLayer : undefined,
+      confidence: selectedConfidence !== 'all' ? selectedConfidence : undefined,
     });
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Export Results</DialogTitle>
           <DialogDescription>
@@ -79,18 +83,50 @@ export function ExportDialog({ jobId, jobName, isOpen, onOpenChange }: ExportDia
             </Select>
           </div>
 
-          {/* Status Filter */}
+          {/* Approval Filter */}
           <div className="space-y-2">
-            <Label htmlFor="status">Include Results</Label>
-            <Select value={selectedStatus} onValueChange={(value) => setSelectedStatus(value as typeof selectedStatus)}>
-              <SelectTrigger id="status">
-                <SelectValue placeholder="Select results to include" />
+            <Label htmlFor="filter">Approval Status</Label>
+            <Select value={selectedFilter} onValueChange={(value) => setSelectedFilter(value as typeof selectedFilter)}>
+              <SelectTrigger id="filter">
+                <SelectValue placeholder="Select approval status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Results</SelectItem>
-                <SelectItem value="success">Approved Only</SelectItem>
+                <SelectItem value="approved">Approved Only</SelectItem>
                 <SelectItem value="rejected">Rejected Only</SelectItem>
-                <SelectItem value="failed">Failed Only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Layer Filter */}
+          <div className="space-y-2">
+            <Label htmlFor="layer">Filter by Layer</Label>
+            <Select value={selectedLayer} onValueChange={(value) => setSelectedLayer(value as typeof selectedLayer)}>
+              <SelectTrigger id="layer">
+                <SelectValue placeholder="Select layer" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Layers</SelectItem>
+                <SelectItem value="layer1">Layer 1 Only</SelectItem>
+                <SelectItem value="layer2">Layer 2 Only</SelectItem>
+                <SelectItem value="layer3">Layer 3 Only</SelectItem>
+                <SelectItem value="passed_all">Passed All Layers</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Confidence Filter */}
+          <div className="space-y-2">
+            <Label htmlFor="confidence">Filter by Confidence</Label>
+            <Select value={selectedConfidence} onValueChange={(value) => setSelectedConfidence(value as typeof selectedConfidence)}>
+              <SelectTrigger id="confidence">
+                <SelectValue placeholder="Select confidence level" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Confidence Levels</SelectItem>
+                <SelectItem value="high">High Confidence</SelectItem>
+                <SelectItem value="medium">Medium Confidence</SelectItem>
+                <SelectItem value="low">Low Confidence</SelectItem>
               </SelectContent>
             </Select>
           </div>

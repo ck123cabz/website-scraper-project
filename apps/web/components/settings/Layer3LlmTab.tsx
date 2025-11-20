@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 
 interface Layer3LlmTabProps {
   rules: Layer3Rules;
@@ -16,69 +15,64 @@ interface Layer3LlmTabProps {
 
 export function Layer3LlmTab({ rules, onChange, errors }: Layer3LlmTabProps) {
   // Ensure arrays exist with defaults
-  const guestPostRedFlags = rules?.guest_post_red_flags || [];
-  const seoInvestmentSignals = rules?.seo_investment_signals || [];
+  const positiveIndicators = rules?.positive_indicators || [];
+  const negativeIndicators = rules?.negative_indicators || [];
 
   return (
     <div className="space-y-6">
-      {/* Guest Post Red Flags */}
+      {/* Positive Indicators */}
       <Card>
         <CardHeader>
-          <CardTitle>Guest Post Red Flags (Negative Indicators)</CardTitle>
+          <CardTitle>Positive Indicators</CardTitle>
           <CardDescription>
-            Sites WITH these signals should be marked NOT suitable (low-quality link farms).
-            Enter one signal per line.
+            Signals that indicate a site IS suitable for outreach.
+            Enter one indicator per line.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <Textarea
-            placeholder="Explicit &quot;Write for Us&quot; or &quot;Guest Post Guidelines&quot; pages&#10;Author bylines with external contributors&#10;Contributor sections or editorial team listings&#10;Writing opportunities or submission guidelines&#10;Clear evidence of accepting external content"
-            value={guestPostRedFlags.join('\n')}
+            placeholder="High-quality editorial content&#10;Multiple authors with detailed profiles&#10;Professional writing and well-researched articles&#10;Active audience engagement (comments, shares)&#10;Strong SEO investment (meta tags, schema markup)"
+            value={positiveIndicators.join('\n')}
             onChange={(e) => {
               const indicators = e.target.value
                 .split('\n')
-                .map((i) => i.trim())
-                .filter((i) => i);
-              onChange({ ...rules, guest_post_red_flags: indicators });
+                .map((i) => i.trim());
+              onChange({ ...rules, positive_indicators: indicators });
             }}
-            rows={6}
+            rows={8}
             className="font-mono text-sm"
           />
           <p className="text-xs text-muted-foreground">
-            Current red flags: {guestPostRedFlags.length}
+            Current positive indicators: {positiveIndicators.length}
           </p>
         </CardContent>
       </Card>
 
-      {/* SEO Investment Signals */}
+      {/* Negative Indicators */}
       <Card>
         <CardHeader>
-          <CardTitle>SEO Investment Signals</CardTitle>
-          <CardDescription>Technical SEO indicators to detect</CardDescription>
+          <CardTitle>Negative Indicators</CardTitle>
+          <CardDescription>
+            Signals that indicate a site is NOT suitable for outreach.
+            Enter one indicator per line.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="space-y-3">
-            {['schema_markup', 'open_graph', 'structured_data'].map((signal) => (
-              <div key={signal} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`seo-${signal}`}
-                  checked={seoInvestmentSignals.includes(signal)}
-                  onCheckedChange={(checked) => {
-                    const updated = [...seoInvestmentSignals];
-                    if (checked) {
-                      updated.push(signal);
-                    } else {
-                      updated.splice(updated.indexOf(signal), 1);
-                    }
-                    onChange({ ...rules, seo_investment_signals: updated });
-                  }}
-                />
-                <label htmlFor={`seo-${signal}`} className="text-sm font-medium cursor-pointer capitalize">
-                  {signal.replace(/_/g, ' ')}
-                </label>
-              </div>
-            ))}
-          </div>
+          <Textarea
+            placeholder="Explicit &quot;Write for Us&quot; pages&#10;Guest post solicitation or guidelines&#10;Payment requests for content placement&#10;Low-quality or spammy content&#10;Excessive advertising or affiliate links"
+            value={negativeIndicators.join('\n')}
+            onChange={(e) => {
+              const indicators = e.target.value
+                .split('\n')
+                .map((i) => i.trim());
+              onChange({ ...rules, negative_indicators: indicators });
+            }}
+            rows={8}
+            className="font-mono text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            Current negative indicators: {negativeIndicators.length}
+          </p>
         </CardContent>
       </Card>
 

@@ -22,12 +22,19 @@ export class LlmService {
   // Default values used as fallback (Story 3.0 AC7)
   private readonly DEFAULT_TEMPERATURE = 0.3;
   private readonly DEFAULT_CONTENT_LIMIT = 10000;
-  private readonly DEFAULT_INDICATORS = [
+  private readonly DEFAULT_POSITIVE_INDICATORS = [
+    'High-quality editorial content with depth and professional tone',
+    'Multiple authors with detailed profiles and credentials',
+    'Active audience engagement (comments, social shares, community interaction)',
+    'Strong SEO investment (meta tags, schema markup, structured data)',
+    'Regular publishing cadence with diverse, well-researched content',
+  ];
+  private readonly DEFAULT_NEGATIVE_INDICATORS = [
     'Explicit "Write for Us" or "Guest Post Guidelines" pages',
-    'Author bylines with external contributors',
-    'Contributor sections or editorial team listings',
-    'Writing opportunities or submission guidelines',
-    'Clear evidence of accepting external content',
+    'Guest post solicitation or payment requests',
+    'Low-quality, thin, or spammy content',
+    'Excessive advertising or aggressive affiliate marketing',
+    'Link farms or content mills characteristics',
   ];
 
   constructor(private readonly settingsService: SettingsService) {
@@ -84,16 +91,11 @@ export class LlmService {
         ? this.asNumber(layer3Rules.content_truncation_limit, this.DEFAULT_CONTENT_LIMIT)
         : this.asNumber(settings.content_truncation_limit, this.DEFAULT_CONTENT_LIMIT);
 
-      const guestPostRedFlags =
-        layer3Rules?.guest_post_red_flags ||
-        settings.classification_indicators ||
-        this.DEFAULT_INDICATORS;
+      const positiveIndicators =
+        layer3Rules?.positive_indicators || this.DEFAULT_POSITIVE_INDICATORS;
 
-      const seoInvestmentSignals = layer3Rules?.seo_investment_signals || [
-        'schema_markup',
-        'open_graph',
-        'structured_data',
-      ];
+      const negativeIndicators =
+        layer3Rules?.negative_indicators || this.DEFAULT_NEGATIVE_INDICATORS;
 
       const isFromDatabase = settings.id !== 'default';
       if (!isFromDatabase) {
@@ -110,37 +112,28 @@ export class LlmService {
       const truncatedContent = content.slice(0, contentLimit);
       const isTruncated = content.length > contentLimit;
 
-      // Build dynamic indicators list from settings
-      const indicatorsList = guestPostRedFlags.map((indicator) => `- ${indicator}`).join('\n');
+      // Build dynamic indicators lists from settings
+      const positiveList = positiveIndicators.map((indicator) => `- ${indicator}`).join('\n');
+      const negativeList = negativeIndicators.map((indicator) => `- ${indicator}`).join('\n');
 
-      const seoSignalsList = seoInvestmentSignals
-        .map((signal) => `- ${signal.replace(/_/g, ' ')}`)
-        .join('\n');
+      // Enhanced prompt with configurable positive/negative indicators
+      // Story 3.0: Uses dynamic positive_indicators and negative_indicators from layer3_rules
+      return `You are an AI assistant that analyzes website content to determine if the site is suitable for high-quality guest post outreach.
 
-      // Enhanced prompt with sophistication signals (Story 2.4-refactored AC2)
-      // Story 3.0: Uses dynamic indicators and signals from layer3_rules
-      return `You are an AI assistant that analyzes website content to determine if the site is suitable for high-quality guest post outreach. Focus on content marketing sophistication and SEO investment as POSITIVE indicators, while treating explicit guest post solicitation as RED FLAGS.
+Analyze the following website content and determine suitability based on the indicators below.
 
-Analyze the following website content and determine suitability.
+**POSITIVE INDICATORS (sites WITH these signals are suitable):**
+${positiveList}
 
-**Content Marketing Sophistication Indicators (POSITIVE):**
-- Author bylines with external contributor profiles
-- Editorial quality: writing depth, professional tone, well-researched content
-- Audience engagement signals: comment sections, social shares, community interaction
-- Multiple authors or contributors (indicates editorial process)
-- Regular publishing cadence with diverse content
+**NEGATIVE INDICATORS (sites WITH these signals are NOT suitable):**
+${negativeList}
 
-**SEO Investment Signals (POSITIVE):**
-${seoSignalsList}
-- Meta optimization: descriptive title tags, meta descriptions, canonical tags
-- Technical SEO: sitemap.xml, robots.txt, proper heading hierarchy
-- Internal linking strategy and content organization
-- Mobile optimization and page speed indicators
-
-**Guest Post Red Flags (NEGATIVE - Mark as NOT SUITABLE if found):**
-${indicatorsList}
-
-IMPORTANT: Sites WITH these red flag signals should be marked as NOT suitable (they are low-quality link farms or openly solicit paid guest posts). Sites WITHOUT these signals, but WITH sophistication and SEO investment, should be marked as suitable.
+**Analysis Instructions:**
+- Look for evidence of POSITIVE indicators in the content
+- Check for presence of NEGATIVE indicators (red flags)
+- Sites WITH positive signals and WITHOUT negative signals = SUITABLE
+- Sites WITH negative signals = NOT SUITABLE
+- Consider the strength and quantity of signals found
 
 Website URL: ${url}
 
@@ -151,15 +144,15 @@ Respond ONLY with valid JSON in this exact format:
 {
   "suitable": boolean,
   "confidence": number (0-1, where 1.0 is absolute certainty),
-  "reasoning": "string explaining the decision with specific evidence",
-  "sophistication_signals": ["array", "of", "detected", "signals"]
+  "reasoning": "string explaining the decision with specific evidence from the indicators",
+  "sophistication_signals": ["array", "of", "detected", "positive", "or", "negative", "signals"]
 }
 
 **Confidence Scoring Guidance:**
 - High confidence (0.8-1.0): Multiple strong signals found, clear evidence, consistent indicators
 - Medium confidence (0.5-0.79): Some signals present, but ambiguous or conflicting evidence
 - Low confidence (0.3-0.49): Weak signals, limited evidence, unclear intent
-- Auto-reject (0-0.29): No relevant signals, clear mismatch, or negative indicators`;
+- Auto-reject (0-0.29): No relevant signals, clear mismatch, or strong negative indicators`;
     } catch (error) {
       this.logger.warn('Failed to load settings for prompt. Using defaults.');
 
@@ -173,32 +166,29 @@ Respond ONLY with valid JSON in this exact format:
         );
       }
 
-      const indicatorsList = this.DEFAULT_INDICATORS.map((indicator) => `- ${indicator}`).join(
-        '\n',
-      );
+      const positiveList = this.DEFAULT_POSITIVE_INDICATORS.map(
+        (indicator) => `- ${indicator}`,
+      ).join('\n');
+      const negativeList = this.DEFAULT_NEGATIVE_INDICATORS.map(
+        (indicator) => `- ${indicator}`,
+      ).join('\n');
 
-      return `You are an AI assistant that analyzes website content to determine if the site is suitable for high-quality guest post outreach. Focus on content marketing sophistication and SEO investment as POSITIVE indicators, while treating explicit guest post solicitation as RED FLAGS.
+      return `You are an AI assistant that analyzes website content to determine if the site is suitable for high-quality guest post outreach.
 
-Analyze the following website content and determine suitability.
+Analyze the following website content and determine suitability based on the indicators below.
 
-**Content Marketing Sophistication Indicators (POSITIVE):**
-- Author bylines with external contributor profiles
-- Editorial quality: writing depth, professional tone, well-researched content
-- Audience engagement signals: comment sections, social shares, community interaction
-- Multiple authors or contributors (indicates editorial process)
-- Regular publishing cadence with diverse content
+**POSITIVE INDICATORS (sites WITH these signals are suitable):**
+${positiveList}
 
-**SEO Investment Signals (POSITIVE):**
-- Structured data: schema markup, JSON-LD, Open Graph tags
-- Meta optimization: descriptive title tags, meta descriptions, canonical tags
-- Technical SEO: sitemap.xml, robots.txt, proper heading hierarchy
-- Internal linking strategy and content organization
-- Mobile optimization and page speed indicators
+**NEGATIVE INDICATORS (sites WITH these signals are NOT suitable):**
+${negativeList}
 
-**Guest Post Red Flags (NEGATIVE - Mark as NOT SUITABLE if found):**
-${indicatorsList}
-
-IMPORTANT: Sites WITH these red flag signals should be marked as NOT suitable (they are low-quality link farms or openly solicit paid guest posts). Sites WITHOUT these signals, but WITH sophistication and SEO investment, should be marked as suitable.
+**Analysis Instructions:**
+- Look for evidence of POSITIVE indicators in the content
+- Check for presence of NEGATIVE indicators (red flags)
+- Sites WITH positive signals and WITHOUT negative signals = SUITABLE
+- Sites WITH negative signals = NOT SUITABLE
+- Consider the strength and quantity of signals found
 
 Website URL: ${url}
 
@@ -209,8 +199,8 @@ Respond ONLY with valid JSON in this exact format:
 {
   "suitable": boolean,
   "confidence": number (0-1, where 1.0 is absolute certainty),
-  "reasoning": "string explaining the decision with specific evidence",
-  "sophistication_signals": ["array", "of", "detected", "signals"]
+  "reasoning": "string explaining the decision with specific evidence from the indicators",
+  "sophistication_signals": ["array", "of", "detected", "positive", "or", "negative", "signals"]
 }
 
 **Confidence Scoring Guidance:**

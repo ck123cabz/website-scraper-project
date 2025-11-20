@@ -23,18 +23,23 @@ import { Request, Response } from 'express';
 import { JobsService } from './jobs.service';
 import { FileParserService } from './services/file-parser.service';
 import { UrlValidationService } from './services/url-validation.service';
+import { Layer1DomainAnalysisService } from './services/layer1-domain-analysis.service';
 import { QueueService } from '../queue/queue.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { ExportService } from './services/export.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { extname } from 'path';
+import { Logger } from '@nestjs/common';
 
 @Controller('jobs')
 export class JobsController {
+  private readonly logger = new Logger(JobsController.name);
+
   constructor(
     private readonly jobsService: JobsService,
     private readonly fileParserService: FileParserService,
     private readonly urlValidationService: UrlValidationService,
+    private readonly layer1Analysis: Layer1DomainAnalysisService,
     private readonly queueService: QueueService,
     private readonly supabase: SupabaseService,
     private readonly exportService: ExportService,
@@ -105,8 +110,32 @@ export class JobsController {
       const uniqueUrls = Array.from(deduplicationMap.values());
       const duplicatesRemovedCount = originalCount - uniqueUrls.length;
 
-      // Database insertion (Task 5)
-      const { job, urlIds } = await this.jobsService.createJobWithUrls(jobName, uniqueUrls);
+      // Layer 1 filtering (bulk) - filter out URLs before queueing
+      // This eliminates 40-60% of URLs instantly without HTTP requests
+      const layer1StartTime = performance.now();
+      const layer1PassedUrls: string[] = [];
+      const layer1RejectedUrls: string[] = [];
+
+      for (const url of uniqueUrls) {
+        const result = this.layer1Analysis.analyzeUrl(url);
+        if (result.passed) {
+          layer1PassedUrls.push(url);
+        } else {
+          layer1RejectedUrls.push(url);
+        }
+      }
+
+      const layer1Duration = performance.now() - layer1StartTime;
+      const layer1EliminationRate = uniqueUrls.length > 0
+        ? ((layer1RejectedUrls.length / uniqueUrls.length) * 100).toFixed(1)
+        : '0.0';
+
+      this.logger.log(
+        `Layer 1 bulk filtering: ${layer1RejectedUrls.length}/${uniqueUrls.length} URLs rejected (${layer1EliminationRate}% elimination rate) in ${layer1Duration.toFixed(0)}ms`
+      );
+
+      // Database insertion (Task 5) - only insert URLs that passed Layer 1
+      const { job, urlIds } = await this.jobsService.createJobWithUrls(jobName, layer1PassedUrls);
 
       // Queue URLs for processing (Story 3.1 fix: auto-start job)
       // Update job status to 'processing' and set started_at timestamp
@@ -116,7 +145,7 @@ export class JobsController {
       });
 
       // Add URLs to BullMQ queue for worker processing with urlId
-      const queueJobs = uniqueUrls.map((url, index) => ({
+      const queueJobs = layer1PassedUrls.map((url, index) => ({
         jobId: job.id,
         url,
         urlId: urlIds[index], // Include urlId from job_urls table
@@ -128,9 +157,11 @@ export class JobsController {
         success: true,
         data: {
           job_id: job.id,
-          url_count: uniqueUrls.length,
+          url_count: layer1PassedUrls.length, // Only count URLs that passed Layer 1
           duplicates_removed_count: duplicatesRemovedCount,
           invalid_urls_count: invalidCount,
+          layer1_rejected_count: layer1RejectedUrls.length, // New field
+          layer1_elimination_rate: `${layer1EliminationRate}%`, // New field
           created_at: job.created_at,
           status: 'processing',
         },

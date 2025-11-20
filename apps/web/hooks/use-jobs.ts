@@ -7,7 +7,7 @@ import type { BatchJob as Job } from '@website-scraper/shared';
 import { transformJobFromDB } from './job-transform';
 
 // Constants for cache management and polling configuration
-const REALTIME_FALLBACK_POLL_INTERVAL_MS = 5000; // Fallback polling when Realtime WebSocket fails (NFR001-R7)
+const REALTIME_FALLBACK_POLL_INTERVAL_MS = 2000; // Fallback polling when Realtime WebSocket fails (faster updates for real-time visibility)
 
 // Query key factory for cache management
 export const jobKeys = {

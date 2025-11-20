@@ -4,12 +4,12 @@ export class Layer3RulesDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  guest_post_red_flags?: string[];
+  positive_indicators?: string[];
 
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  seo_investment_signals?: string[];
+  negative_indicators?: string[];
 
   @IsOptional()
   @IsNumber(

@@ -1,33 +1,57 @@
-import type { BatchJob as Job } from '@website-scraper/shared';
+import type { Job } from '@website-scraper/shared';
 
+/**
+ * Transform job data from API response to Job interface.
+ * Note: API client (api-client.ts) already transforms snake_case to camelCase via interceptor,
+ * so we receive and work with camelCase properties here.
+ */
 export function transformJobFromDB(dbJob: any): Job {
-  const processedUrls = dbJob.processed_urls || 0;
-  const totalUrls = dbJob.total_urls || 0;
-  const totalCost = Number(dbJob.total_cost) || 0;
+  const processedUrls = dbJob.processedUrls || 0;
+  const totalUrls = dbJob.totalUrls || 0;
+  const totalCost = Number(dbJob.totalCost) || 0;
 
-  // Calculate derived cost fields (Story 1.5)
+  // Calculate derived cost fields
   const avgCostPerUrl = processedUrls > 0 ? totalCost / processedUrls : null;
   const projectedTotalCost =
     avgCostPerUrl !== null && totalUrls > 0 ? totalUrls * avgCostPerUrl : null;
 
+  // Transform currentUrls array if present (for real-time processing display)
+  // Note: Job interface expects snake_case 'started_at', so we convert back from camelCase
+  const currentUrls = dbJob.currentUrls?.map((entry: any) => ({
+    url: entry.url,
+    layer: entry.layer,
+    started_at: entry.startedAt,
+  })) || null;
+
   return {
     id: dbJob.id,
-    job_name: dbJob.job_name,
+    name: dbJob.name,
     status: dbJob.status,
-    created_at: dbJob.created_at,
-    started_at: dbJob.started_at,
-    completed_at: dbJob.completed_at,
-    archived_at: dbJob.archived_at,
-    total_urls: totalUrls,
-    processed_urls: processedUrls,
-    accepted_count: dbJob.accepted_count || 0,
-    rejected_count: dbJob.rejected_count || 0,
-    error_count: dbJob.error_count || 0,
-    total_cost: totalCost,
-    layer1_eliminated: dbJob.layer1_eliminated || 0,
-    layer2_eliminated: dbJob.layer2_eliminated || 0,
-    layer3_classified: dbJob.layer3_classified || 0,
-    csv_file_path: dbJob.csv_file_path || null,
-    updated_at: dbJob.updated_at,
+    totalUrls: totalUrls,
+    processedUrls: processedUrls,
+    successfulUrls: dbJob.successfulUrls || 0,
+    failedUrls: dbJob.failedUrls || 0,
+    rejectedUrls: dbJob.rejectedUrls || 0,
+    currentUrl: dbJob.currentUrl,
+    currentStage: dbJob.currentStage,
+    currentUrlStartedAt: dbJob.currentUrlStartedAt,
+    currentLayer: dbJob.currentLayer,
+    currentUrls: currentUrls,
+    progressPercentage: dbJob.progressPercentage || 0,
+    processingRate: dbJob.processingRate,
+    estimatedTimeRemaining: dbJob.estimatedTimeRemaining,
+    totalCost: totalCost,
+    scrapingCost: dbJob.scrapingCost || 0,
+    geminiCost: dbJob.geminiCost || 0,
+    gptCost: dbJob.gptCost || 0,
+    estimatedSavings: dbJob.estimatedSavings || 0,
+    avgCostPerUrl: avgCostPerUrl,
+    projectedTotalCost: projectedTotalCost,
+    layer1EliminatedCount: dbJob.layer1EliminatedCount || 0,
+    layer2EliminatedCount: dbJob.layer2EliminatedCount || 0,
+    startedAt: dbJob.startedAt,
+    completedAt: dbJob.completedAt,
+    createdAt: dbJob.createdAt,
+    updatedAt: dbJob.updatedAt,
   };
 }
