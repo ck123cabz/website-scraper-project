@@ -12,7 +12,7 @@ interface MetricsCardProps {
   trendLabel?: string; // Label for trend (e.g., "vs last month")
   icon?: React.ReactNode;
   isLoading?: boolean;
-  format?: 'number' | 'percentage' | 'duration'; // Format for value display
+  format?: 'number' | 'percentage' | 'duration' | 'currency' | 'currencySmall'; // Format for value display
 }
 
 /**
@@ -46,6 +46,11 @@ export function MetricsCard({
           return `${hours}h ${remainingMinutes}m`;
         }
         return `${minutes}m`;
+      case 'currency':
+        return `$${value.toFixed(2)}`;
+      case 'currencySmall':
+        // For small amounts like cost per URL, show more decimals
+        return `$${value.toFixed(4)}`;
       case 'number':
       default:
         return value.toLocaleString();
