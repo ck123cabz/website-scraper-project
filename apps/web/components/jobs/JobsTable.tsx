@@ -189,13 +189,19 @@ export function JobsTable({ filterActive = false, className }: JobsTableProps) {
         const isActive = job.status === 'processing' || job.status === 'paused';
 
         if (isActive) {
+          // Handle both API response formats and NaN values
+          const rawProgress = (job as any).progress ?? (job as any).progressPercentage;
+          const progressPercentage = Number.isFinite(rawProgress) ? rawProgress : 0;
+          const processedUrls = (job as any).completedCount ?? (job as any).processedUrls ?? 0;
+          const totalUrls = (job as any).urlCount ?? (job as any).totalUrls ?? 0;
+
           return (
             <div className="space-y-1 min-w-[200px]">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">{job.processedUrls} / {job.totalUrls} URLs</span>
-                <span className="font-medium">{Math.round(job.progressPercentage)}%</span>
+                <span className="text-muted-foreground">{processedUrls} / {totalUrls} URLs</span>
+                <span className="font-medium">{Math.round(progressPercentage)}%</span>
               </div>
-              <Progress value={job.progressPercentage} className="h-1.5" />
+              <Progress value={progressPercentage} className="h-1.5" />
             </div>
           );
         }

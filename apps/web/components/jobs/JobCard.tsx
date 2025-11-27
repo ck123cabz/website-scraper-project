@@ -60,7 +60,9 @@ export function JobCard({ job, className }: JobCardProps) {
   const showProgress = job.status === 'processing' || job.status === 'paused';
 
   // Handle both API response formats for backward compatibility
-  const progressPercentage = (job as any).progress ?? (job as any).progressPercentage ?? 0;
+  // Use Number.isFinite to catch NaN, null, undefined
+  const rawProgress = (job as any).progress ?? (job as any).progressPercentage;
+  const progressPercentage = Number.isFinite(rawProgress) ? rawProgress : 0;
   const totalUrls = (job as any).urlCount ?? (job as any).totalUrls ?? 0;
   const processedUrls = (job as any).completedCount ?? (job as any).processedUrls ?? 0;
 

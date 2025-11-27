@@ -62,9 +62,9 @@ export function JobCard({ job }: JobCardProps) {
         <div className="space-y-1">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Progress</span>
-            <span className="font-medium" data-testid="job-progress">{(job.progressPercentage ?? 0).toFixed(1)}%</span>
+            <span className="font-medium" data-testid="job-progress">{(Number.isFinite(job.progressPercentage) ? job.progressPercentage : 0).toFixed(1)}%</span>
           </div>
-          <Progress value={job.progressPercentage ?? 0} className="h-2" />
+          <Progress value={Number.isFinite(job.progressPercentage) ? job.progressPercentage : 0} className="h-2" />
         </div>
 
         {/* URL Count */}

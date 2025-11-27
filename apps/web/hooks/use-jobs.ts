@@ -60,16 +60,31 @@ export function useJob(jobId: string, options?: { enableRealtime?: boolean }) {
     queryKey: jobKeys.detail(jobId),
     queryFn: async (): Promise<Job> => {
       console.log(`[useJob] Fetching job ${jobId} from backend API`);
-      const response = await jobsApi.getById(jobId);
+      try {
+        const response = await jobsApi.getById(jobId);
 
-      if (!response.success) {
-        console.error(`[useJob] Backend API error for job ${jobId}:`, response);
-        throw new Error(response.error?.message || 'Failed to fetch job');
+        if (!response.success) {
+          console.error(`[useJob] Backend API error for job ${jobId}:`, response);
+          const error = new Error(response.error?.message || 'Failed to fetch job');
+          // Add status code to error for retry logic
+          (error as any).statusCode = response.error?.statusCode || 500;
+          throw error;
+        }
+
+        console.log(`[useJob] Received job ${jobId} from backend`);
+        // Transform snake_case from backend to camelCase for frontend
+        return transformJobFromDB(response.data);
+      } catch (err: any) {
+        // Handle axios errors and extract status code
+        const statusCode = err.response?.status || err.statusCode || 500;
+        const message = err.response?.data?.error || err.message || 'Failed to fetch job';
+
+        console.error(`[useJob] Error fetching job ${jobId}:`, { statusCode, message });
+
+        const error = new Error(message);
+        (error as any).statusCode = statusCode;
+        throw error;
       }
-
-      console.log(`[useJob] Received job ${jobId} from backend`);
-      // Transform snake_case from backend to camelCase for frontend
-      return transformJobFromDB(response.data);
     },
     enabled: !!jobId,
     staleTime: 10 * 1000, // Consider data fresh for 10 seconds
@@ -77,6 +92,16 @@ export function useJob(jobId: string, options?: { enableRealtime?: boolean }) {
     // This ensures updates even if Realtime WebSocket fails (NFR001-R7)
     refetchInterval: enableRealtime ? REALTIME_FALLBACK_POLL_INTERVAL_MS : false,
     refetchIntervalInBackground: false, // Only poll when window is active
+    // Don't retry on 404 errors (job not found)
+    retry: (failureCount, error) => {
+      // Don't retry if it's a 404 error (job not found)
+      if ((error as any)?.statusCode === 404) {
+        console.log(`[useJob] Job ${jobId} not found (404), not retrying`);
+        return false;
+      }
+      // Retry other errors up to 2 times
+      return failureCount < 2;
+    },
   });
 
   // Set up Realtime subscription for instant updates

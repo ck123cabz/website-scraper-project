@@ -61,7 +61,10 @@ export function ProgressBar({
 }: ProgressBarProps) {
   // Clamp percentage between 0-100 to protect against invalid backend data
   // (e.g., negative values, values >100, NaN, Infinity)
-  const clampedPercentage = Math.min(100, Math.max(0, percentage));
+  // Use Number.isFinite to catch NaN and Infinity before clamping
+  const clampedPercentage = Number.isFinite(percentage)
+    ? Math.min(100, Math.max(0, percentage))
+    : 0;
 
   // Generate accessible label
   const ariaLabel = label || `Job progress: ${Math.round(clampedPercentage)}%`;

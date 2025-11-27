@@ -43,11 +43,26 @@ export function Sidebar({ collapsed: externalCollapsed, onCollapsedChange }: Sid
   const { preferences, updatePreferences } = useUserPreferences();
   const [internalCollapsed, setInternalCollapsed] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(false);
 
   // ALWAYS call useTheme hook unconditionally (Rules of Hooks requirement)
   const themeContext = useTheme();
 
   const collapsed = externalCollapsed ?? internalCollapsed;
+
+  // Detect mobile viewport
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
 
   // Set mounted flag to enable theme functionality
   React.useEffect(() => {
@@ -61,6 +76,13 @@ export function Sidebar({ collapsed: externalCollapsed, onCollapsedChange }: Sid
     updatePreferences({ sidebarCollapsed: newState });
   };
 
+  const handleNavClick = () => {
+    // Auto-close sidebar on mobile after navigation
+    if (isMobile && !collapsed) {
+      handleCollapse(true);
+    }
+  };
+
   // Sync with persisted preferences on load
   React.useEffect(() => {
     if (preferences?.sidebarCollapsed !== undefined) {
@@ -71,8 +93,12 @@ export function Sidebar({ collapsed: externalCollapsed, onCollapsedChange }: Sid
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 h-screen border-r border-border bg-background transition-all duration-300 ease-in-out',
-        collapsed ? 'w-16' : 'w-64',
+        'fixed left-0 top-0 z-50 h-screen border-r border-border bg-background transition-all duration-300 ease-in-out',
+        // On mobile (< md): collapsed = hidden (-translate-x-full), expanded = visible (translate-x-0)
+        // On desktop (>= md): collapsed = narrow (w-16), expanded = wide (w-64)
+        collapsed
+          ? 'w-64 -translate-x-full md:w-16 md:translate-x-0'
+          : 'w-64 translate-x-0',
       )}
     >
       {/* Header */}
@@ -108,6 +134,7 @@ export function Sidebar({ collapsed: externalCollapsed, onCollapsedChange }: Sid
             <Link
               key={item.href}
               href={item.href}
+              onClick={handleNavClick}
               className={cn(
                 'flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                 isActive

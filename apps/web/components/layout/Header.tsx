@@ -3,10 +3,12 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Menu } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface HeaderProps {
   sidebarCollapsed?: boolean;
+  onToggleSidebar?: () => void;
 }
 
 const pathLabels: Record<string, string> = {
@@ -18,7 +20,7 @@ const pathLabels: Record<string, string> = {
   '/settings': 'Settings',
 };
 
-export function Header({ sidebarCollapsed = false }: HeaderProps) {
+export function Header({ sidebarCollapsed = false, onToggleSidebar }: HeaderProps) {
   const pathname = usePathname();
 
   // Generate breadcrumbs from pathname
@@ -41,29 +43,38 @@ export function Header({ sidebarCollapsed = false }: HeaderProps) {
 
   return (
     <header
-      className={cn(
-        'sticky top-0 border-b border-border bg-background/95 backdrop-blur',
-        sidebarCollapsed ? 'ml-16' : 'ml-64',
-      )}
+      className="sticky top-0 border-b border-border bg-background/95 backdrop-blur"
     >
-      <div className="flex items-center justify-between px-6 py-4">
+      <div className="flex items-center justify-between px-4 py-4 sm:px-6">
         {/* Breadcrumbs */}
-        <div className="flex items-center space-x-2">
-          {breadcrumbs.map((breadcrumb, index) => (
-            <React.Fragment key={breadcrumb.href}>
-              {index > 0 && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-              <span
-                className={cn(
-                  'text-sm',
-                  index === breadcrumbs.length - 1
-                    ? 'font-semibold text-foreground'
-                    : 'text-muted-foreground',
-                )}
-              >
-                {breadcrumb.label}
-              </span>
-            </React.Fragment>
-          ))}
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={onToggleSidebar}
+            aria-label="Toggle navigation"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+
+          <div className="flex items-center space-x-2">
+            {breadcrumbs.map((breadcrumb, index) => (
+              <React.Fragment key={breadcrumb.href}>
+                {index > 0 && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                <span
+                  className={cn(
+                    'text-sm',
+                    index === breadcrumbs.length - 1
+                      ? 'font-semibold text-foreground'
+                      : 'text-muted-foreground',
+                  )}
+                >
+                  {breadcrumb.label}
+                </span>
+              </React.Fragment>
+            ))}
+          </div>
         </div>
 
         {/* Right side actions */}

@@ -63,7 +63,7 @@ export class JobsService {
 
     if (error) {
       if (error.code === 'PGRST116') {
-        // Not found
+        // Not found - return null so controller can handle with 404
         this.logger.warn(`Job not found: ${id}`);
         return null;
       }
@@ -703,24 +703,22 @@ export class JobsService {
    * Get recently completed jobs
    * Task T072 [Phase 6 - Dashboard]
    *
-   * Returns jobs with status 'completed' from the last 24 hours.
+   * Returns jobs with status 'completed' with pagination support.
    * Includes total cost and completion timestamp.
    *
+   * @param limit - Maximum number of jobs to return (default: 50)
+   * @param offset - Number of jobs to skip for pagination (default: 0)
    * @returns Array of completed jobs
    */
-  async getCompletedJobs(): Promise<any[]> {
+  async getCompletedJobs(limit: number = 50, offset: number = 0): Promise<any[]> {
     const client = this.supabase.getClient();
-
-    // Get completed jobs from the last 24 hours
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
     const { data: jobs, error } = await client
       .from('jobs')
       .select('*')
       .eq('status', 'completed')
-      .gte('completed_at', twentyFourHoursAgo)
       .order('completed_at', { ascending: false })
-      .limit(10); // Limit to 10 most recent completed jobs
+      .range(offset, offset + limit - 1);
 
     if (error) {
       throw new Error(`Failed to fetch completed jobs: ${error.message}`);
@@ -736,8 +734,13 @@ export class JobsService {
       name: job.name || 'Untitled Job',
       status: 'completed',
       completedAt: job.completed_at,
+      createdAt: job.created_at,
       urlCount: job.total_urls || 0,
       totalCost: job.total_cost || 0,
+      // Include URL metrics for success rate calculation
+      processedUrls: job.processed_urls || 0,
+      successfulUrls: job.successful_urls || 0,
+      rejectedUrls: job.rejected_urls || 0,
     }));
   }
 }

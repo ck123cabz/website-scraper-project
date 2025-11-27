@@ -8,6 +8,7 @@ import { jobsApi, resultsApi } from '@/lib/api-client';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import type { Job } from '@website-scraper/shared';
+import { cn } from '@/lib/utils';
 
 interface QuickActionsProps {
   className?: string;
@@ -80,8 +81,13 @@ export function QuickActions({ className }: QuickActionsProps) {
   };
 
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
-      <Button onClick={handleNewJob} size="default" className="gap-2">
+    <div
+      className={cn(
+        'flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end',
+        className,
+      )}
+    >
+      <Button onClick={handleNewJob} size="default" className="gap-2 w-full sm:w-auto">
         <Plus className="h-4 w-4" />
         New Job
       </Button>
@@ -89,7 +95,7 @@ export function QuickActions({ className }: QuickActionsProps) {
         onClick={handleExportRecent}
         variant="outline"
         size="default"
-        className="gap-2"
+        className="gap-2 w-full sm:w-auto"
         disabled={isExporting || !jobs || jobs.length === 0}
       >
         <Download className="h-4 w-4" />

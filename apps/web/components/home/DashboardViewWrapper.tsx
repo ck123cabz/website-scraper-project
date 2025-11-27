@@ -14,7 +14,7 @@ export function DashboardViewWrapper() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <h2 className="text-2xl font-semibold tracking-tight">Recent Jobs</h2>
         <ViewToggle onViewChange={setCurrentView} />
       </div>

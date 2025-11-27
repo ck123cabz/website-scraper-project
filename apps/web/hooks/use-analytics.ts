@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useJobs } from './use-jobs';
-import type { BatchJob as Job } from '@website-scraper/shared';
+import type { Job } from '@website-scraper/shared';
 import { format, subDays, startOfDay } from 'date-fns';
 
 export interface AnalyticsMetrics {
@@ -40,10 +40,10 @@ function calculateMetrics(jobs: Job[]): AnalyticsMetrics {
 
   // Filter jobs for different time periods
   const allJobs = jobs;
-  const last30Days = jobs.filter((job) => new Date(job.created_at) >= thirtyDaysAgo);
+  const last30Days = jobs.filter((job) => new Date(job.createdAt) >= thirtyDaysAgo);
   const previous30Days = jobs.filter(
     (job) =>
-      new Date(job.created_at) >= sixtyDaysAgo && new Date(job.created_at) < thirtyDaysAgo
+      new Date(job.createdAt) >= sixtyDaysAgo && new Date(job.createdAt) < thirtyDaysAgo
   );
 
   // Total jobs processed (all time)
@@ -54,39 +54,39 @@ function calculateMetrics(jobs: Job[]): AnalyticsMetrics {
     ['queued', 'processing'].includes(job.status)
   ).length;
 
-  // Success rate calculation (accepted URLs / total processed URLs)
+  // Success rate calculation (successful URLs / total processed URLs)
   const completedJobs = allJobs.filter((job) => job.status === 'completed');
   const totalProcessed = completedJobs.reduce(
-    (sum, job) => sum + (job.processed_urls || 0),
+    (sum, job) => sum + (job.processedUrls || 0),
     0
   );
-  const totalAccepted = completedJobs.reduce(
-    (sum, job) => sum + (job.accepted_count || 0),
+  const totalSuccessful = completedJobs.reduce(
+    (sum, job) => sum + (job.successfulUrls || 0),
     0
   );
-  const successRate = totalProcessed > 0 ? (totalAccepted / totalProcessed) * 100 : 0;
+  const successRate = totalProcessed > 0 ? (totalSuccessful / totalProcessed) * 100 : 0;
 
   // Success rate for previous period
   const prev30DaysCompleted = previous30Days.filter((job) => job.status === 'completed');
   const prevTotalProcessed = prev30DaysCompleted.reduce(
-    (sum, job) => sum + (job.processed_urls || 0),
+    (sum, job) => sum + (job.processedUrls || 0),
     0
   );
-  const prevTotalAccepted = prev30DaysCompleted.reduce(
-    (sum, job) => sum + (job.accepted_count || 0),
+  const prevTotalSuccessful = prev30DaysCompleted.reduce(
+    (sum, job) => sum + (job.successfulUrls || 0),
     0
   );
   const prevSuccessRate =
-    prevTotalProcessed > 0 ? (prevTotalAccepted / prevTotalProcessed) * 100 : 0;
+    prevTotalProcessed > 0 ? (prevTotalSuccessful / prevTotalProcessed) * 100 : 0;
   const successRateTrend = successRate - prevSuccessRate;
 
   // Average processing time calculation (completed jobs only)
   const completedJobsWithTime = completedJobs.filter(
-    (job) => job.completed_at && job.created_at
+    (job) => job.completedAt && job.createdAt
   );
   const totalProcessingTime = completedJobsWithTime.reduce((sum, job) => {
-    const start = new Date(job.created_at).getTime();
-    const end = new Date(job.completed_at!).getTime();
+    const start = new Date(job.createdAt).getTime();
+    const end = new Date(job.completedAt!).getTime();
     const duration = (end - start) / (1000 * 60); // Convert to minutes
     return sum + duration;
   }, 0);
@@ -97,11 +97,11 @@ function calculateMetrics(jobs: Job[]): AnalyticsMetrics {
 
   // Average processing time for previous period
   const prev30DaysCompletedWithTime = prev30DaysCompleted.filter(
-    (job) => job.completed_at && job.created_at
+    (job) => job.completedAt && job.createdAt
   );
   const prevTotalProcessingTime = prev30DaysCompletedWithTime.reduce((sum, job) => {
-    const start = new Date(job.created_at).getTime();
-    const end = new Date(job.completed_at!).getTime();
+    const start = new Date(job.createdAt).getTime();
+    const end = new Date(job.completedAt!).getTime();
     const duration = (end - start) / (1000 * 60);
     return sum + duration;
   }, 0);
@@ -129,17 +129,17 @@ function calculateMetrics(jobs: Job[]): AnalyticsMetrics {
  */
 function calculateSuccessRateData(jobs: Job[]): SuccessRateData {
   const completedJobs = jobs.filter((job) => job.status === 'completed');
-  const totalAccepted = completedJobs.reduce(
-    (sum, job) => sum + (job.accepted_count || 0),
+  const totalSuccessful = completedJobs.reduce(
+    (sum, job) => sum + (job.successfulUrls || 0),
     0
   );
   const totalRejected = completedJobs.reduce(
-    (sum, job) => sum + (job.rejected_count || 0),
+    (sum, job) => sum + (job.rejectedUrls || 0),
     0
   );
 
   return {
-    approved: totalAccepted,
+    approved: totalSuccessful,
     rejected: totalRejected,
   };
 }
@@ -155,17 +155,17 @@ function calculateProcessingTimeTrends(jobs: Job[]): ProcessingTimeData[] {
   const recentJobs = jobs.filter(
     (job) =>
       job.status === 'completed' &&
-      job.completed_at &&
-      job.created_at &&
-      new Date(job.created_at) >= thirtyDaysAgo
+      job.completedAt &&
+      job.createdAt &&
+      new Date(job.createdAt) >= thirtyDaysAgo
   );
 
   // Group by date
   const dataByDate: Record<string, number[]> = {};
   recentJobs.forEach((job) => {
-    const date = format(startOfDay(new Date(job.created_at)), 'yyyy-MM-dd');
-    const start = new Date(job.created_at).getTime();
-    const end = new Date(job.completed_at!).getTime();
+    const date = format(startOfDay(new Date(job.createdAt)), 'yyyy-MM-dd');
+    const start = new Date(job.createdAt).getTime();
+    const end = new Date(job.completedAt!).getTime();
     const duration = (end - start) / (1000 * 60); // Minutes
 
     if (!dataByDate[date]) {
@@ -197,14 +197,14 @@ function calculateActivityTrends(jobs: Job[]): ActivityData[] {
   const recentJobs = jobs.filter(
     (job) =>
       job.status === 'completed' &&
-      job.completed_at &&
-      new Date(job.completed_at) >= thirtyDaysAgo
+      job.completedAt &&
+      new Date(job.completedAt) >= thirtyDaysAgo
   );
 
   // Group by completion date
   const countByDate: Record<string, number> = {};
   recentJobs.forEach((job) => {
-    const date = format(startOfDay(new Date(job.completed_at!)), 'yyyy-MM-dd');
+    const date = format(startOfDay(new Date(job.completedAt!)), 'yyyy-MM-dd');
     countByDate[date] = (countByDate[date] || 0) + 1;
   });
 

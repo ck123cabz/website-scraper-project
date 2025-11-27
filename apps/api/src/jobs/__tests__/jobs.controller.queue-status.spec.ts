@@ -38,7 +38,9 @@ import { ExportService } from '../services/export.service';
  *     completedJobs?: Array<{
  *       id: string (UUID),
  *       name: string,
+ *       status: 'completed',
  *       completedAt: string (ISO),
+ *       createdAt: string (ISO),
  *       urlCount: number,
  *       totalCost: number
  *     }>
@@ -144,14 +146,18 @@ describe('JobsController - GET /jobs/queue/status (T072)', () => {
     {
       id: '66666666-6666-6666-6666-666666666666',
       name: 'Completed Job 1',
+      status: 'completed' as const,
       completedAt: '2025-01-13T07:00:00.000Z',
+      createdAt: '2025-01-13T05:00:00.000Z',
       urlCount: 1000,
       totalCost: 0.45,
     },
     {
       id: '77777777-7777-7777-7777-777777777777',
       name: 'Completed Job 2',
+      status: 'completed' as const,
       completedAt: '2025-01-13T06:00:00.000Z',
+      createdAt: '2025-01-13T04:00:00.000Z',
       urlCount: 500,
       totalCost: 0.23,
     },

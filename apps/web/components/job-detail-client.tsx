@@ -116,7 +116,7 @@ export function JobDetailClient({ jobId }: JobDetailClientProps) {
               <ProgressBar
                 percentage={job.progressPercentage}
                 variant={progressVariant}
-                label={`Job progress: ${Math.round(job.progressPercentage)}%`}
+                label={`Job progress: ${Math.round(Number.isFinite(job.progressPercentage) ? job.progressPercentage : 0)}%`}
               />
             </CardContent>
           </Card>

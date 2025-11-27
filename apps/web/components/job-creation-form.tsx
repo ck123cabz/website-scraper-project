@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Link, FileText, Loader2 } from 'lucide-react';
+import { Upload, Link, FileText, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
@@ -16,6 +16,41 @@ export function JobCreationForm({ onClose }: { onClose?: () => void }) {
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState('file');
+
+  // URL validation function
+  const isValidUrl = (url: string): boolean => {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
+  // Validate URLs and compute validation state
+  const urlValidation = useMemo(() => {
+    if (activeTab !== 'manual' || !urls.trim()) {
+      return { valid: [], invalid: [], hasInvalid: false };
+    }
+
+    const urlList = urls
+      .split('\n')
+      .map(url => url.trim())
+      .filter(url => url.length > 0);
+
+    const valid: string[] = [];
+    const invalid: string[] = [];
+
+    urlList.forEach(url => {
+      if (isValidUrl(url)) {
+        valid.push(url);
+      } else {
+        invalid.push(url);
+      }
+    });
+
+    return { valid, invalid, hasInvalid: invalid.length > 0 };
+  }, [urls, activeTab]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -59,14 +94,15 @@ export function JobCreationForm({ onClose }: { onClose?: () => void }) {
           body: formData,
         });
       } else if (activeTab === 'manual' && urls.trim()) {
-        // Manual URL input
-        const urlList = urls
-          .split('\n')
-          .map(url => url.trim())
-          .filter(url => url.length > 0);
+        // Manual URL input - validate before submitting
+        if (urlValidation.hasInvalid) {
+          toast.error(`Cannot submit: ${urlValidation.invalid.length} invalid URL(s) detected`);
+          setIsSubmitting(false);
+          return;
+        }
 
-        if (urlList.length === 0) {
-          toast.error('Please enter at least one URL');
+        if (urlValidation.valid.length === 0) {
+          toast.error('Please enter at least one valid URL');
           setIsSubmitting(false);
           return;
         }
@@ -78,7 +114,7 @@ export function JobCreationForm({ onClose }: { onClose?: () => void }) {
           },
           body: JSON.stringify({
             name: jobName || 'Untitled Job',
-            urls: urlList,
+            urls: urlValidation.valid,
           }),
         });
       } else {
@@ -198,11 +234,45 @@ export function JobCreationForm({ onClose }: { onClose?: () => void }) {
                   onChange={(e) => setUrls(e.target.value)}
                   disabled={isSubmitting}
                   data-testid="urls-textarea"
-                  className="min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  className={`min-h-[200px] w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+                    urlValidation.hasInvalid ? 'border-destructive' : 'border-input'
+                  }`}
                   rows={10}
                 />
+
+                {/* Validation Feedback */}
+                {urls.trim() && (
+                  <div className="space-y-2">
+                    {urlValidation.hasInvalid && (
+                      <div className="flex items-start gap-2 text-sm text-destructive" data-testid="url-validation-error">
+                        <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="font-medium">
+                            {urlValidation.invalid.length} invalid URL{urlValidation.invalid.length > 1 ? 's' : ''} detected
+                          </p>
+                          <p className="text-xs mt-1">
+                            URLs must start with http:// or https://
+                          </p>
+                          {urlValidation.invalid.length <= 5 && (
+                            <ul className="list-disc list-inside mt-2 text-xs space-y-1">
+                              {urlValidation.invalid.map((url, idx) => (
+                                <li key={idx} className="truncate">{url}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {!urlValidation.hasInvalid && urlValidation.valid.length > 0 && (
+                      <p className="text-sm text-muted-foreground" data-testid="url-validation-success">
+                        {urlValidation.valid.length} valid URL{urlValidation.valid.length > 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <p className="text-xs text-muted-foreground">
-                  Enter URLs separated by new lines
+                  Enter URLs separated by new lines. URLs must include http:// or https://
                 </p>
               </div>
             </TabsContent>
@@ -223,7 +293,11 @@ export function JobCreationForm({ onClose }: { onClose?: () => void }) {
             )}
             <Button
               type="submit"
-              disabled={isSubmitting || (activeTab === 'file' && !file) || (activeTab === 'manual' && !urls.trim())}
+              disabled={
+                isSubmitting ||
+                (activeTab === 'file' && !file) ||
+                (activeTab === 'manual' && (!urls.trim() || urlValidation.hasInvalid))
+              }
               data-testid="submit-button"
             >
               {isSubmitting ? (

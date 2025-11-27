@@ -662,7 +662,7 @@ export class JobsController {
 
       // Include completed jobs if requested
       if (parsedIncludeCompleted) {
-        const completedJobs = await this.jobsService.getCompletedJobs();
+        const completedJobs = await this.jobsService.getCompletedJobs(parsedLimit, parsedOffset);
         responseData.completedJobs = completedJobs;
       }
 

@@ -168,18 +168,61 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
   }
 
   if (error || !job) {
+    // Check if it's a 404 error (job not found)
+    const is404 = (error as any)?.statusCode === 404 ||
+                  (error as any)?.message?.toLowerCase().includes('not found');
+
     return (
-      <div>
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Failed to load job details. The job may not exist or there was an error.
-          </AlertDescription>
-        </Alert>
-        <Button variant="outline" onClick={() => router.back()} className="mt-4">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Go Back
-        </Button>
+      <div className="space-y-6">
+        <Card className="border-destructive">
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="rounded-full bg-destructive/10 p-3">
+                <AlertCircle className="h-8 w-8 text-destructive" />
+              </div>
+
+              <div className="space-y-2">
+                <h2 className="text-2xl font-bold">
+                  {is404 ? 'Job Not Found' : 'Error Loading Job'}
+                </h2>
+                <p className="text-muted-foreground max-w-md">
+                  {is404
+                    ? 'The job you are looking for does not exist or has been deleted. Please check the job ID and try again.'
+                    : 'An error occurred while loading the job details. Please try again later.'}
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/jobs/all')}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Dashboard
+                </Button>
+                {!is404 && (
+                  <Button
+                    variant="default"
+                    onClick={() => window.location.reload()}
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Try Again
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Show error details in development */}
+        {process.env.NODE_ENV === 'development' && error && (
+          <Alert>
+            <AlertDescription className="font-mono text-xs">
+              Error: {(error as any)?.message || 'Unknown error'}
+              {(error as any)?.statusCode && ` (Status: ${(error as any).statusCode})`}
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
     );
   }
@@ -284,10 +327,10 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Processing Progress</span>
                 <span className="text-2xl font-bold">
-                  {Math.round(job.progressPercentage ?? 0)}%
+                  {Math.round(Number.isFinite(job.progressPercentage) ? job.progressPercentage : 0)}%
                 </span>
               </div>
-              <Progress value={job.progressPercentage ?? 0} className="h-3" />
+              <Progress value={Number.isFinite(job.progressPercentage) ? job.progressPercentage : 0} className="h-3" />
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>
                   {job.processedUrls} / {job.totalUrls} URLs processed
