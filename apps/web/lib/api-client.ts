@@ -56,6 +56,11 @@ apiClient.interceptors.response.use(
   (response) => {
     console.log(`[API Response] ${response.status} ${response.config.url}`);
 
+    // Skip transformation for blob responses (used for file downloads)
+    if (response.config.responseType === 'blob') {
+      return response;
+    }
+
     // Transform response data keys from snake_case to camelCase
     if (response.data) {
       response.data = transformKeysToCamelCase(response.data);
@@ -181,6 +186,7 @@ export const resultsApi = {
     const response = await apiClient.post(`/jobs/${jobId}/export`, {}, {
       params,
       responseType: 'blob',
+      timeout: 120000, // 2 minutes for large exports
     });
     return response.data;
   },
