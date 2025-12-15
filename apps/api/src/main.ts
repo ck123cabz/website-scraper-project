@@ -119,7 +119,9 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
   await app.listen(port);
 
-  console.log(`API server running on http://localhost:${port}`);
+  // Build timestamp for deployment verification
+  const buildVersion = '2025-12-16T01:50:00Z';
+  console.log(`API server running on http://localhost:${port} (build: ${buildVersion})`);
   console.log(`Bull Board dashboard available at http://localhost:${port}/admin/queues`);
   console.log(`Swagger documentation available at http://localhost:${port}/api/docs`);
 }
