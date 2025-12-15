@@ -40,13 +40,33 @@ export class ScraperService {
     return !!process.env.SCRAPINGBEE_API_KEY;
   }
 
+  // Minimum content length to consider a scrape successful (chars)
+  private readonly MIN_CONTENT_LENGTH = 500;
+
+  // SPA framework indicators that suggest JS rendering is needed
+  private readonly SPA_INDICATORS = [
+    'id="root"', // React
+    'id="app"', // Vue
+    'ng-app', // Angular
+    'data-reactroot',
+    '__NEXT_DATA__', // Next.js
+    '__NUXT__', // Nuxt.js
+    'window.__INITIAL_STATE__',
+    '<noscript>You need to enable JavaScript',
+    '<noscript>Please enable JavaScript',
+    'This page requires JavaScript',
+  ];
+
   /**
-   * Fetch a URL using ScrapingBee API with JS rendering
+   * Fetch a URL using ScrapingBee API
    *
    * @param url - URL to fetch
+   * @param renderJs - Whether to enable JS rendering (default: true for backwards compatibility)
+   *                   - true = 5 credits (headless browser, executes JavaScript)
+   *                   - false = 1 credit (simple HTTP request, no JS execution)
    * @returns ScraperResult with content and metadata
    */
-  async fetchUrl(url: string): Promise<ScraperResult> {
+  async fetchUrl(url: string, renderJs: boolean = true): Promise<ScraperResult> {
     const startTime = Date.now();
 
     // Input validation
@@ -60,7 +80,8 @@ export class ScraperService {
 
     // Sanitize URL for logging (limit length)
     const sanitizedUrl = url.length > 100 ? url.slice(0, 100) + '...' : url;
-    this.logger.log(`Fetching URL: ${sanitizedUrl}`);
+    const creditCost = renderJs ? 5 : 1;
+    this.logger.log(`Fetching URL: ${sanitizedUrl} (render_js=${renderJs}, ${creditCost} credit${creditCost > 1 ? 's' : ''})`);
 
     try {
       // Call ScrapingBee API
@@ -68,7 +89,7 @@ export class ScraperService {
         params: {
           api_key: process.env.SCRAPINGBEE_API_KEY,
           url: url,
-          render_js: 'true', // Enable JS rendering
+          render_js: renderJs ? 'true' : 'false', // JS rendering toggle
           premium_proxy: 'false', // Use standard proxies
           // Don't send country_code if empty - ScrapingBee rejects empty string
         },
@@ -136,6 +157,88 @@ export class ScraperService {
         processingTimeMs,
       };
     }
+  }
+
+  /**
+   * Smart fetch: Try without JS first (1 credit), retry with JS (5 credits) if needed.
+   * This optimizes credit usage by only using JS rendering when necessary.
+   *
+   * Credit costs:
+   * - Best case (no JS needed): 1 credit
+   * - Worst case (JS retry needed): 6 credits (1 + 5)
+   * - Average case (~30% need JS): ~2.5 credits
+   *
+   * JS rendering is triggered when:
+   * - Content is too short (< 500 chars body text)
+   * - SPA framework indicators detected (React, Vue, Angular, Next.js, Nuxt.js)
+   * - Page explicitly requires JavaScript
+   *
+   * @param url - URL to fetch
+   * @returns ScraperResult with content and metadata, plus jsRetryUsed flag
+   */
+  async fetchUrlSmart(url: string): Promise<ScraperResult & { jsRetryUsed: boolean; creditsUsed: number }> {
+    const sanitizedUrl = url.length > 100 ? url.slice(0, 100) + '...' : url;
+
+    // Step 1: Try without JS rendering (1 credit)
+    this.logger.log(`[Smart Fetch] Attempting without JS: ${sanitizedUrl}`);
+    const noJsResult = await this.fetchUrl(url, false);
+
+    // If the request failed entirely, return the failure (don't waste credits retrying)
+    if (!noJsResult.success) {
+      this.logger.log(`[Smart Fetch] Failed without JS, not retrying: ${noJsResult.error}`);
+      return { ...noJsResult, jsRetryUsed: false, creditsUsed: 1 };
+    }
+
+    // Check if we need JS rendering
+    const needsJs = this.detectJsRequired(noJsResult.content || '');
+
+    if (!needsJs) {
+      this.logger.log(`[Smart Fetch] Success without JS (1 credit): ${sanitizedUrl}`);
+      return { ...noJsResult, jsRetryUsed: false, creditsUsed: 1 };
+    }
+
+    // Step 2: Retry with JS rendering (5 more credits)
+    this.logger.log(`[Smart Fetch] JS required, retrying with JS rendering: ${sanitizedUrl}`);
+    const jsResult = await this.fetchUrl(url, true);
+
+    if (!jsResult.success) {
+      // JS fetch failed - return original no-JS result as fallback
+      this.logger.warn(`[Smart Fetch] JS retry failed, using no-JS result: ${jsResult.error}`);
+      return { ...noJsResult, jsRetryUsed: true, creditsUsed: 6 };
+    }
+
+    this.logger.log(`[Smart Fetch] Success with JS retry (6 credits total): ${sanitizedUrl}`);
+    return { ...jsResult, jsRetryUsed: true, creditsUsed: 6 };
+  }
+
+  /**
+   * Detect if a page requires JavaScript rendering based on content analysis
+   * @private
+   */
+  private detectJsRequired(html: string): boolean {
+    if (!html || html.length === 0) {
+      return true; // Empty content likely needs JS
+    }
+
+    // Check content length (extract body text first)
+    const extracted = this.extractContent(html);
+    const bodyTextLength = extracted.bodyText?.length || 0;
+
+    if (bodyTextLength < this.MIN_CONTENT_LENGTH) {
+      this.logger.debug(`[JS Detection] Content too short (${bodyTextLength} chars < ${this.MIN_CONTENT_LENGTH})`);
+      return true;
+    }
+
+    // Check for SPA framework indicators
+    const htmlLower = html.toLowerCase();
+    for (const indicator of this.SPA_INDICATORS) {
+      if (htmlLower.includes(indicator.toLowerCase())) {
+        this.logger.debug(`[JS Detection] SPA indicator found: ${indicator}`);
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**

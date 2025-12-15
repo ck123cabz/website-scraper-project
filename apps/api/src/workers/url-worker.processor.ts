@@ -227,9 +227,11 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     scrapeResult: any;
     layer2Result: { passed: boolean; reasoning: string; signals?: any; processingTimeMs?: number };
   }> {
-    // Scrape homepage (with retries + T034 retry tracking)
+    // Scrape homepage with smart JS detection (with retries + T034 retry tracking)
+    // Uses fetchUrlSmart() which tries without JS first (1 credit), then with JS if needed (5 more credits)
+    // This optimizes ScrapingBee credit usage: 1-6 credits vs always 5 credits
     const scrapeResult = await this.retryWithBackoff(
-      () => this.scraper.fetchUrl(url),
+      () => this.scraper.fetchUrlSmart(url),
       3,
       url,
       jobId,
@@ -247,8 +249,12 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
       };
     }
 
-    // Validate operational signals (Story 2.6: Full Layer 2 implementation)
-    const layer2Result = await this.layer2Filter.filterUrl(url);
+    // Validate operational signals using pre-fetched HTML (avoids duplicate ScrapingBee call)
+    // FIX: Previously called filterUrl() which scraped again, wasting 5 credits per URL
+    const layer2Result = await this.layer2Filter.filterUrlWithContent(
+      url,
+      scrapeResult.content || '',
+    );
 
     return { scrapeResult, layer2Result };
   }
@@ -324,28 +330,21 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     };
 
     // Add to current_urls array (keeps last 10 for display)
-    await this.supabase
-      .getClient()
-      .rpc('add_current_url', {
-        p_job_id: jobId,
-        p_url_entry: entry,
-      });
+    await this.supabase.getClient().rpc('add_current_url', {
+      p_job_id: jobId,
+      p_url_entry: entry,
+    });
   }
 
   /**
    * Remove URL from current_urls array when processing completes
    * @private
    */
-  private async removeCurrentUrl(
-    jobId: string,
-    currentUrl: string,
-  ): Promise<void> {
-    await this.supabase
-      .getClient()
-      .rpc('remove_current_url', {
-        p_job_id: jobId,
-        p_url: currentUrl,
-      });
+  private async removeCurrentUrl(jobId: string, currentUrl: string): Promise<void> {
+    await this.supabase.getClient().rpc('remove_current_url', {
+      p_job_id: jobId,
+      p_url: currentUrl,
+    });
   }
 
   /**
@@ -403,28 +402,31 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     }
 
     // Write to url_results table (new schema with JSONB factors)
-    await this.supabase.getClient().from('url_results').upsert(
-      {
-        job_id: jobId,
-        url_id: urlId,
-        url: url,
-        status: 'rejected',
-        confidence_score: null, // No LLM classification yet
-        confidence_band: null,
-        eliminated_at_layer: 'layer1',
-        processing_time_ms: processingTimeMs,
-        total_cost: 0, // Layer 1 has no costs (rule-based, no HTTP)
-        retry_count: 0,
-        last_error: null,
-        layer1_factors: layer1Factors,
-        layer2_factors: null, // Layer 2 not reached
-        layer3_factors: null, // Layer 3 not reached
-        reviewer_notes: `Layer 1 rejection: ${layer1Result.reasoning}`,
-      },
-      {
-        onConflict: 'url_id', // Update if exists based on url_id uniqueness
-      },
-    );
+    await this.supabase
+      .getClient()
+      .from('url_results')
+      .upsert(
+        {
+          job_id: jobId,
+          url_id: urlId,
+          url: url,
+          status: 'rejected',
+          confidence_score: null, // No LLM classification yet
+          confidence_band: null,
+          eliminated_at_layer: 'layer1',
+          processing_time_ms: processingTimeMs,
+          total_cost: 0, // Layer 1 has no costs (rule-based, no HTTP)
+          retry_count: 0,
+          last_error: null,
+          layer1_factors: layer1Factors,
+          layer2_factors: null, // Layer 2 not reached
+          layer3_factors: null, // Layer 3 not reached
+          reviewer_notes: `Layer 1 rejection: ${layer1Result.reasoning}`,
+        },
+        {
+          onConflict: 'url_id', // Update if exists based on url_id uniqueness
+        },
+      );
 
     // Atomic update with SQL increment
     const { data: jobMeta } = await this.supabase
@@ -510,10 +512,10 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
       layer1Factors = this.getEmptyLayer1Factors();
     }
 
-    // Get Layer 2 factors
+    // Get Layer 2 factors - pass pre-fetched HTML to avoid duplicate ScrapingBee call
     let layer2Factors: any = null;
     try {
-      layer2Factors = await this.layer2Filter.getLayer2Factors(url);
+      layer2Factors = await this.layer2Filter.getLayer2Factors(url, scrapeResult.content || '');
       if (!layer2Factors) {
         this.logger.warn(`Layer 2 factors returned null for ${url}, using empty structure`);
         layer2Factors = this.getEmptyLayer2Factors();
@@ -643,7 +645,9 @@ export class UrlWorkerProcessor extends WorkerHost implements OnModuleDestroy {
     }
 
     try {
-      layer2Factors = await this.layer2Filter.getLayer2Factors(url);
+      // Pass pre-fetched HTML to avoid duplicate ScrapingBee call (saves 5 credits per URL)
+      // FIX: Previously called getLayer2Factors(url) which scraped again
+      layer2Factors = await this.layer2Filter.getLayer2Factors(url, scrapeResult.content || '');
       if (!layer2Factors) {
         this.logger.warn(`Layer 2 factors returned null for ${url}, using empty structure`);
         layer2Factors = this.getEmptyLayer2Factors();

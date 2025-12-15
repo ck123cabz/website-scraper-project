@@ -45,6 +45,7 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
           provide: ScraperService,
           useValue: {
             fetchUrl: jest.fn(),
+            fetchUrlSmart: jest.fn(), // Smart fetch with JS fallback
           },
         },
         {
@@ -57,7 +58,9 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
           provide: Layer2OperationalFilterService,
           useValue: {
             filterUrl: jest.fn(),
+            filterUrlWithContent: jest.fn(), // New method that accepts pre-fetched HTML
             validateOperational: jest.fn(), // Keep for backward compatibility
+            getLayer2Factors: jest.fn(), // For Layer 3 factor storage
           },
         },
         {
@@ -113,8 +116,8 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
         processingTimeMs: 5,
       });
 
-      // Layer 2: Scraper + PASS
-      scraperService.fetchUrl.mockResolvedValue({
+      // Layer 2: Scraper + PASS (smart fetch with JS fallback info)
+      scraperService.fetchUrlSmart.mockResolvedValue({
         url: 'https://example.com',
         content: '<html><body>Test content</body></html>',
         title: 'Test Page',
@@ -122,9 +125,11 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
         success: true,
         statusCode: 200,
         processingTimeMs: 2000,
+        jsRetryUsed: false,
+        creditsUsed: 1,
       });
 
-      layer2FilterService.filterUrl.mockResolvedValue({
+      layer2FilterService.filterUrlWithContent.mockResolvedValue({
         passed: true,
         reasoning: 'PASS - Business signals detected, publication score below threshold',
         signals: {
@@ -196,8 +201,8 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
 
       // Verify all 3 layers were called
       expect(layer1AnalysisService.analyzeUrl).toHaveBeenCalledWith('https://example.com');
-      expect(scraperService.fetchUrl).toHaveBeenCalledWith('https://example.com');
-      expect(layer2FilterService.filterUrl).toHaveBeenCalled();
+      expect(scraperService.fetchUrlSmart).toHaveBeenCalledWith('https://example.com');
+      expect(layer2FilterService.filterUrlWithContent).toHaveBeenCalled();
       expect(llmService.classifyUrl).toHaveBeenCalled();
 
       // Verify result was stored
@@ -238,8 +243,8 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
 
       // Verify Layer 1 called, but Layer 2 and Layer 3 NOT called
       expect(layer1AnalysisService.analyzeUrl).toHaveBeenCalled();
-      expect(scraperService.fetchUrl).not.toHaveBeenCalled();
-      expect(layer2FilterService.filterUrl).not.toHaveBeenCalled();
+      expect(scraperService.fetchUrlSmart).not.toHaveBeenCalled();
+      expect(layer2FilterService.filterUrlWithContent).not.toHaveBeenCalled();
       expect(llmService.classifyUrl).not.toHaveBeenCalled();
 
       // Verify Layer 1 rejection stored
@@ -267,7 +272,7 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
       });
 
       // Layer 2: Scraper FAIL
-      scraperService.fetchUrl.mockResolvedValue({
+      scraperService.fetchUrlSmart.mockResolvedValue({
         url: 'https://example.com',
         content: '',
         title: null,
@@ -275,6 +280,8 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
         success: false,
         error: 'ScrapingBee returned status 404',
         processingTimeMs: 1000,
+        jsRetryUsed: false,
+        creditsUsed: 1,
       });
 
       // Mock job data fetch
@@ -296,7 +303,7 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
 
       // Verify Layer 1 and scraper called, but NOT Layer 3
       expect(layer1AnalysisService.analyzeUrl).toHaveBeenCalled();
-      expect(scraperService.fetchUrl).toHaveBeenCalled();
+      expect(scraperService.fetchUrlSmart).toHaveBeenCalled();
       expect(llmService.classifyUrl).not.toHaveBeenCalled();
 
       // Verify Layer 2 rejection stored
@@ -323,8 +330,8 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
         processingTimeMs: 5,
       });
 
-      // Layer 2: Scraper success
-      scraperService.fetchUrl.mockResolvedValue({
+      // Layer 2: Scraper success (smart fetch)
+      scraperService.fetchUrlSmart.mockResolvedValue({
         url: 'https://example.com',
         content: '<html><body>Content</body></html>',
         title: 'Test',
@@ -332,10 +339,12 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
         success: true,
         statusCode: 200,
         processingTimeMs: 2000,
+        jsRetryUsed: false,
+        creditsUsed: 1,
       });
 
       // Layer 2: Operational filter REJECT
-      layer2FilterService.filterUrl.mockResolvedValue({
+      layer2FilterService.filterUrlWithContent.mockResolvedValue({
         passed: false,
         reasoning: 'REJECT - Publication score above threshold (0.85 >= 0.65)',
         signals: {
@@ -385,8 +394,8 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
 
       // Verify Layer 1 and Layer 2 called, but NOT Layer 3
       expect(layer1AnalysisService.analyzeUrl).toHaveBeenCalled();
-      expect(scraperService.fetchUrl).toHaveBeenCalled();
-      expect(layer2FilterService.filterUrl).toHaveBeenCalled();
+      expect(scraperService.fetchUrlSmart).toHaveBeenCalled();
+      expect(layer2FilterService.filterUrlWithContent).toHaveBeenCalled();
       expect(llmService.classifyUrl).not.toHaveBeenCalled();
 
       // Verify Layer 2 rejection stored
@@ -430,7 +439,7 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
       await processor.process(mockJob as Job);
 
       expect(layer1AnalysisService.analyzeUrl).not.toHaveBeenCalled();
-      expect(scraperService.fetchUrl).not.toHaveBeenCalled();
+      expect(scraperService.fetchUrlSmart).not.toHaveBeenCalled();
       expect(llmService.classifyUrl).not.toHaveBeenCalled();
     });
 
@@ -443,7 +452,7 @@ describe('UrlWorkerProcessor (3-Tier Architecture)', () => {
       await processor.process(mockJob as Job);
 
       expect(layer1AnalysisService.analyzeUrl).not.toHaveBeenCalled();
-      expect(scraperService.fetchUrl).not.toHaveBeenCalled();
+      expect(scraperService.fetchUrlSmart).not.toHaveBeenCalled();
       expect(llmService.classifyUrl).not.toHaveBeenCalled();
     });
   });

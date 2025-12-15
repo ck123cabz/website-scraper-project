@@ -66,6 +66,9 @@ export class Layer2OperationalFilterService {
    * Main entry point: Filter URL through Layer 2 publication detection
    * Scrapes homepage and aggregates 4 detection modules into publication score
    *
+   * NOTE: This method scrapes the URL. If you already have the HTML content,
+   * use filterUrlWithContent() instead to avoid duplicate ScrapingBee calls.
+   *
    * @param url - URL to filter (must have passed Layer 1)
    * @returns Layer2FilterResult with passed flag, signals, and reasoning
    */
@@ -82,9 +85,6 @@ export class Layer2OperationalFilterService {
         );
       }
 
-      // Load Layer 2 configuration rules
-      const rules = await this.loadLayer2Rules();
-
       // Scrape homepage HTML
       const scrapeResult = await this.scraperService.fetchUrl(url);
 
@@ -98,7 +98,55 @@ export class Layer2OperationalFilterService {
         );
       }
 
-      const html = scrapeResult.content;
+      // Delegate to filterUrlWithContent with the scraped HTML
+      return this.filterUrlWithContent(url, scrapeResult.content, startTime);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Error in Layer 2 filtering for ${url.slice(0, 100)}: ${errorMessage}`);
+      return this.createPassThroughResult(
+        `PASS Layer 2 - Error in analysis (${errorMessage}), defaulting to next layer`,
+        startTime,
+      );
+    }
+  }
+
+  /**
+   * Filter URL with pre-fetched HTML content (no scraping)
+   * Use this method when you already have the HTML to avoid duplicate ScrapingBee calls.
+   *
+   * @param url - URL being analyzed (for logging/context)
+   * @param html - Pre-fetched HTML content
+   * @param startTime - Optional start time for timing calculation (defaults to now)
+   * @returns Layer2FilterResult with passed flag, signals, and reasoning
+   */
+  async filterUrlWithContent(
+    url: string,
+    html: string,
+    startTime?: number,
+  ): Promise<Layer2FilterResult> {
+    const effectiveStartTime = startTime ?? Date.now();
+
+    try {
+      // Input validation
+      if (!url || typeof url !== 'string' || url.trim().length === 0) {
+        this.logger.warn('Invalid URL input to filterUrlWithContent: null, undefined, or empty');
+        return this.createPassThroughResult(
+          'PASS Layer 2 - Invalid input, defaulting to next layer',
+          effectiveStartTime,
+        );
+      }
+
+      if (!html || typeof html !== 'string' || html.trim().length === 0) {
+        this.logger.warn('Invalid HTML input to filterUrlWithContent: null, undefined, or empty');
+        return this.createPassThroughResult(
+          'PASS Layer 2 - No HTML content provided, defaulting to next layer',
+          effectiveStartTime,
+        );
+      }
+
+      // Load Layer 2 configuration rules
+      const rules = await this.loadLayer2Rules();
+
       const $ = cheerio.load(html);
 
       // Run 4 detection modules
@@ -141,7 +189,7 @@ export class Layer2OperationalFilterService {
 
       // Make decision
       const passed = publication_score < rules.publication_score_threshold;
-      const processingTimeMs = Date.now() - startTime;
+      const processingTimeMs = Date.now() - effectiveStartTime;
 
       this.logger.log(
         `Layer 2 result for ${url.slice(0, 100)}: ${passed ? 'PASS' : 'REJECT'} ` +
@@ -161,7 +209,7 @@ export class Layer2OperationalFilterService {
       this.logger.error(`Error in Layer 2 filtering for ${url.slice(0, 100)}: ${errorMessage}`);
       return this.createPassThroughResult(
         `PASS Layer 2 - Error in analysis (${errorMessage}), defaulting to next layer`,
-        startTime,
+        effectiveStartTime,
       );
     }
   }
@@ -963,13 +1011,19 @@ export class Layer2OperationalFilterService {
    * Get complete Layer 2 factor structure for url_results table
    * Returns JSONB-compatible object with all publication detection factors
    *
+   * NOTE: If html parameter is provided, uses pre-fetched content to avoid
+   * duplicate ScrapingBee calls. Otherwise falls back to scraping the URL.
+   *
    * @param url - URL to analyze
+   * @param html - Optional pre-fetched HTML content (avoids duplicate scraping)
    * @returns Promise<Layer2Factors> with complete publication detection data
    */
-  async getLayer2Factors(url: string): Promise<any> {
+  async getLayer2Factors(url: string, html?: string): Promise<any> {
     try {
-      // Run full Layer 2 analysis
-      const filterResult = await this.filterUrl(url);
+      // Run Layer 2 analysis - use pre-fetched HTML if provided to avoid duplicate scraping
+      const filterResult = html
+        ? await this.filterUrlWithContent(url, html)
+        : await this.filterUrl(url);
 
       if (!filterResult.signals) {
         return this.getEmptyLayer2Factors('No signals available');
